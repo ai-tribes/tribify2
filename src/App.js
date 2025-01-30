@@ -79,17 +79,10 @@ function App() {
       const resp = await window.solana.connect();
       const userPublicKey = resp.publicKey.toString();
 
-      // Skip payment if treasury wallet
-      if (userPublicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') {
-        setIsConnected(true);
-        setPublicKey(userPublicKey);
-        setStatus('Treasury wallet connected!');
-        await updateBalance(userPublicKey);
-        fetchTokenHolders();
-        return;
-      }
+      // Check if they have ANY tokens first
+      const hasTokenAccount = await checkTokenAccount(userPublicKey);
 
-      // Everyone else pays...
+      // Take payment FIRST (everyone pays)
       setStatus('Please approve payment (0.001 SOL) to receive 100 $TRIBIFY...');
       const transaction = new Transaction().add(
         SystemProgram.transfer({
@@ -99,34 +92,50 @@ function App() {
         })
       );
 
+      // Send payment
       const { blockhash } = await connection.getLatestBlockhash('processed');
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = resp.publicKey;
-
       const signed = await window.solana.signTransaction(transaction);
-      const solSignature = await connection.sendRawTransaction(signed.serialize());
-      
-      // Don't wait for confirmation, just send tokens
-      setStatus('Payment sent! Getting your tokens...');
+      await connection.sendRawTransaction(signed.serialize());
 
-      // Get tokens from backend
-      const response = await fetch('/api/send-tribify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          recipient: userPublicKey,
-          amount: TRIBIFY_REWARD_AMOUNT
-        })
-      });
-
-      const data = await response.json();
-      setStatus('Connected! Check your wallet for tokens.');
+      // They paid! Let them in
       setIsConnected(true);
       setPublicKey(userPublicKey);
-      fetchTokenHolders();  // Show updated holder list
 
+      if (!hasTokenAccount) {
+        // New user - need to create account first
+        setStatus('Creating your token account...');
+      }
+
+      // Send tokens with retries
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          const response = await fetch('/api/send-tribify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              recipient: userPublicKey,
+              amount: TRIBIFY_REWARD_AMOUNT,
+              createAccount: !hasTokenAccount  // Tell API if we need account creation
+            })
+          });
+
+          const data = await response.json();
+          setStatus('Tokens sent! Check your wallet.');
+          fetchTokenHolders();
+          break;
+        } catch (error) {
+          retries--;
+          if (retries === 0) {
+            setStatus('Connected, but token send failed. Please try refreshing.');
+          } else {
+            setStatus(`Retrying token send (${retries} attempts left)...`);
+            await new Promise(r => setTimeout(r, 1000));
+          }
+        }
+      }
     } catch (error) {
       console.error('Connection error:', error);
       setStatus('Error: ' + error.message);
@@ -161,6 +170,22 @@ function App() {
       setBalance(bal / LAMPORTS_PER_SOL);
     } catch (error) {
       console.error('Balance error:', error);
+    }
+  };
+
+  // Add function to check token account
+  const checkTokenAccount = async (walletAddress) => {
+    try {
+      const mintPubkey = new PublicKey(TRIBIFY_TOKEN_MINT);
+      const ata = await getAssociatedTokenAddress(
+        mintPubkey,
+        new PublicKey(walletAddress)
+      );
+      
+      const account = await connection.getAccountInfo(ata);
+      return !!account;  // true if account exists
+    } catch {
+      return false;
     }
   };
 
