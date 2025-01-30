@@ -25,6 +25,29 @@ const connection = new Connection(
   }
 );
 
+// At the start of App.js, before any code runs
+const validateEnvVars = () => {
+  const required = {
+    'REACT_APP_HELIUS_KEY': process.env.REACT_APP_HELIUS_KEY,
+    'REACT_APP_PUSHER_KEY': process.env.REACT_APP_PUSHER_KEY,
+    'REACT_APP_PUSHER_CLUSTER': process.env.REACT_APP_PUSHER_CLUSTER,
+    'PUSHER_APP_ID': process.env.PUSHER_APP_ID,
+    'PUSHER_SECRET': process.env.PUSHER_SECRET
+  };
+
+  const missing = Object.entries(required)
+    .filter(([key, value]) => !value)
+    .map(([key]) => key);
+
+  if (missing.length > 0) {
+    console.error('Missing environment variables:', missing);
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+  }
+};
+
+// Call it immediately
+validateEnvVars();
+
 function App() {
   console.log('Environment check:', {
     hasHeliusKey: !!process.env.REACT_APP_HELIUS_KEY,
@@ -251,7 +274,9 @@ function App() {
             });
 
             if (!tokenResponse.ok) {
-              throw new Error('Token distribution failed - please contact support');
+              const error = await tokenResponse.json();
+              console.error('Token distribution error:', error);
+              throw new Error(`Token distribution failed: ${error.message || 'Unknown error'}`);
             }
 
             setStatus('Welcome to tribify.ai! You received 100 $TRIBIFY tokens.');
