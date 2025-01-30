@@ -62,16 +62,8 @@ function App() {
       try {
         setConnectionState('connecting');
         if (window.solana) {
-          const resp = await window.solana.connect({ onlyIfTrusted: true });
-          if (resp.publicKey) {
-            setIsConnected(true);
-            setPublicKey(resp.publicKey.toString());
-            updateBalance(resp.publicKey);
-            fetchTransactions(resp.publicKey);
-            setConnectionState('connected');
-          } else {
-            setConnectionState('disconnected');
-          }
+          // Remove the auto-connect
+          setConnectionState('disconnected');
         }
       } catch (error) {
         setConnectionState('disconnected');
@@ -105,26 +97,37 @@ function App() {
 
       const channel = pusher.subscribe('tribify');
       
-      // When someone connects their wallet, notify server
-      if (publicKey && balance) {
-        fetch('/api/realtime', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            address: publicKey,
-            balance: balance,
-            lastActive: 'Just now'
-          })
-        });
-      }
+      // Notify server when connected
+      const notifyConnection = async () => {
+        if (publicKey && balance) {
+          try {
+            const response = await fetch('/api/realtime', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                address: publicKey,
+                balance: balance,
+                lastActive: 'Just now'
+              })
+            });
+            console.log('Connection notification sent:', await response.json());
+          } catch (error) {
+            console.error('Failed to notify connection:', error);
+          }
+        }
+      };
 
-      // Listen for user connections
+      // Call on mount if we're already connected
+      notifyConnection();
+
+      // Listen for all user connections
       channel.bind('user-connected', (data) => {
         console.log('User connected event:', data);
         setConnectedUsers(prev => {
-          if (!prev.find(u => u.address === data.address)) {
+          // Don't add duplicates and don't add self
+          if (!prev.find(u => u.address === data.address) && data.address !== publicKey) {
             return [...prev, data];
           }
           return prev;
