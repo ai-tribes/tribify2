@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import Pusher from 'pusher-js';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -18,6 +19,16 @@ function App() {
   const [publicKey, setPublicKey] = useState(null);
   const [balance, setBalance] = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [connectionState, setConnectionState] = useState('disconnected'); // 'disconnected', 'connecting', 'connected', 'error'
+  const [errorMessage, setErrorMessage] = useState('');
+  const [otherWallets, setOtherWallets] = useState([
+    { name: 'Phantom', connected: true },
+    { name: 'Solflare', connected: false },
+    { name: 'Backpack', connected: false },
+    { name: 'Glow', connected: false }
+  ]);
+  const [connectedUsers, setConnectedUsers] = useState([]);
+  const [socket, setSocket] = useState(null);
 
   // Connection instance
   const connection = new Connection(
@@ -34,19 +45,79 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Check connection and get balance
+  // Enhanced connection check
   useEffect(() => {
     const checkConnection = async () => {
-      if (window.solana && window.solana.isConnected) {
-        const response = await window.solana.connect({ onlyIfTrusted: true });
-        setIsConnected(true);
-        setPublicKey(response.publicKey.toString());
-        updateBalance(response.publicKey);
-        fetchTransactions(response.publicKey);
+      try {
+        setConnectionState('connecting');
+        if (window.solana) {
+          const resp = await window.solana.connect({ onlyIfTrusted: true });
+          if (resp.publicKey) {
+            setIsConnected(true);
+            setPublicKey(resp.publicKey.toString());
+            updateBalance(resp.publicKey);
+            fetchTransactions(resp.publicKey);
+            setConnectionState('connected');
+          } else {
+            setConnectionState('disconnected');
+          }
+        }
+      } catch (error) {
+        setConnectionState('disconnected');
+        resetStates();
       }
     };
     checkConnection();
+
+    // Listen for wallet connection changes
+    const handleWalletChange = () => {
+      if (!window.solana?.isConnected) {
+        resetStates();
+      }
+    };
+    window.solana?.on('disconnect', handleWalletChange);
+    window.solana?.on('accountChanged', handleWalletChange);
+
+    return () => {
+      window.solana?.removeListener('disconnect', handleWalletChange);
+      window.solana?.removeListener('accountChanged', handleWalletChange);
+    };
   }, []);
+
+  // Replace Socket.io effect with Pusher
+  useEffect(() => {
+    const pusher = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
+      cluster: process.env.REACT_APP_PUSHER_CLUSTER,
+      encrypted: true
+    });
+
+    const channel = pusher.subscribe('tribify');
+    
+    channel.bind('user-connected', (data) => {
+      console.log('New user connected:', data);
+      setConnectedUsers(prev => [...prev, data]);
+    });
+
+    channel.bind('user-disconnected', (userId) => {
+      console.log('User disconnected:', userId);
+      setConnectedUsers(prev => prev.filter(u => u.id !== userId));
+    });
+
+    return () => {
+      channel.unbind_all();
+      channel.unsubscribe();
+    };
+  }, []);
+
+  const resetStates = () => {
+    setIsConnected(false);
+    setPublicKey(null);
+    setBalance(null);
+    setTransactions([]);
+    setStatus('');
+    setConnectionState('disconnected');
+    setErrorMessage('');
+  };
 
   const updateBalance = async (pubKey) => {
     try {
@@ -68,25 +139,25 @@ function App() {
 
   const handleDisconnect = async () => {
     try {
+      setConnectionState('disconnecting');
       await window.solana.disconnect();
-      setIsConnected(false);
-      setPublicKey(null);
-      setBalance(null);
-      setTransactions([]);
-      setStatus('');
+      resetStates();
     } catch (error) {
-      console.error('Disconnect error:', error);
+      setConnectionState('error');
+      setErrorMessage('Failed to disconnect: ' + error.message);
     }
   };
 
   const handleClick = async () => {
     if (!window.solana) {
-      alert("Get Phantom wallet!");
+      setConnectionState('error');
+      setErrorMessage('Phantom wallet not installed');
       return;
     }
 
     try {
       if (!isConnected) {
+        setConnectionState('connecting');
         setStatus('Connecting...');
         const response = await window.solana.connect();
         setIsConnected(true);
@@ -94,6 +165,7 @@ function App() {
         await updateBalance(response.publicKey);
         await fetchTransactions(response.publicKey);
         setStatus('Connected: ' + response.publicKey.toString().slice(0,4) + '...');
+        setConnectionState('connected');
       } else {
         // Transaction logic...
         const transaction = new Transaction().add(
@@ -124,33 +196,51 @@ function App() {
       }
     } catch (error) {
       console.error(error);
-      setStatus('Error: ' + error.message);
+      setConnectionState('error');
+      setErrorMessage(error.message);
       if (error.code === 4001) {
-        setIsConnected(false);
-        setPublicKey(null);
-        setBalance(null);
-        setTransactions([]);
+        resetStates();
       }
+    }
+  };
+
+  const fetchConnectedUsers = async () => {
+    try {
+      // This would need to be implemented with your backend
+      // const users = await fetchActiveUsers();
+      // setConnectedUsers(users);
+    } catch (error) {
+      console.error('Failed to fetch connected users:', error);
     }
   };
 
   return (
     <div className={`App ${isDark ? 'dark' : 'light'}`}>
+      <div className={`connection-status ${connectionState}`}>
+        {connectionState === 'connecting' && '◎ Connecting...'}
+        {connectionState === 'connected' && '◉ Connected'}
+        {connectionState === 'disconnecting' && '◌ Disconnecting...'}
+        {connectionState === 'error' && '⊗ ' + errorMessage}
+      </div>
       <button className="mode-toggle" onClick={() => setIsDark(!isDark)}>
         {isDark ? '◯' : '●'}
       </button>
       <div className="content">
-        <button onClick={handleClick}>
-          {isConnected ? '⬡ Send' : '⬢ Connect'}
-        </button>
+        <div className="button-group">
+          <button onClick={handleClick}>
+            {isConnected ? '⬡ Send' : '⬢ Connect'}
+          </button>
+          {isConnected && (
+            <button className="disconnect" onClick={handleDisconnect}>
+              ⊗ Disconnect
+            </button>
+          )}
+        </div>
         {isConnected && (
           <>
             <div className="wallet-info">
               <div>◈ {publicKey?.slice(0,4)}...{publicKey?.slice(-4)}</div>
               <div>◇ {balance?.toFixed(4)} SOL</div>
-              <button className="disconnect" onClick={handleDisconnect}>
-                ⬚ Disconnect
-              </button>
             </div>
             {transactions.length > 0 && (
               <div className="transactions">
@@ -158,6 +248,22 @@ function App() {
                 {transactions.map((tx, i) => (
                   <div key={i} className="tx-item">
                     ◊ {tx.signature.slice(0,4)}...{tx.signature.slice(-4)}
+                  </div>
+                ))}
+              </div>
+            )}
+            {isConnected && connectedUsers.length > 0 && (
+              <div className="connected-users">
+                <div className="users-header">Connected Users</div>
+                {connectedUsers.map((user, i) => (
+                  <div key={i} className="user-item">
+                    <div className="user-address">
+                      ◈ {user.address?.slice(0,4)}...{user.address?.slice(-4)}
+                    </div>
+                    <div className="user-details">
+                      <span>◇ {Number(user.balance).toFixed(4)} SOL</span>
+                      <span className="last-active">{user.lastActive}</span>
+                    </div>
                   </div>
                 ))}
               </div>

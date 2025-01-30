@@ -1,12 +1,15 @@
+/* Base Layout */
 .App {
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   min-height: 100vh;
-  transition: all 0.3s ease;
+  padding: 40px;
   font-family: monospace;
+  transition: all 0.3s ease;
 }
 
+/* Theme Styles */
 .dark {
   background: #000;
   color: #fff;
@@ -17,6 +20,32 @@
   color: #000;
 }
 
+/* Connection Status */
+.connection-status {
+  display: inline-block;
+  padding: 6px 12px;
+  border: 1px solid currentColor;
+  border-radius: 0;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.connection-status.connecting,
+.connection-status.disconnecting {
+  animation: pulse 1.5s infinite;
+}
+
+.connection-status.error {
+  opacity: 1;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+  100% { opacity: 0.3; }
+}
+
+/* Theme Toggle */
 .mode-toggle {
   position: fixed;
   top: 20px;
@@ -24,67 +53,68 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  font-size: 20px;
-  padding: 0;
+  font-size: 18px;
   opacity: 0.5;
   background: transparent;
   border: 1px solid currentColor;
-  color: inherit;
 }
 
 .mode-toggle:hover {
   opacity: 1;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+/* Main Content */
+.content {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  align-items: flex-start;
+  gap: 15px;
 }
 
-.container {
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.centered-button {
-  padding: 12px 24px;
-  font-size: 16px;
-  background-color: white;
-  border: 2px solid #000;
-  border-radius: 4px;
+/* Buttons */
+button:not(.mode-toggle) {
+  padding: 8px 16px;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  background: transparent;
+  border: 1px solid currentColor;
+  color: inherit;
+  border-radius: 0;
+  min-width: 100px;
+  transition: all 0.2s ease;
 }
 
-.centered-button:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+button:hover {
+  transform: translateY(-1px);
+  opacity: 0.8;
 }
 
+.dark button {
+  border-color: #fff;
+}
+
+.light button {
+  border-color: #000;
+}
+
+.disconnect {
+  opacity: 0.7;
+  border-style: dashed;
+}
+
+/* Wallet Info */
 .wallet-info {
-  background: white;
-  border: 2px solid #000;
-  border-radius: 8px;
-  padding: 20px;
-  margin-top: 20px;
-  max-width: 400px;
-  width: 90%;
-  font-family: monospace;
+  margin: 15px 0;
   font-size: 14px;
   opacity: 0.8;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: center;
+}
+
+.dark .wallet-info {
+  color: #2ecc71;
+}
+
+.light .wallet-info {
+  color: #222;
 }
 
 .wallet-info h3 {
@@ -122,76 +152,166 @@
   margin: 20px 0 10px 0;
 }
 
-button {
-  padding: 12px 24px;
-  font-size: 16px;
-  cursor: pointer;
-  font-family: monospace;
-  transition: all 0.2s ease;
-  background: transparent;
-  border: 1px solid currentColor;
-  color: inherit;
-}
-
-.dark button {
-  border-color: #fff;
-}
-
-.light button {
-  border-color: #000;
-}
-
-button:hover {
-  transform: translateY(-1px);
-  opacity: 0.8;
-}
-
-.content {
+/* Add this to your existing CSS */
+.button-group {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
+  gap: 12px;
+  margin: 20px 0;
 }
 
-.wallet-info, .status {
+.button-group .disconnect {
+  margin-top: 0;
+  width: auto;
+  border: 1px solid currentColor;
+  opacity: 0.7;
+}
+
+.button-group .disconnect:hover {
+  opacity: 1;
+  background: transparent;
+}
+
+/* Transaction History */
+.transactions {
+  margin-top: 25px;
+}
+
+.tx-header {
+  font-size: 14px;
+  opacity: 0.7;
+  margin-bottom: 10px;
+}
+
+.tx-item {
+  font-size: 14px;
+  opacity: 0.7;
+  margin: 6px 0;
+}
+
+/* Status Messages */
+.status {
   font-size: 14px;
   opacity: 0.7;
 }
 
-.dark .wallet-info {
-  color: #2ecc71;
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
 }
 
-.light .wallet-info {
-  color: #222;
+.container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
-.disconnect {
-  font-size: 12px;
-  padding: 8px 16px;
-  opacity: 0.6;
+.centered-button {
+  padding: 12px 24px;
+  font-size: 16px;
+  background-color: white;
+  border: 2px solid #000;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.disconnect:hover {
+.centered-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Other Wallets Box */
+.other-wallets {
+  margin-top: 25px;
+  border: 1px solid currentColor;
+  padding: 15px;
+  width: 200px;
+}
+
+.wallet-header {
+  font-size: 14px;
+  opacity: 0.7;
+  margin-bottom: 12px;
+}
+
+.wallet-item {
+  font-size: 14px;
+  opacity: 0.7;
+  margin: 8px 0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.wallet-item.connected {
   opacity: 1;
 }
 
-.transactions {
-  margin-top: 20px;
-  width: 100%;
-  max-width: 300px;
+.dark .wallet-item.connected {
+  color: #2ecc71;
 }
 
-.tx-header {
-  font-size: 12px;
-  opacity: 0.5;
-  margin-bottom: 10px;
-  text-align: center;
+.light .wallet-item.connected {
+  color: #222;
 }
 
-.tx-item {
+/* Connected Users Box */
+.connected-users {
+  margin-top: 25px;
+  border: 1px solid currentColor;
+  padding: 20px;
+  min-width: 300px;
+  background: transparent;
+}
+
+.users-header {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid currentColor;
+}
+
+.user-item {
+  padding: 10px 0;
+  border-bottom: 1px dashed currentColor;
+  opacity: 0.8;
+}
+
+.user-item:last-child {
+  border-bottom: none;
+}
+
+.user-address {
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.user-details {
+  display: flex;
+  justify-content: space-between;
   font-size: 12px;
   opacity: 0.7;
-  margin: 5px 0;
-  text-align: center;
+}
+
+.last-active {
+  font-style: italic;
+}
+
+/* Dark mode specifics */
+.dark .user-item {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Light mode specifics */
+.light .user-item {
+  border-color: rgba(0, 0, 0, 0.1);
 } 
