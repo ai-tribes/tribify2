@@ -75,12 +75,11 @@ module.exports = async function handler(req, res) {
       // After getting ATAs
       console.log('Checking accounts...');
 
-      // Build transaction with proper options
-      const { blockhash } = await connection.getLatestBlockhash();
-      const tx = new Transaction({
-        feePayer: treasuryKey.publicKey,
-        recentBlockhash: blockhash
-      });
+      // Build transaction
+      console.log('Building transaction...');
+
+      // Create transaction without blockhash first
+      const tx = new Transaction();
 
       // Check treasury account first
       const treasuryInfo = await connection.getAccountInfo(treasuryATA);
@@ -130,19 +129,25 @@ module.exports = async function handler(req, res) {
         )
       );
 
+      // Get fresh blockhash right before sending
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      tx.recentBlockhash = blockhash;
+      tx.feePayer = treasuryKey.publicKey;
+
       // Send with proper options
+      console.log('Sending transaction...');
       const signature = await connection.sendTransaction(tx, [treasuryKey], {
         skipPreflight: false,
         preflightCommitment: 'confirmed',
         maxRetries: 5
       });
 
-      // Wait for confirmation with longer timeout
+      // Wait for confirmation
       console.log('Waiting for confirmation...');
       const confirmation = await connection.confirmTransaction({
         signature,
         blockhash,
-        lastValidBlockHeight: await connection.getBlockHeight()
+        lastValidBlockHeight
       }, 'confirmed');
 
       if (confirmation.value.err) {
