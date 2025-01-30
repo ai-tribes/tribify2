@@ -15,6 +15,9 @@ const TRIBIFY_TOKEN_MINT = "672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump";
 const CONNECTION_FEE_SOL = 0.003; // 0.003 SOL connection fee
 const TRIBIFY_REWARD_AMOUNT = 100; // 100 $TRIBIFY tokens reward
 
+// Change from const to let for the connection
+let connection;
+
 function App() {
   console.log('Environment check:', {
     hasHeliusKey: !!process.env.REACT_APP_HELIUS_KEY,
@@ -67,27 +70,13 @@ function App() {
     return endpoints[0]; // Use GenesysGo by default
   };
 
-  // Update connection instance
-  const connection = new Connection(getRPCEndpoint(), {
-    commitment: 'confirmed',
-    wsEndpoint: undefined // Disable WebSocket to avoid connection issues
-  });
-
-  // Add RPC fallback handling
-  const getRecentBlockhash = async () => {
-    for (let i = 0; i < 3; i++) {
-      try {
-        const { blockhash } = await connection.getLatestBlockhash('finalized');
-        return blockhash;
-      } catch (error) {
-        console.error(`RPC attempt ${i + 1} failed:`, error);
-        // Try next endpoint
-        connection._rpcEndpoint = getRPCEndpoint();
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    }
-    throw new Error('Failed to get blockhash after multiple attempts');
-  };
+  // Initialize connection in useEffect
+  useEffect(() => {
+    connection = new Connection(getRPCEndpoint(), {
+      commitment: 'confirmed',
+      wsEndpoint: undefined
+    });
+  }, []);
 
   // Update theme based on time of day
   useEffect(() => {
@@ -180,7 +169,7 @@ function App() {
     }
   }, [publicKey]);
 
-  // Add RPC error handling
+  // Update RPC test
   useEffect(() => {
     const testRPC = async () => {
       try {
@@ -188,8 +177,8 @@ function App() {
         const slot = await connection.getSlot();
         console.log('RPC working, current slot:', slot);
       } catch (error) {
-        console.error('RPC connection failed, check API key:', error);
-        // Try fallback RPC
+        console.error('RPC connection failed:', error);
+        // Create new connection with fallback
         connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
       }
     };
@@ -466,6 +455,20 @@ function App() {
     e.preventDefault(); // Prevent page refresh
     console.log('Searching for:', searchQuery);
     // Search is already handled by filteredUsers
+  };
+
+  // Add back the getRecentBlockhash function
+  const getRecentBlockhash = async () => {
+    try {
+      const { blockhash } = await connection.getLatestBlockhash('finalized');
+      return blockhash;
+    } catch (error) {
+      console.error('Failed to get blockhash:', error);
+      // Try fallback RPC
+      connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+      const { blockhash } = await connection.getLatestBlockhash('finalized');
+      return blockhash;
+    }
   };
 
   return (
