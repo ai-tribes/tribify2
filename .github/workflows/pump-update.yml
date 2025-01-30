@@ -1,0 +1,26 @@
+name: Post Update to pump.fun
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  post-update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get commit message
+        id: commit
+        run: echo "::set-output name=message::$(git log --format=%B -n 1)"
+      
+      - name: Post to pump.fun
+        run: |
+          curl -X POST "https://pumpportal.fun/api/v1/post" \
+          -H "Content-Type: application/json" \
+          -H "X-API-Key: ${{ secrets.PUMP_PORTAL_API_KEY }}" \
+          -d '{
+            "mint": "672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump",
+            "message": "🚀 New Update: ${{ steps.commit.outputs.message }}\n\nCheck it out at tribify.ai",
+            "source": "tribify.ai"
+          }' 
