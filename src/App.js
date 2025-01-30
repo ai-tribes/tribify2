@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import './App.css';
 import { Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import TokenGateway from './components/TokenGateway';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -35,6 +37,7 @@ function App() {
   const [balance, setBalance] = useState(null);
   const [tokenHolders, setTokenHolders] = useState([]);
   const [isDark, setIsDark] = useState(true);  // Keep dark mode
+  const [showDocs, setShowDocs] = useState(false);
 
   // Core functions
   const handleConnection = async () => {
@@ -169,36 +172,56 @@ function App() {
   };
 
   return (
-    <div className={`App ${isDark ? 'dark' : 'light'}`}>
-      <button className="mode-toggle" onClick={() => setIsDark(!isDark)}>
-        {isDark ? '◯' : '●'}
-      </button>
+    <Router>
+      <Routes>
+        <Route path="/docs/tokengateway" element={<TokenGateway />} />
+        <Route path="/" element={
+          <div className={`App ${isDark ? 'dark' : 'light'}`}>
+            <button className="mode-toggle" onClick={() => setIsDark(!isDark)}>
+              {isDark ? '◯' : '●'}
+            </button>
 
-      <button onClick={handleConnection}>
-        {isConnected ? 'Connected' : 'Connect Wallet'}
-      </button>
+            <button onClick={handleConnection}>
+              {isConnected ? 'Connected' : 'Connect Wallet'}
+            </button>
 
-      {isConnected && (
-        <>
-          <div className="wallet-info">
-            <div>◈ {publicKey}</div>
-            <div>◇ {balance} SOL</div>
+            {isConnected && (
+              <>
+                <div className="wallet-info">
+                  <div>◈ {publicKey}</div>
+                  <div>◇ {balance} SOL</div>
+                </div>
+
+                <div className="token-holders">
+                  <h3>TRIBIFY Holders</h3>
+                  {tokenHolders.map((holder, i) => (
+                    <div key={i} className="holder-item">
+                      <div>◈ {holder.address}</div>
+                      <div>◇ {holder.tokenBalance} $TRIBIFY</div>
+                    </div>
+                  ))}
+                </div>
+
+                {!showDocs ? (
+                  <button onClick={() => setShowDocs(true)} className="docs-link">
+                    View Documentation
+                  </button>
+                ) : (
+                  <div className="docs-content">
+                    <button onClick={() => setShowDocs(false)}>← Back</button>
+                    <h1>Tribify Documentation</h1>
+                    <p>Welcome token holder! Since you have $TRIBIFY tokens, you can access this documentation.</p>
+                    {/* Add more documentation content here */}
+                  </div>
+                )}
+              </>
+            )}
+
+            {status && <div className="status">{status}</div>}
           </div>
-
-          <div className="token-holders">
-            <h3>TRIBIFY Holders</h3>
-            {tokenHolders.map((holder, i) => (
-              <div key={i} className="holder-item">
-                <div>◈ {holder.address}</div>
-                <div>◇ {holder.tokenBalance} $TRIBIFY</div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {status && <div className="status">{status}</div>}
-    </div>
+        } />
+      </Routes>
+    </Router>
   );
 }
 
