@@ -90,16 +90,27 @@ function App() {
   // Update the Pusher effect
   useEffect(() => {
     try {
+      console.log('Initializing Pusher with:', {
+        key: process.env.REACT_APP_PUSHER_KEY,
+        cluster: process.env.REACT_APP_PUSHER_CLUSTER
+      });
+
       const pusher = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
         cluster: process.env.REACT_APP_PUSHER_CLUSTER,
         encrypted: true
       });
 
       const channel = pusher.subscribe('tribify');
+      console.log('Subscribed to channel: tribify');
       
       // Notify server when connected
       const notifyConnection = async () => {
         if (publicKey && balance) {
+          console.log('Attempting to notify server of connection:', {
+            address: publicKey,
+            balance: balance
+          });
+
           try {
             const response = await fetch('/api/realtime', {
               method: 'POST',
@@ -112,29 +123,32 @@ function App() {
                 lastActive: 'Just now'
               })
             });
-            console.log('Connection notification sent:', await response.json());
+            const result = await response.json();
+            console.log('Server response:', result);
           } catch (error) {
             console.error('Failed to notify connection:', error);
           }
         }
       };
 
-      // Call on mount if we're already connected
       notifyConnection();
 
-      // Listen for all user connections
       channel.bind('user-connected', (data) => {
-        console.log('User connected event:', data);
+        console.log('Received user-connected event:', data);
+        console.log('Current publicKey:', publicKey);
         setConnectedUsers(prev => {
-          // Don't add duplicates and don't add self
+          console.log('Previous users:', prev);
           if (!prev.find(u => u.address === data.address) && data.address !== publicKey) {
+            console.log('Adding new user:', data);
             return [...prev, data];
           }
+          console.log('User already exists or is self');
           return prev;
         });
       });
 
       return () => {
+        console.log('Cleaning up Pusher connection');
         channel.unbind_all();
         channel.unsubscribe();
       };
