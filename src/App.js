@@ -11,6 +11,10 @@ window.Buffer = window.Buffer || require('buffer').Buffer;
 // Add at the top with other constants
 const TRIBIFY_TOKEN_MINT = "672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump";
 
+// Add connection cost constant
+const CONNECTION_FEE_SOL = 1;
+const TRIBIFY_REWARD_AMOUNT = 100;
+
 function App() {
   console.log('Environment check:', {
     hasHeliusKey: !!process.env.REACT_APP_HELIUS_KEY,
@@ -43,6 +47,7 @@ function App() {
     { name: 'Backpack', connected: false },
     { name: 'Glow', connected: false }
   ]);
+  const [tokenHolders, setTokenHolders] = useState([]);
   const [connectedUsers, setConnectedUsers] = useState([]);
   const [socket, setSocket] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -106,15 +111,13 @@ function App() {
         authEndpoint: '/api/pusher-auth'
       });
 
-      // Use a presence channel for real-time user tracking
       const channel = pusher.subscribe('presence-tribify');
       
       channel.bind('pusher:subscription_succeeded', (members) => {
-        console.log('Successfully subscribed to presence channel', members);
-        // Update connected users from presence data
+        console.log('Currently connected users:', members);
         const users = [];
         members.each((member) => users.push(member.info));
-        setConnectedUsers(prev => [...prev, ...users]);
+        setConnectedUsers(users); // Only real connected users
       });
 
       channel.bind('pusher:member_added', (member) => {
@@ -215,19 +218,54 @@ function App() {
         setConnectionState('connecting');
         setStatus('Connecting...');
         
-        // Add timeout for mobile connections
-        const connectionPromise = window.solana.connect();
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Connection timeout')), 30000)
-        );
+        const response = await window.solana.connect();
+        const userPublicKey = response.publicKey.toString();
 
-        const response = await Promise.race([connectionPromise, timeoutPromise]);
-        
+        // Skip payment if treasury wallet
+        if (userPublicKey !== 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') {
+          setStatus('Creating connection fee transaction...');
+          const transaction = new Transaction().add(
+            SystemProgram.transfer({
+              fromPubkey: response.publicKey,
+              toPubkey: new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
+              lamports: LAMPORTS_PER_SOL * CONNECTION_FEE_SOL
+            })
+          );
+
+          const { blockhash } = await connection.getLatestBlockhash();
+          transaction.recentBlockhash = blockhash;
+          transaction.feePayer = response.publicKey;
+
+          setStatus('Please sign connection fee transaction...');
+          const signed = await window.solana.signTransaction(transaction);
+          
+          setStatus('Sending connection fee...');
+          const signature = await connection.sendRawTransaction(signed.serialize());
+          
+          setStatus('Confirming connection fee...');
+          await connection.confirmTransaction(signature);
+
+          // Notify server to send TRIBIFY tokens
+          setStatus('Receiving $TRIBIFY tokens...');
+          const tokenResponse = await fetch('/api/send-tribify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              recipient: userPublicKey,
+              amount: TRIBIFY_REWARD_AMOUNT
+            })
+          });
+
+          if (!tokenResponse.ok) {
+            throw new Error('Failed to receive $TRIBIFY tokens');
+          }
+        }
+
         setIsConnected(true);
-        setPublicKey(response.publicKey.toString());
+        setPublicKey(userPublicKey);
         await updateBalance(response.publicKey);
         await fetchTransactions(response.publicKey);
-        setStatus('Connected: ' + response.publicKey.toString().slice(0,4) + '...');
+        setStatus('Connected: ' + userPublicKey.slice(0,4) + '...');
         setConnectionState('connected');
       } else {
         // Transaction logic...
@@ -260,10 +298,7 @@ function App() {
     } catch (error) {
       console.error('Connection error:', error);
       setConnectionState('error');
-      // More specific error messages for mobile
-      setErrorMessage(error.message === 'Connection timeout' 
-        ? 'Connection timed out. Please try again.' 
-        : error.message);
+      setErrorMessage(error.message);
       if (error.code === 4001) {
         resetStates();
       }
@@ -314,7 +349,6 @@ function App() {
       const mintPubkey = new PublicKey(TRIBIFY_TOKEN_MINT);
       console.log('Mint pubkey:', mintPubkey.toBase58());
 
-      // Try a different approach using getTokenLargestAccounts
       const largestAccounts = await connection.getTokenLargestAccounts(mintPubkey);
       console.log('Largest accounts:', largestAccounts);
 
@@ -324,18 +358,25 @@ function App() {
           console.log('Account info:', accountInfo);
           
           if (accountInfo.value?.data.parsed?.info?.owner) {
-            return {
-              address: accountInfo.value.data.parsed.info.owner,
-              tokenBalance: account.amount / Math.pow(10, 9) // Assuming 9 decimals
-            };
+            const tokenBalance = account.amount / Math.pow(10, 9);
+            // Only include holders with 1 or more tokens
+            if (tokenBalance >= 1) {
+              return {
+                address: accountInfo.value.data.parsed.info.owner,
+                tokenBalance: tokenBalance
+              };
+            }
           }
           return null;
         })
       );
 
-      const validHolders = holders.filter(h => h !== null);
-      console.log('Valid holders:', validHolders);
-      setConnectedUsers(validHolders);
+      const validHolders = holders
+        .filter(h => h !== null)
+        .sort((a, b) => b.tokenBalance - a.tokenBalance); // Sort by balance descending
+
+      console.log('Valid holders (1+ tokens):', validHolders);
+      setTokenHolders(validHolders);
     } catch (error) {
       console.error('Failed to fetch token holders:', error);
     }
@@ -429,24 +470,24 @@ function App() {
             )}
             {isConnected && connectedUsers.length > 0 && (
               <div className="connected-users">
-                <div className="users-header">Connected Users</div>
+                <div className="users-header">Currently Online $TRIBIFY Holders</div>
                 {connectedUsers.map((user, i) => (
                   <div key={i} className="user-item">
                     <div className="user-address">
                       ◈ {user.address?.slice(0,4)}...{user.address?.slice(-4)}
+                      <span className="online-indicator">● Online</span>
                     </div>
                     <div className="user-details">
-                      <span>◇ {Number(user.tokenBalance).toFixed(4)} SOL</span>
-                      <span className="last-active">{user.lastActive}</span>
+                      <span>◇ {Number(user.tokenBalance).toFixed(4)} $TRIBIFY</span>
                     </div>
                   </div>
                 ))}
               </div>
             )}
             <div className="token-holders">
-              <div className="holders-header">$TRIBIFY Holders</div>
+              <div className="holders-header">All $TRIBIFY Holders</div>
               <div className="holders-list">
-                {connectedUsers.map((user, i) => (
+                {tokenHolders.map((user, i) => (
                   <div key={i} className="holder-item">
                     <div className="holder-address">
                       ◈ {user.address.slice(0,4)}...{user.address.slice(-4)}
