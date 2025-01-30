@@ -68,3 +68,31 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+# $tribify
+
+Real-time Solana wallet connector with token holder tracking.
+
+## Updates Posted to pump.fun
+
+### Update 1 - Real-time Token Holder Tracking
+- Added real-time $TRIBIFY token holder display
+- Shows holder addresses and balances
+- Preparing for holder-to-holder messaging
+- Live at: tribify.ai
+
+### Next Updates Planned
+- Holder-to-holder messaging
+- Token transfer interface
+- Holder statistics
+- Activity tracking
+
+## Development
+
+When pushing updates:
+1. Deploy to tribify.ai
+2. Sign in to pump.fun with treasury wallet: `DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv`
+3. Post update with:
+   - What's new
+   - Link to tribify.ai
+   - Next planned features
