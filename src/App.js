@@ -25,15 +25,20 @@ const connection = new Connection(
   }
 );
 
-// At the start of App.js, before any code runs
+// Update the validation to only check required vars
 const validateEnvVars = () => {
+  // Always required
   const required = {
     'REACT_APP_HELIUS_KEY': process.env.REACT_APP_HELIUS_KEY,
-    'REACT_APP_PUSHER_KEY': process.env.REACT_APP_PUSHER_KEY,
-    'REACT_APP_PUSHER_CLUSTER': process.env.REACT_APP_PUSHER_CLUSTER,
-    'PUSHER_APP_ID': process.env.PUSHER_APP_ID,
-    'PUSHER_SECRET': process.env.PUSHER_SECRET
   };
+
+  // Only required in production
+  if (process.env.NODE_ENV === 'production') {
+    required['REACT_APP_PUSHER_KEY'] = process.env.REACT_APP_PUSHER_KEY;
+    required['REACT_APP_PUSHER_CLUSTER'] = process.env.REACT_APP_PUSHER_CLUSTER;
+    required['PUSHER_APP_ID'] = process.env.PUSHER_APP_ID;
+    required['PUSHER_SECRET'] = process.env.PUSHER_SECRET;
+  }
 
   const missing = Object.entries(required)
     .filter(([key, value]) => !value)
