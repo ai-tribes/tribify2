@@ -15,14 +15,9 @@ const TRIBIFY_TOKEN_MINT = "672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump";
 const CONNECTION_FEE_SOL = 0.003; // 0.003 SOL connection fee
 const TRIBIFY_REWARD_AMOUNT = 100; // 100 $TRIBIFY tokens reward
 
-// Use QuickNode's dedicated RPC
-const RPC_URL = 'https://rough-empty-dust.solana-mainnet.quiknode.pro/8eef33f92c84c6d4c7fd8aa2c4d27e57b9f82e8d/';
-
-// Initialize connection ONCE with proper config
-let connection = new Connection(RPC_URL, {
-  commitment: 'confirmed',
-  wsEndpoint: undefined,
-  confirmTransactionInitialTimeout: 60000
+// Just use one simple connection
+const connection = new Connection('https://api.mainnet-beta.solana.com', {
+  commitment: 'confirmed'
 });
 
 function App() {
@@ -65,25 +60,6 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
-
-  // Update the RPC endpoints with GenesysGo first
-  const getRPCEndpoint = () => {
-    const endpoints = [
-      'https://ssc-dao.genesysgo.net',  // Most reliable public RPC
-      'https://api.mainnet-beta.solana.com',
-      'https://solana-api.projectserum.com'
-    ];
-
-    return endpoints[0]; // Use GenesysGo by default
-  };
-
-  // Initialize connection in useEffect
-  useEffect(() => {
-    connection = new Connection(getRPCEndpoint(), {
-      commitment: 'confirmed',
-      wsEndpoint: undefined
-    });
-  }, []);
 
   // Update theme based on time of day
   useEffect(() => {
@@ -175,22 +151,6 @@ function App() {
       setIsAdmin(true);
     }
   }, [publicKey]);
-
-  // Update RPC test
-  useEffect(() => {
-    const testRPC = async () => {
-      try {
-        console.log('Testing RPC connection...');
-        const slot = await connection.getSlot();
-        console.log('RPC working, current slot:', slot);
-      } catch (error) {
-        console.error('RPC connection failed:', error);
-        // Create new connection with fallback
-        connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
-      }
-    };
-    testRPC();
-  }, []);
 
   const resetStates = () => {
     setIsConnected(false);
@@ -466,14 +426,8 @@ function App() {
 
   // Simplify the getRecentBlockhash function
   const getRecentBlockhash = async () => {
-    try {
-      const { blockhash } = await connection.getLatestBlockhash();
-      return blockhash;
-    } catch (error) {
-      console.error('RPC Error:', error);
-      // Just throw the error - no fancy retries
-      throw new Error('Connection failed - please refresh and try again');
-    }
+    const { blockhash } = await connection.getLatestBlockhash('finalized');
+    return blockhash;
   };
 
   return (
