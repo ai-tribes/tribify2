@@ -105,20 +105,25 @@ function App() {
 
       const channel = pusher.subscribe('tribify');
       
-      // When someone connects their wallet, broadcast to others
+      // When someone connects their wallet, notify server
       if (publicKey && balance) {
-        channel.trigger('client-user-connected', {
-          address: publicKey,
-          balance: balance,
-          lastActive: 'Just now'
+        fetch('/api/realtime', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            address: publicKey,
+            balance: balance,
+            lastActive: 'Just now'
+          })
         });
       }
 
-      // Listen for existing and new connections
-      channel.bind('client-user-connected', (data) => {
+      // Listen for user connections
+      channel.bind('user-connected', (data) => {
         console.log('User connected event:', data);
         setConnectedUsers(prev => {
-          // Don't add duplicates
           if (!prev.find(u => u.address === data.address)) {
             return [...prev, data];
           }
@@ -126,21 +131,14 @@ function App() {
         });
       });
 
-      channel.bind('pusher:subscription_succeeded', () => {
-        console.log('Successfully subscribed to channel');
-      });
-
       return () => {
-        if (publicKey) {
-          channel.trigger('client-user-disconnected', { address: publicKey });
-        }
         channel.unbind_all();
         channel.unsubscribe();
       };
     } catch (error) {
       console.error('Pusher setup error:', error);
     }
-  }, [publicKey, balance]); // Add dependencies
+  }, [publicKey, balance]);
 
   const resetStates = () => {
     setIsConnected(false);
