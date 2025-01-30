@@ -56,13 +56,40 @@ function App() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Update the connection instance with fallback
-  const connection = new Connection(
-    process.env.REACT_APP_HELIUS_KEY 
-      ? `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`
-      : 'https://api.mainnet-beta.solana.com',
-    'confirmed'
-  );
+  // Update the connection instance with multiple fallbacks
+  const getRPCEndpoint = () => {
+    const endpoints = [
+      'https://api.mainnet-beta.solana.com',
+      'https://solana-mainnet.g.alchemy.com/v2/demo',
+      'https://rpc.ankr.com/solana'
+    ];
+
+    // Add Helius if we have an API key
+    if (process.env.REACT_APP_HELIUS_KEY) {
+      endpoints.unshift(`https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`);
+    }
+
+    return endpoints[0]; // Start with first endpoint
+  };
+
+  // Update connection instance
+  const connection = new Connection(getRPCEndpoint(), 'confirmed');
+
+  // Add RPC fallback handling
+  const getRecentBlockhash = async () => {
+    for (let i = 0; i < 3; i++) {
+      try {
+        const { blockhash } = await connection.getLatestBlockhash('finalized');
+        return blockhash;
+      } catch (error) {
+        console.error(`RPC attempt ${i + 1} failed:`, error);
+        // Try next endpoint
+        connection._rpcEndpoint = getRPCEndpoint();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    throw new Error('Failed to get blockhash after multiple attempts');
+  };
 
   // Update theme based on time of day
   useEffect(() => {
@@ -230,7 +257,7 @@ function App() {
           setStatus(`Join tribify.ai: Send 0.003 SOL to receive 100 $TRIBIFY tokens...`);
           
           // First get the blockhash
-          const { blockhash } = await connection.getLatestBlockhash('finalized');
+          const blockhash = await getRecentBlockhash();
           
           // Create payment transaction
           const transaction = new Transaction().add(
@@ -290,7 +317,7 @@ function App() {
           })
         );
 
-        const { blockhash } = await connection.getLatestBlockhash();
+        const blockhash = await getRecentBlockhash();
         transaction.recentBlockhash = blockhash;
         transaction.feePayer = window.solana.publicKey;
 
