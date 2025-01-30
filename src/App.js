@@ -87,7 +87,10 @@ function App() {
           setStatus(`Payment received! Getting your tokens (attempt ${4-retries}/3)...`);
           const response = await fetch('/api/send-tribify', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
             body: JSON.stringify({
               recipient: userPublicKey,
               amount: TRIBIFY_REWARD_AMOUNT

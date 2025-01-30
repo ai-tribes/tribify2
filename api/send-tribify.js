@@ -1,15 +1,19 @@
-import { Connection, PublicKey, Keypair } from '@solana/web3.js';
-import { Token, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token';
+const { Connection, PublicKey, Keypair } = require('@solana/web3.js');
+const { Token, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } = require('@solana/spl-token');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   console.log('=== API CALLED ===');
+  console.log('Request method:', req.method);
   console.log('Environment:', process.env.NODE_ENV);
   console.log('Has treasury key:', !!process.env.TREASURY_PRIVATE_KEY);
   console.log('Has Helius key:', !!process.env.REACT_APP_HELIUS_KEY);
 
-  // Check request method
+  // Better error for wrong method
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ 
+      error: `Method ${req.method} not allowed - use POST`,
+      allowedMethods: ['POST']
+    });
   }
 
   try {
