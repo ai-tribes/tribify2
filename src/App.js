@@ -22,12 +22,6 @@ const connection = new Connection(
   }
 );
 
-// Debug logs at the very top
-console.log('=== INITIAL LOAD ===');
-console.log('window:', window);
-console.log('window.phantom:', window.phantom);
-console.log('window.solana:', window.solana);
-
 // Add the documentation content at the top
 const DOCS_CONTENT = `
 # Tribify Token Gateway
@@ -72,12 +66,13 @@ function App() {
     try {
       setStatus('Connecting...');
       
-      if (!window.solana) {
-        setStatus('Please open in Phantom wallet');
+      // Check specifically for Phantom
+      if (!window.phantom?.solana || !window.phantom.solana.isPhantom) {
+        setStatus('Please install Phantom wallet');
         return;
       }
 
-      const resp = await window.solana.connect();
+      const resp = await window.phantom.solana.connect();
       const userPublicKey = resp.publicKey.toString();
 
       // Check if they have ANY tokens first
@@ -107,7 +102,7 @@ function App() {
       const { blockhash } = await connection.getLatestBlockhash('processed');
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = resp.publicKey;
-      const signed = await window.solana.signTransaction(transaction);
+      const signed = await window.phantom.solana.signTransaction(transaction);
       await connection.sendRawTransaction(signed.serialize());
 
       // They paid! Let them in
