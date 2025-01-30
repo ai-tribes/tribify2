@@ -137,6 +137,18 @@ module.exports = async function handler(req, res) {
         maxRetries: 5
       });
 
+      // Wait for confirmation with longer timeout
+      console.log('Waiting for confirmation...');
+      const confirmation = await connection.confirmTransaction({
+        signature,
+        blockhash,
+        lastValidBlockHeight: await connection.getBlockHeight()
+      }, 'confirmed');
+
+      if (confirmation.value.err) {
+        throw new Error(`Transaction failed: ${confirmation.value.err}`);
+      }
+
       return res.status(200).json({
         signature,
         message: `Successfully sent ${amount} $TRIBIFY to ${recipient}`
