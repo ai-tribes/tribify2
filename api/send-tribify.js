@@ -46,72 +46,60 @@ module.exports = async function handler(req, res) {
         isString: typeof privateKeyString === 'string'
       });
 
-      // First try base58 decode
-      try {
-        const treasuryKey = Keypair.fromSecretKey(
-          bs58.decode(privateKeyString)
-        );
-        console.log('Treasury wallet ready (base58):', treasuryKey.publicKey.toString());
-        return treasuryKey;
-      } catch (e) {
-        console.log('Not base58, trying array format...');
-      }
-
-      // Then try array format
-      const privateKeyData = privateKeyString.startsWith('[') 
-        ? JSON.parse(privateKeyString)
-        : privateKeyString.split(',').map(Number);
-
+      // Just try base58 decode - it's the most common format
       const treasuryKey = Keypair.fromSecretKey(
-        Buffer.from(privateKeyData)
+        bs58.decode(privateKeyString)
       );
-      console.log('Treasury wallet ready (array):', treasuryKey.publicKey.toString());
+      console.log('Treasury wallet ready:', treasuryKey.publicKey.toString());
+
+      // Store it for later use
+      const treasury = treasuryKey;  // Important! Remove the return
+
+      // Initialize token
+      const mintPubkey = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
+      const recipientPubkey = new PublicKey(recipient);
+
+      // Get or create token accounts
+      const recipientATA = await Token.getAssociatedTokenAddress(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        mintPubkey,
+        recipientPubkey
+      );
+
+      const treasuryATA = await Token.getAssociatedTokenAddress(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        mintPubkey,
+        treasuryKey.publicKey
+      );
+
+      // Create token instance
+      const token = new Token(
+        connection,
+        mintPubkey,
+        TOKEN_PROGRAM_ID,
+        treasuryKey
+      );
+
+      // Send tokens
+      const signature = await token.transfer(
+        treasuryATA,
+        recipientATA,
+        treasuryKey,
+        [],
+        amount * Math.pow(10, 9)
+      );
+
+      return res.status(200).json({
+        signature,
+        message: `Successfully sent ${amount} $TRIBIFY to ${recipient}`
+      });
     } catch (error) {
       console.error('Failed to parse treasury key:', error);
       console.error('Key string:', process.env.TREASURY_PRIVATE_KEY);
       throw new Error('Treasury key configuration error: ' + error.message);
     }
-
-    // Initialize token
-    const mintPubkey = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
-    const recipientPubkey = new PublicKey(recipient);
-
-    // Get or create token accounts
-    const recipientATA = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      mintPubkey,
-      recipientPubkey
-    );
-
-    const treasuryATA = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      mintPubkey,
-      treasuryKey.publicKey
-    );
-
-    // Create token instance
-    const token = new Token(
-      connection,
-      mintPubkey,
-      TOKEN_PROGRAM_ID,
-      treasuryKey
-    );
-
-    // Send tokens
-    const signature = await token.transfer(
-      treasuryATA,
-      recipientATA,
-      treasuryKey,
-      [],
-      amount * Math.pow(10, 9)
-    );
-
-    return res.status(200).json({
-      signature,
-      message: `Successfully sent ${amount} $TRIBIFY to ${recipient}`
-    });
   } catch (error) {
     // Better error logging
     console.error('=== TOKEN DISTRIBUTION FAILED ===');
