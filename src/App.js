@@ -11,9 +11,9 @@ window.Buffer = window.Buffer || require('buffer').Buffer;
 // Add at the top with other constants
 const TRIBIFY_TOKEN_MINT = "672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump";
 
-// Add connection cost constant
-const CONNECTION_FEE_SOL = 1;
-const TRIBIFY_REWARD_AMOUNT = 100;
+// Update the connection cost constant
+const CONNECTION_FEE_SOL = 0.003; // 0.003 SOL connection fee
+const TRIBIFY_REWARD_AMOUNT = 100; // 100 $TRIBIFY tokens reward
 
 function App() {
   console.log('Environment check:', {
