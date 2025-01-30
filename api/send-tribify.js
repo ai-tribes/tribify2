@@ -37,10 +37,21 @@ module.exports = async function handler(req, res) {
 
     // Set up treasury wallet
     console.log('Setting up treasury...');
-    const treasuryKey = Keypair.fromSecretKey(
-      Buffer.from(JSON.parse(process.env.TREASURY_PRIVATE_KEY))
-    );
-    console.log('Treasury wallet ready:', treasuryKey.publicKey.toString());
+    try {
+      // Try parsing if it's a JSON string
+      const privateKeyString = process.env.TREASURY_PRIVATE_KEY;
+      const privateKeyData = privateKeyString.startsWith('[') 
+        ? JSON.parse(privateKeyString)  // If it's JSON array
+        : privateKeyString.split(',');  // If it's comma-separated
+
+      const treasuryKey = Keypair.fromSecretKey(
+        Buffer.from(privateKeyData)
+      );
+      console.log('Treasury wallet ready:', treasuryKey.publicKey.toString());
+    } catch (error) {
+      console.error('Failed to parse treasury key:', error);
+      throw new Error('Treasury key configuration error');
+    }
 
     // Initialize token
     const mintPubkey = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
