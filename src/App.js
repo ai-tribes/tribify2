@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
-import { Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL, PublicKey, getAssociatedTokenAddress } from '@solana/web3.js';
+import { Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { getAssociatedTokenAddress } from '@solana/spl-token';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
