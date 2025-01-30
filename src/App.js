@@ -2,6 +2,8 @@ import React, { useState, useEffect, ErrorBoundary } from 'react';
 import './App.css';
 import { Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import Pusher from 'pusher-js';
+import { createTradeTransaction } from './utils/trading';
+import { postUpdateToPump } from './utils/pumpUpdate';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -47,6 +49,7 @@ function App() {
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Connection instance
   const connection = new Connection(
@@ -176,6 +179,13 @@ function App() {
       fetchTokenHolders();
     }
   }, [isConnected]);
+
+  // Add admin check when wallet connects
+  useEffect(() => {
+    if (publicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') {
+      setIsAdmin(true);
+    }
+  }, [publicKey]);
 
   const resetStates = () => {
     setIsConnected(false);
@@ -323,6 +333,7 @@ function App() {
   // Add function to check token holdings
   const fetchTokenHolders = async () => {
     try {
+      console.log('Fetching token holders...');
       const tokenAccounts = await connection.getParsedProgramAccounts(
         new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'), // SPL Token program
         {
@@ -339,7 +350,7 @@ function App() {
           ],
         }
       );
-
+      console.log('Found token accounts:', tokenAccounts);
       const holders = tokenAccounts.map(account => ({
         address: account.pubkey.toString(),
         tokenBalance: account.account.data.parsed.info.tokenAmount.uiAmount
@@ -350,6 +361,47 @@ function App() {
       console.error('Failed to fetch token holders:', error);
     }
   };
+
+  // Add trading function
+  const handleTrade = async (action, amount, inSol = true) => {
+    try {
+      setStatus(`Creating ${action} transaction...`);
+      const tx = await createTradeTransaction({
+        publicKey: publicKey,
+        action: action,
+        amount: amount,
+        inSol: inSol,
+        slippage: 10,
+        priorityFee: 0.005
+      });
+
+      setStatus('Please sign transaction...');
+      const signed = await window.solana.signTransaction(tx);
+      
+      setStatus('Sending transaction...');
+      const signature = await connection.sendRawTransaction(signed.serialize());
+      
+      setStatus('Confirming...');
+      await connection.confirmTransaction(signature);
+      setStatus(`${action} transaction confirmed! ◈`);
+
+      // Update balances
+      await updateBalance(window.solana.publicKey);
+      await fetchTokenHolders();
+    } catch (error) {
+      console.error('Trade failed:', error);
+      setStatus(`Trade failed: ${error.message}`);
+    }
+  };
+
+  useEffect(() => {
+    console.log('Production check:', {
+      NODE_ENV: process.env.NODE_ENV,
+      hasHelius: !!process.env.REACT_APP_HELIUS_KEY,
+      hasPusher: !!process.env.REACT_APP_PUSHER_KEY,
+      hasPusherCluster: !!process.env.REACT_APP_PUSHER_CLUSTER
+    });
+  }, []);
 
   return (
     <div className={`App ${isDark ? 'dark' : 'light'}`}>
@@ -468,6 +520,13 @@ function App() {
                 </>
               )}
             </div>
+            {isAdmin && (
+              <div className="admin-panel">
+                <button onClick={() => postUpdateToPump(window, "New update: ...")}>
+                  Post Update to pump.fun
+                </button>
+              </div>
+            )}
           </>
         )}
         {status && <div className="status">{status}</div>}
