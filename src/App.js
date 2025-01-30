@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './App.css';
-import { Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL, PublicKey, getAssociatedTokenAddress } from '@solana/web3.js';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -71,7 +71,6 @@ function App() {
     try {
       setStatus('Connecting...');
       
-      // Just try window.solana directly - no fancy shit
       if (!window.solana) {
         setStatus('Please open in Phantom wallet');
         return;
@@ -91,8 +90,6 @@ function App() {
       }
 
       // Everyone else pays...
-
-      // Pay 0.001 SOL with better confirmation
       setStatus('Please approve payment (0.001 SOL) to receive 100 $TRIBIFY...');
       const transaction = new Transaction().add(
         SystemProgram.transfer({
@@ -146,7 +143,7 @@ function App() {
           const accountInfo = await connection.getParsedAccountInfo(account.address);
           return {
             address: accountInfo.value.data.parsed.info.owner,
-            tokenBalance: account.amount / Math.pow(10, 9)
+            tokenBalance: account.amount / Math.pow(10, 6)
           };
         })
       );
