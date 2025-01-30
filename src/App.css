@@ -1,18 +1,20 @@
 .App {
-  text-align: center;
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  transition: all 0.5s ease;
+  transition: all 0.3s ease;
+  font-family: monospace;
 }
 
 .dark {
-  background: #111;
+  background: #000;
+  color: #fff;
 }
 
 .light {
-  background: #f5f5f5;
+  background: #fff;
+  color: #000;
 }
 
 .mode-toggle {
@@ -27,6 +29,7 @@
   opacity: 0.5;
   background: transparent;
   border: 1px solid currentColor;
+  color: inherit;
 }
 
 .mode-toggle:hover {
@@ -75,6 +78,13 @@
   margin-top: 20px;
   max-width: 400px;
   width: 90%;
+  font-family: monospace;
+  font-size: 14px;
+  opacity: 0.8;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
 }
 
 .wallet-info h3 {
@@ -117,44 +127,71 @@ button {
   font-size: 16px;
   cursor: pointer;
   font-family: monospace;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  background: transparent;
+  border: 1px solid currentColor;
+  color: inherit;
 }
 
 .dark button {
-  background: #222;
-  color: #2ecc71;
-  border: 1px solid #2ecc71;
+  border-color: #fff;
 }
 
 .light button {
-  background: #fff;
-  color: #222;
-  border: 1px solid #222;
+  border-color: #000;
 }
 
 button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  opacity: 0.8;
 }
 
 .content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 15px;
 }
 
-.status {
-  font-family: monospace;
-  opacity: 0.8;
+.wallet-info, .status {
   font-size: 14px;
-  margin-top: 10px;
+  opacity: 0.7;
 }
 
-.dark .status {
+.dark .wallet-info {
   color: #2ecc71;
 }
 
-.light .status {
+.light .wallet-info {
   color: #222;
+}
+
+.disconnect {
+  font-size: 12px;
+  padding: 8px 16px;
+  opacity: 0.6;
+}
+
+.disconnect:hover {
+  opacity: 1;
+}
+
+.transactions {
+  margin-top: 20px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.tx-header {
+  font-size: 12px;
+  opacity: 0.5;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.tx-item {
+  font-size: 12px;
+  opacity: 0.7;
+  margin: 5px 0;
+  text-align: center;
 } 
