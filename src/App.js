@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ErrorBoundary } from 'react';
 import './App.css';
 import { Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import Pusher from 'pusher-js';
@@ -7,6 +7,17 @@ import Pusher from 'pusher-js';
 window.Buffer = window.Buffer || require('buffer').Buffer;
 
 function App() {
+  console.log('Environment check:', {
+    hasHeliusKey: !!process.env.REACT_APP_HELIUS_KEY,
+    hasPusherKey: !!process.env.REACT_APP_PUSHER_KEY,
+    hasPusherCluster: !!process.env.REACT_APP_PUSHER_CLUSTER
+  });
+
+  console.log('Raw env values:', {
+    pusherKey: process.env.REACT_APP_PUSHER_KEY,
+    pusherCluster: process.env.REACT_APP_PUSHER_CLUSTER
+  });
+
   // Check if it's daytime (between 6am and 6pm)
   const isDaytime = () => {
     const hours = new Date().getHours();
@@ -86,27 +97,36 @@ function App() {
 
   // Replace Socket.io effect with Pusher
   useEffect(() => {
-    const pusher = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
-      cluster: process.env.REACT_APP_PUSHER_CLUSTER,
-      encrypted: true
-    });
+    try {
+      const pusher = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
+        cluster: process.env.REACT_APP_PUSHER_CLUSTER,
+        encrypted: true
+      });
 
-    const channel = pusher.subscribe('tribify');
-    
-    channel.bind('user-connected', (data) => {
-      console.log('New user connected:', data);
-      setConnectedUsers(prev => [...prev, data]);
-    });
+      console.log('Pusher initialized'); // Debug log
 
-    channel.bind('user-disconnected', (userId) => {
-      console.log('User disconnected:', userId);
-      setConnectedUsers(prev => prev.filter(u => u.id !== userId));
-    });
+      const channel = pusher.subscribe('tribify');
+      
+      channel.bind('user-connected', (data) => {
+        console.log('User connected event:', data);
+        setConnectedUsers(prev => [...prev, data]);
+      });
 
-    return () => {
-      channel.unbind_all();
-      channel.unsubscribe();
-    };
+      channel.bind('pusher:subscription_succeeded', () => {
+        console.log('Successfully subscribed to channel');
+      });
+
+      channel.bind('pusher:subscription_error', (error) => {
+        console.error('Pusher subscription error:', error);
+      });
+
+      return () => {
+        channel.unbind_all();
+        channel.unsubscribe();
+      };
+    } catch (error) {
+      console.error('Pusher setup error:', error);
+    }
   }, []);
 
   const resetStates = () => {
