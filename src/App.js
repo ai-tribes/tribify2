@@ -65,8 +65,32 @@ const validateEnvVars = () => {
 };
 
 function App() {
+  // Move all useState hooks to the top, before any conditionals
+  const [isDark, setIsDark] = useState(!isDaytime());
+  const [status, setStatus] = useState('');
+  const [isConnected, setIsConnected] = useState(false);
+  const [publicKey, setPublicKey] = useState(null);
+  const [balance, setBalance] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [connectionState, setConnectionState] = useState('disconnected');
+  const [errorMessage, setErrorMessage] = useState('');
   const [envError, setEnvError] = useState(!validateEnvVars());
+  const [otherWallets, setOtherWallets] = useState([
+    { name: 'Phantom', connected: true },
+    { name: 'Solflare', connected: false },
+    { name: 'Backpack', connected: false },
+    { name: 'Glow', connected: false }
+  ]);
+  const [tokenHolders, setTokenHolders] = useState([]);
+  const [connectedUsers, setConnectedUsers] = useState([]);
+  const [socket, setSocket] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
+  // Now we can have the conditional return
   if (envError) {
     return (
       <div className="App">
@@ -94,14 +118,6 @@ function App() {
     return hours >= 6 && hours < 18;
   };
 
-  const [isDark, setIsDark] = useState(!isDaytime());
-  const [status, setStatus] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
-  const [publicKey, setPublicKey] = useState(null);
-  const [balance, setBalance] = useState(null);
-  const [transactions, setTransactions] = useState([]);
-  const [connectionState, setConnectionState] = useState('disconnected'); // 'disconnected', 'connecting', 'connected', 'error'
-  const [errorMessage, setErrorMessage] = useState('');
   const [otherWallets, setOtherWallets] = useState([
     { name: 'Phantom', connected: true },
     { name: 'Solflare', connected: false },
