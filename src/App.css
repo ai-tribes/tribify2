@@ -346,4 +346,31 @@ button:hover {
   margin-top: 4px;
   font-size: 12px;
   opacity: 0.7;
+}
+
+.user-search form {
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: currentColor;
+  opacity: 1;
+}
+
+.error-message {
+  padding: 20px;
+  margin: 20px;
+  border: 1px solid currentColor;
+  text-align: center;
+  font-family: monospace;
 } 

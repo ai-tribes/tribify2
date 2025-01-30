@@ -64,9 +64,6 @@ const validateEnvVars = () => {
   return true;
 };
 
-// Call it immediately
-validateEnvVars();
-
 function App() {
   const [envError, setEnvError] = useState(!validateEnvVars());
 
