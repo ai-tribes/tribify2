@@ -12,14 +12,26 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       const { address, balance } = req.body;
-      await pusher.trigger('tribify', 'user-connected', {
+      
+      // Log the incoming connection
+      console.log('Received connection from:', address);
+
+      // Broadcast to all clients including sender
+      await pusher.trigger('presence-tribify', 'user-connected', {
         address,
         balance,
-        lastActive: 'Just now'
+        lastActive: 'Just now',
+        timestamp: Date.now()
       });
-      res.json({ success: true });
+
+      return res.status(200).json({ 
+        success: true,
+        message: 'Connection broadcast successful'
+      });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error('Pusher error:', error);
+      return res.status(500).json({ error: error.message });
     }
   }
+  return res.status(405).json({ error: 'Method not allowed' });
 } 

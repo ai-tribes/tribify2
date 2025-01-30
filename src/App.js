@@ -100,8 +100,8 @@ function App() {
         encrypted: true
       });
 
-      const channel = pusher.subscribe('tribify');
-      console.log('Subscribed to channel: tribify');
+      const channel = pusher.subscribe('presence-tribify');
+      console.log('Subscribed to channel: presence-tribify');
       
       // Notify server when connected
       const notifyConnection = async () => {
