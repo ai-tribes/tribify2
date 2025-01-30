@@ -75,89 +75,54 @@ module.exports = async function handler(req, res) {
       // After getting ATAs
       console.log('Checking accounts...');
 
-      // Build transaction
-      console.log('Building transaction...');
+      // Optimize transaction sending
+      try {
+        // Build minimal transaction
+        const tx = new Transaction();
+        
+        // Only create recipient ATA if needed
+        const recipientInfo = await connection.getAccountInfo(recipientATA);
+        if (!recipientInfo) {
+          console.log('Creating recipient ATA...');
+          tx.add(
+            createAssociatedTokenAccountInstruction(
+              treasuryKey.publicKey,
+              recipientATA,
+              recipientPubkey,
+              mintPubkey
+            )
+          );
+        }
 
-      // Create transaction without blockhash first
-      const tx = new Transaction();
-
-      // Check treasury account first
-      const treasuryInfo = await connection.getAccountInfo(treasuryATA);
-      if (!treasuryInfo) {
-        console.log('Treasury ATA does not exist, creating...');
+        // Add transfer (we know treasury ATA exists)
         tx.add(
-          createAssociatedTokenAccountInstruction(
-            treasuryKey.publicKey,
+          createTransferInstruction(
             treasuryATA,
-            treasuryKey.publicKey,
-            mintPubkey
-          )
-        );
-      } else {
-        console.log('Treasury ATA exists, checking balance...');
-        const treasuryAccount = await connection.getTokenAccountBalance(treasuryATA);
-        console.log('Treasury balance:', {
-          address: treasuryATA.toString(),
-          amount: treasuryAccount.value.uiAmount,
-          decimals: treasuryAccount.value.decimals
-        });
-      }
-
-      // Check recipient account
-      const recipientInfo = await connection.getAccountInfo(recipientATA);
-      if (!recipientInfo) {
-        console.log('Recipient ATA does not exist, creating...');
-        tx.add(
-          createAssociatedTokenAccountInstruction(
-            treasuryKey.publicKey,
             recipientATA,
-            recipientPubkey,
-            mintPubkey
+            treasuryKey.publicKey,
+            amount * Math.pow(10, 9)
           )
         );
-      } else {
-        console.log('Recipient ATA exists');
+
+        // Quick send
+        const { blockhash } = await connection.getLatestBlockhash('finalized');
+        tx.recentBlockhash = blockhash;
+        tx.feePayer = treasuryKey.publicKey;
+
+        const signature = await connection.sendTransaction(tx, [treasuryKey], {
+          skipPreflight: true,  // Speed up
+          maxRetries: 1         // Don't retry
+        });
+
+        // Return immediately
+        return res.status(200).json({
+          signature,
+          message: `Sent ${amount} $TRIBIFY to ${recipient}`
+        });
+      } catch (error) {
+        console.error('Failed to send transaction:', error);
+        throw new Error('Transaction error: ' + error.message);
       }
-
-      // Add transfer instruction
-      tx.add(
-        createTransferInstruction(
-          treasuryATA,
-          recipientATA,
-          treasuryKey.publicKey,
-          amount * Math.pow(10, 9)
-        )
-      );
-
-      // Get fresh blockhash right before sending
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-      tx.recentBlockhash = blockhash;
-      tx.feePayer = treasuryKey.publicKey;
-
-      // Send with proper options
-      console.log('Sending transaction...');
-      const signature = await connection.sendTransaction(tx, [treasuryKey], {
-        skipPreflight: false,
-        preflightCommitment: 'confirmed',
-        maxRetries: 5
-      });
-
-      // Wait for confirmation
-      console.log('Waiting for confirmation...');
-      const confirmation = await connection.confirmTransaction({
-        signature,
-        blockhash,
-        lastValidBlockHeight
-      }, 'confirmed');
-
-      if (confirmation.value.err) {
-        throw new Error(`Transaction failed: ${confirmation.value.err}`);
-      }
-
-      return res.status(200).json({
-        signature,
-        message: `Successfully sent ${amount} $TRIBIFY to ${recipient}`
-      });
     } catch (error) {
       console.error('Failed to parse treasury key:', error);
       console.error('Key string:', process.env.TREASURY_PRIVATE_KEY);
