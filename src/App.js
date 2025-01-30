@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import './App.css';
 import { Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import TokenGateway from './components/TokenGateway';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -28,6 +26,35 @@ console.log('=== INITIAL LOAD ===');
 console.log('window:', window);
 console.log('window.phantom:', window.phantom);
 console.log('window.solana:', window.solana);
+
+// Add the documentation content at the top
+const DOCS_CONTENT = `
+# Tribify Token Gateway
+
+Welcome token holder! Since you have $TRIBIFY tokens, you can access this documentation.
+
+## How Tribify Works
+
+1. **Payment Flow**
+   - User connects Phantom wallet
+   - Pays 0.001 SOL
+   - Receives 100 $TRIBIFY tokens
+
+2. **Technical Implementation**
+   - Frontend in React
+   - Vercel serverless API
+   - Solana token distribution
+
+3. **Smart Contract Details**
+   - Token: $TRIBIFY
+   - Mint: 672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump
+   - Treasury: DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv
+
+## Token Uses
+1. Access to documentation
+2. Future governance
+3. Community membership
+`;
 
 function App() {
   // Core states only
@@ -172,56 +199,51 @@ function App() {
   };
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/docs/tokengateway" element={<TokenGateway />} />
-        <Route path="/" element={
-          <div className={`App ${isDark ? 'dark' : 'light'}`}>
-            <button className="mode-toggle" onClick={() => setIsDark(!isDark)}>
-              {isDark ? '◯' : '●'}
-            </button>
+    <div className={`App ${isDark ? 'dark' : 'light'}`}>
+      <button className="mode-toggle" onClick={() => setIsDark(!isDark)}>
+        {isDark ? '◯' : '●'}
+      </button>
 
-            <button onClick={handleConnection}>
-              {isConnected ? 'Connected' : 'Connect Wallet'}
-            </button>
+      <button onClick={handleConnection}>
+        {isConnected ? 'Connected' : 'Connect Wallet'}
+      </button>
 
-            {isConnected && (
-              <>
-                <div className="wallet-info">
-                  <div>◈ {publicKey}</div>
-                  <div>◇ {balance} SOL</div>
-                </div>
-
-                <div className="token-holders">
-                  <h3>TRIBIFY Holders</h3>
-                  {tokenHolders.map((holder, i) => (
-                    <div key={i} className="holder-item">
-                      <div>◈ {holder.address}</div>
-                      <div>◇ {holder.tokenBalance} $TRIBIFY</div>
-                    </div>
-                  ))}
-                </div>
-
-                {!showDocs ? (
-                  <button onClick={() => setShowDocs(true)} className="docs-link">
-                    View Documentation
-                  </button>
-                ) : (
-                  <div className="docs-content">
-                    <button onClick={() => setShowDocs(false)}>← Back</button>
-                    <h1>Tribify Documentation</h1>
-                    <p>Welcome token holder! Since you have $TRIBIFY tokens, you can access this documentation.</p>
-                    {/* Add more documentation content here */}
-                  </div>
-                )}
-              </>
-            )}
-
-            {status && <div className="status">{status}</div>}
+      {isConnected && (
+        <>
+          <div className="wallet-info">
+            <div>◈ {publicKey}</div>
+            <div>◇ {balance} SOL</div>
           </div>
-        } />
-      </Routes>
-    </Router>
+
+          <div className="token-holders">
+            <h3>TRIBIFY Holders</h3>
+            {tokenHolders.map((holder, i) => (
+              <div key={i} className="holder-item">
+                <div>◈ {holder.address}</div>
+                <div>◇ {holder.tokenBalance} $TRIBIFY</div>
+              </div>
+            ))}
+          </div>
+
+          {!showDocs ? (
+            <button onClick={() => setShowDocs(true)} className="docs-link">
+              View Documentation
+            </button>
+          ) : (
+            <div className="docs-content">
+              <button onClick={() => setShowDocs(false)}>← Back</button>
+              <div className="markdown-content">
+                {DOCS_CONTENT.split('\n').map((line, i) => (
+                  <p key={i}>{line}</p>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {status && <div className="status">{status}</div>}
+    </div>
   );
 }
 
