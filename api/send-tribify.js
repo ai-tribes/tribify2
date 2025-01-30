@@ -75,20 +75,36 @@ module.exports = async function handler(req, res) {
       // After getting ATAs
       console.log('Checking accounts...');
 
-      // Send tokens immediately
+      // Build transaction
       const tx = new Transaction();
 
-      // Add transfer instruction (assume accounts exist)
+      // Always try to create recipient ATA first
+      try {
+        console.log('Creating recipient token account...');
+        tx.add(
+          createAssociatedTokenAccountInstruction(
+            treasuryKey.publicKey,  // payer
+            recipientATA,          // ata
+            recipientPubkey,       // owner
+            mintPubkey            // mint
+          )
+        );
+      } catch (error) {
+        console.log('ATA might already exist, continuing...');
+      }
+
+      // Add transfer instruction
       tx.add(
         createTransferInstruction(
           treasuryATA,
           recipientATA,
           treasuryKey.publicKey,
-          amount * Math.pow(10, 9)
+          amount * Math.pow(10, 6)  // Using 6 decimals
         )
       );
 
-      // Quick send
+      // Quick send with better logging
+      console.log('Sending transaction...');
       const { blockhash } = await connection.getLatestBlockhash('processed');
       tx.recentBlockhash = blockhash;
       tx.feePayer = treasuryKey.publicKey;
@@ -97,6 +113,8 @@ module.exports = async function handler(req, res) {
         skipPreflight: true,
         maxRetries: 1
       });
+
+      console.log('Transaction sent:', signature);
 
       // Return immediately
       return res.status(200).json({
