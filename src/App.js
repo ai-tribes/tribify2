@@ -1,10 +1,13 @@
 import React, { useState, useEffect, ErrorBoundary } from 'react';
 import './App.css';
-import { Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import Pusher from 'pusher-js';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
+
+// Add at the top with other constants
+const TRIBIFY_TOKEN_MINT = "672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump";
 
 function App() {
   console.log('Environment check:', {
@@ -40,6 +43,10 @@ function App() {
   ]);
   const [connectedUsers, setConnectedUsers] = useState([]);
   const [socket, setSocket] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null);
 
   // Connection instance
   const connection = new Connection(
@@ -148,6 +155,11 @@ function App() {
         });
       });
 
+      channel.bind('new-message', (data) => {
+        console.log('New message received:', data);
+        setMessages(prev => [...prev, data]);
+      });
+
       return () => {
         console.log('Cleaning up Pusher connection');
         channel.unbind_all();
@@ -157,6 +169,13 @@ function App() {
       console.error('Pusher setup error:', error);
     }
   }, [publicKey, balance]);
+
+  // Add this effect to fetch token holders
+  useEffect(() => {
+    if (isConnected) {
+      fetchTokenHolders();
+    }
+  }, [isConnected]);
 
   const resetStates = () => {
     setIsConnected(false);
@@ -208,7 +227,15 @@ function App() {
       if (!isConnected) {
         setConnectionState('connecting');
         setStatus('Connecting...');
-        const response = await window.solana.connect();
+        
+        // Add timeout for mobile connections
+        const connectionPromise = window.solana.connect();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Connection timeout')), 30000)
+        );
+
+        const response = await Promise.race([connectionPromise, timeoutPromise]);
+        
         setIsConnected(true);
         setPublicKey(response.publicKey.toString());
         await updateBalance(response.publicKey);
@@ -244,9 +271,12 @@ function App() {
         await fetchTransactions(window.solana.publicKey);
       }
     } catch (error) {
-      console.error(error);
+      console.error('Connection error:', error);
       setConnectionState('error');
-      setErrorMessage(error.message);
+      // More specific error messages for mobile
+      setErrorMessage(error.message === 'Connection timeout' 
+        ? 'Connection timed out. Please try again.' 
+        : error.message);
       if (error.code === 4001) {
         resetStates();
       }
@@ -260,6 +290,64 @@ function App() {
       // setConnectedUsers(users);
     } catch (error) {
       console.error('Failed to fetch connected users:', error);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!newMessage.trim()) return;
+    
+    try {
+      const response = await fetch('/api/message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: publicKey,
+          message: newMessage,
+          timestamp: Date.now()
+        })
+      });
+      setNewMessage('');
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
+  };
+
+  // Update the filter function
+  const filteredUsers = connectedUsers.filter(user => 
+    user.address.toLowerCase().includes(searchQuery.toLowerCase()) && 
+    user.tokenBalance > 0  // Only show users with Tribify tokens
+  );
+
+  // Add function to check token holdings
+  const fetchTokenHolders = async () => {
+    try {
+      const tokenAccounts = await connection.getParsedProgramAccounts(
+        new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'), // SPL Token program
+        {
+          filters: [
+            {
+              dataSize: 165, // Size of token account data
+            },
+            {
+              memcmp: {
+                offset: 0, // Mint offset in token account data
+                bytes: TRIBIFY_TOKEN_MINT, // Filter by token mint
+              },
+            },
+          ],
+        }
+      );
+
+      const holders = tokenAccounts.map(account => ({
+        address: account.pubkey.toString(),
+        tokenBalance: account.account.data.parsed.info.tokenAmount.uiAmount
+      }));
+
+      setConnectedUsers(holders);
+    } catch (error) {
+      console.error('Failed to fetch token holders:', error);
     }
   };
 
@@ -310,13 +398,76 @@ function App() {
                       ◈ {user.address?.slice(0,4)}...{user.address?.slice(-4)}
                     </div>
                     <div className="user-details">
-                      <span>◇ {Number(user.balance).toFixed(4)} SOL</span>
+                      <span>◇ {Number(user.tokenBalance).toFixed(4)} SOL</span>
                       <span className="last-active">{user.lastActive}</span>
                     </div>
                   </div>
                 ))}
               </div>
             )}
+            <div className="token-holders">
+              <div className="holders-header">$TRIBIFY Holders</div>
+              <div className="holders-list">
+                {connectedUsers.map((user, i) => (
+                  <div key={i} className="holder-item">
+                    <div className="holder-address">
+                      ◈ {user.address.slice(0,4)}...{user.address.slice(-4)}
+                    </div>
+                    <div className="holder-balance">
+                      ◇ {Number(user.tokenBalance).toFixed(4)} $TRIBIFY
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="messages-container">
+              <div className="user-search">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search users by address..."
+                  className="search-input"
+                />
+                <div className="search-results">
+                  {filteredUsers.map((user, i) => (
+                    <div 
+                      key={i} 
+                      className={`search-result ${selectedUser?.address === user.address ? 'selected' : ''}`}
+                      onClick={() => setSelectedUser(user)}
+                    >
+                      <span>◈ {user.address.slice(0,4)}...{user.address.slice(-4)}</span>
+                      <span>◇ {Number(user.tokenBalance).toFixed(4)} SOL</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {selectedUser && (
+                <>
+                  <div className="messages-list">
+                    {messages
+                      .filter(msg => msg.from === selectedUser.address || msg.to === selectedUser.address)
+                      .map((msg, i) => (
+                        <div key={i} className={`message ${msg.from === publicKey ? 'sent' : 'received'}`}>
+                          <div className="message-sender">◈ {msg.from.slice(0,4)}...{msg.from.slice(-4)}</div>
+                          <div className="message-content">{msg.message}</div>
+                        </div>
+                      ))}
+                  </div>
+                  <div className="message-input">
+                    <input
+                      type="text"
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                      placeholder={`Message ${selectedUser.address.slice(0,4)}...${selectedUser.address.slice(-4)}`}
+                    />
+                    <button onClick={sendMessage}>Send</button>
+                  </div>
+                </>
+              )}
+            </div>
           </>
         )}
         {status && <div className="status">{status}</div>}

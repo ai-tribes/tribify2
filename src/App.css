@@ -314,4 +314,36 @@ button:hover {
 /* Light mode specifics */
 .light .user-item {
   border-color: rgba(0, 0, 0, 0.1);
+}
+
+.token-holders {
+  margin-top: 20px;
+  border: 1px solid currentColor;
+  padding: 15px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.holders-header {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  opacity: 0.7;
+}
+
+.holder-item {
+  padding: 8px 0;
+  border-bottom: 1px dashed currentColor;
+  opacity: 0.8;
+}
+
+.holder-item:last-child {
+  border-bottom: none;
+}
+
+.holder-balance {
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.7;
 } 
