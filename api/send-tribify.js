@@ -85,35 +85,41 @@ module.exports = async function handler(req, res) {
         throw new Error('Treasury account not found or has no tokens');
       }
 
-      // Build transaction
-      const tx = new Transaction();
+      // Build transaction with proper options
+      const { blockhash } = await connection.getLatestBlockhash();
+      const tx = new Transaction({
+        feePayer: treasuryKey.publicKey,
+        recentBlockhash: blockhash
+      });
 
       // Check and create treasury ATA if needed
       try {
-        await connection.getAccountInfo(treasuryATA);
+        const treasuryInfo = await connection.getAccountInfo(treasuryATA);
+        console.log('Treasury ATA exists:', !!treasuryInfo);
       } catch {
         console.log('Creating treasury ATA...');
         tx.add(
           createAssociatedTokenAccountInstruction(
-            treasuryKey.publicKey,  // payer
-            treasuryATA,           // ata
-            treasuryKey.publicKey,  // owner
-            mintPubkey             // mint
+            treasuryKey.publicKey,
+            treasuryATA,
+            treasuryKey.publicKey,
+            mintPubkey
           )
         );
       }
 
       // Check and create recipient ATA if needed
       try {
-        await connection.getAccountInfo(recipientATA);
+        const recipientInfo = await connection.getAccountInfo(recipientATA);
+        console.log('Recipient ATA exists:', !!recipientInfo);
       } catch {
         console.log('Creating recipient ATA...');
         tx.add(
           createAssociatedTokenAccountInstruction(
-            treasuryKey.publicKey,  // payer
-            recipientATA,           // ata
-            recipientPubkey,        // owner
-            mintPubkey             // mint
+            treasuryKey.publicKey,
+            recipientATA,
+            recipientPubkey,
+            mintPubkey
           )
         );
       }
@@ -128,8 +134,12 @@ module.exports = async function handler(req, res) {
         )
       );
 
-      // Send transaction
-      const signature = await connection.sendTransaction(tx, [treasuryKey]);
+      // Send with proper options
+      const signature = await connection.sendTransaction(tx, [treasuryKey], {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+        maxRetries: 5
+      });
 
       return res.status(200).json({
         signature,
