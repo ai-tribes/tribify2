@@ -1,5 +1,9 @@
 const { Connection, PublicKey, Keypair } = require('@solana/web3.js');
-const { getAssociatedTokenAddress, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, createTransferInstruction } = require('@solana/spl-token');
+const { 
+  getAssociatedTokenAddress, 
+  createAssociatedTokenAccountInstruction,
+  createTransferInstruction 
+} = require('@solana/spl-token');
 const bs58 = require('bs58');
 const { Transaction } = require('@solana/web3.js');
 
@@ -57,7 +61,7 @@ module.exports = async function handler(req, res) {
       const mintPubkey = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
       const recipientPubkey = new PublicKey(recipient);
 
-      // Get token accounts
+      // Get token accounts and create if needed
       const recipientATA = await getAssociatedTokenAddress(
         mintPubkey,
         recipientPubkey
@@ -68,16 +72,34 @@ module.exports = async function handler(req, res) {
         treasuryKey.publicKey
       );
 
-      // Create transfer instruction
-      const transferIx = createTransferInstruction(
-        treasuryATA,
-        recipientATA,
-        treasuryKey.publicKey,
-        amount * Math.pow(10, 9)
+      // Build transaction
+      const tx = new Transaction();
+
+      // Add ATA creation instructions if needed
+      try {
+        await connection.getAccountInfo(recipientATA);
+      } catch {
+        tx.add(
+          createAssociatedTokenAccountInstruction(
+            treasuryKey.publicKey,  // payer
+            recipientATA,           // ata
+            recipientPubkey,        // owner
+            mintPubkey              // mint
+          )
+        );
+      }
+
+      // Add transfer instruction
+      tx.add(
+        createTransferInstruction(
+          treasuryATA,
+          recipientATA,
+          treasuryKey.publicKey,
+          amount * Math.pow(10, 9)
+        )
       );
 
       // Send transaction
-      const tx = new Transaction().add(transferIx);
       const signature = await connection.sendTransaction(tx, [treasuryKey]);
 
       return res.status(200).json({
