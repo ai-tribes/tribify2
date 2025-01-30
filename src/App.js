@@ -92,7 +92,7 @@ function App() {
 
       // Everyone else pays...
 
-      // Pay 0.001 SOL
+      // Pay 0.001 SOL with better confirmation
       setStatus('Please approve payment (0.001 SOL) to receive 100 $TRIBIFY...');
       const transaction = new Transaction().add(
         SystemProgram.transfer({
@@ -102,64 +102,33 @@ function App() {
         })
       );
 
-      const { blockhash } = await connection.getLatestBlockhash();
+      const { blockhash } = await connection.getLatestBlockhash('processed');
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = resp.publicKey;
 
       const signed = await window.solana.signTransaction(transaction);
-      const signature = await connection.sendRawTransaction(signed.serialize());
-      await connection.confirmTransaction(signature);
+      const solSignature = await connection.sendRawTransaction(signed.serialize());
+      
+      // Don't wait for confirmation, just send tokens
+      setStatus('Payment sent! Getting your tokens...');
 
-      // Get tokens from backend - update to use send-tribify
-      let retries = 3;
-      while (retries > 0) {
-        try {
-          setStatus(`Payment received! Getting your tokens (attempt ${4-retries}/3)...`);
-          const response = await fetch('/api/send-tribify', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-              recipient: userPublicKey,
-              amount: TRIBIFY_REWARD_AMOUNT
-            })
-          });
+      // Get tokens from backend
+      const response = await fetch('/api/send-tribify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          recipient: userPublicKey,
+          amount: TRIBIFY_REWARD_AMOUNT
+        })
+      });
 
-          // Add this debug logging
-          console.log('API Response:', {
-            status: response.status,
-            statusText: response.statusText,
-            headers: Object.fromEntries([...response.headers])
-          });
-
-          const text = await response.text();
-          console.log('Raw response:', text);
-
-          if (!response.ok) {
-            throw new Error(`API error (${response.status}): ${text || 'No error message provided'}`);
-          }
-
-          if (!text) {
-            throw new Error('API returned empty response');
-          }
-
-          const data = JSON.parse(text);
-          const { signature: tokenSignature } = data;
-          await connection.confirmTransaction(tokenSignature);
-          break; // Success, exit loop
-        } catch (error) {
-          retries--;
-          if (retries === 0) throw error;
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      }
-
+      const data = await response.json();
+      setStatus('Connected! Check your wallet for tokens.');
       setIsConnected(true);
       setPublicKey(userPublicKey);
-      setStatus('Connected! You received 100 TRIBIFY tokens.');
-      fetchTokenHolders();
+      fetchTokenHolders();  // Show updated holder list
 
     } catch (error) {
       console.error('Connection error:', error);
