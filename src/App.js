@@ -15,13 +15,14 @@ const TRIBIFY_TOKEN_MINT = "672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump";
 const CONNECTION_FEE_SOL = 0.003; // 0.003 SOL connection fee
 const TRIBIFY_REWARD_AMOUNT = 100; // 100 $TRIBIFY tokens reward
 
-// At the top, with other constants
-const RPC_URL = 'https://solana-mainnet.rpc.extrnode.com';
+// Use QuickNode's dedicated RPC
+const RPC_URL = 'https://rough-empty-dust.solana-mainnet.quiknode.pro/8eef33f92c84c6d4c7fd8aa2c4d27e57b9f82e8d/';
 
-// Initialize connection ONCE
+// Initialize connection ONCE with proper config
 let connection = new Connection(RPC_URL, {
   commitment: 'confirmed',
-  wsEndpoint: undefined
+  wsEndpoint: undefined,
+  confirmTransactionInitialTimeout: 60000
 });
 
 function App() {
