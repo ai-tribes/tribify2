@@ -56,24 +56,22 @@ function App() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Update the connection instance with multiple fallbacks
+  // Update the RPC endpoints with GenesysGo first
   const getRPCEndpoint = () => {
     const endpoints = [
+      'https://ssc-dao.genesysgo.net',  // Most reliable public RPC
       'https://api.mainnet-beta.solana.com',
-      'https://solana-mainnet.g.alchemy.com/v2/demo',
-      'https://rpc.ankr.com/solana'
+      'https://solana-api.projectserum.com'
     ];
 
-    // Add Helius if we have an API key
-    if (process.env.REACT_APP_HELIUS_KEY) {
-      endpoints.unshift(`https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`);
-    }
-
-    return endpoints[0]; // Start with first endpoint
+    return endpoints[0]; // Use GenesysGo by default
   };
 
   // Update connection instance
-  const connection = new Connection(getRPCEndpoint(), 'confirmed');
+  const connection = new Connection(getRPCEndpoint(), {
+    commitment: 'confirmed',
+    wsEndpoint: undefined // Disable WebSocket to avoid connection issues
+  });
 
   // Add RPC fallback handling
   const getRecentBlockhash = async () => {
