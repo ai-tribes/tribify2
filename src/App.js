@@ -344,44 +344,35 @@ function App() {
     user.tokenBalance > 0  // Only show users with Tribify tokens
   );
 
-  // Add function to check token holdings
+  // Update the fetchTokenHolders function
   const fetchTokenHolders = async () => {
     try {
       console.log('Fetching token holders with mint:', TRIBIFY_TOKEN_MINT);
-      // Convert mint to proper format
       const mintPubkey = new PublicKey(TRIBIFY_TOKEN_MINT);
       console.log('Mint pubkey:', mintPubkey.toBase58());
 
-      const tokenAccounts = await connection.getParsedProgramAccounts(
-        new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
-        {
-          filters: [
-            {
-              dataSize: 165,
-            },
-            {
-              memcmp: {
-                offset: 0,
-                bytes: mintPubkey.toBase58(),
-              },
-            },
-          ],
-        }
+      // Try a different approach using getTokenLargestAccounts
+      const largestAccounts = await connection.getTokenLargestAccounts(mintPubkey);
+      console.log('Largest accounts:', largestAccounts);
+
+      const holders = await Promise.all(
+        largestAccounts.value.map(async (account) => {
+          const accountInfo = await connection.getParsedAccountInfo(account.address);
+          console.log('Account info:', accountInfo);
+          
+          if (accountInfo.value?.data.parsed?.info?.owner) {
+            return {
+              address: accountInfo.value.data.parsed.info.owner,
+              tokenBalance: account.amount / Math.pow(10, 9) // Assuming 9 decimals
+            };
+          }
+          return null;
+        })
       );
-      console.log('Raw token accounts:', tokenAccounts);
-      console.log('Number of holders found:', tokenAccounts.length);
 
-      const holders = tokenAccounts.map(account => {
-        const data = account.account.data.parsed.info;
-        console.log('Processing holder:', data);
-        return {
-          address: account.pubkey.toString(),
-          tokenBalance: data.tokenAmount.uiAmount
-        };
-      });
-
-      console.log('Processed holders:', holders);
-      setConnectedUsers(holders);
+      const validHolders = holders.filter(h => h !== null);
+      console.log('Valid holders:', validHolders);
+      setConnectedUsers(validHolders);
     } catch (error) {
       console.error('Failed to fetch token holders:', error);
     }
@@ -427,6 +418,13 @@ function App() {
       hasPusherCluster: !!process.env.REACT_APP_PUSHER_CLUSTER
     });
   }, []);
+
+  // Add search handler function
+  const handleSearch = (e) => {
+    e.preventDefault(); // Prevent page refresh
+    console.log('Searching for:', searchQuery);
+    // Search is already handled by filteredUsers
+  };
 
   return (
     <div className={`App ${isDark ? 'dark' : 'light'}`}>
@@ -499,13 +497,21 @@ function App() {
             </div>
             <div className="messages-container">
               <div className="user-search">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search users by address..."
-                  className="search-input"
-                />
+                <form onSubmit={handleSearch}>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSearch(e);
+                      }
+                    }}
+                    placeholder="Search users by address..."
+                    className="search-input"
+                  />
+                </form>
                 <div className="search-results">
                   {filteredUsers.map((user, i) => (
                     <div 
@@ -514,7 +520,7 @@ function App() {
                       onClick={() => setSelectedUser(user)}
                     >
                       <span>◈ {user.address.slice(0,4)}...{user.address.slice(-4)}</span>
-                      <span>◇ {Number(user.tokenBalance).toFixed(4)} SOL</span>
+                      <span>◇ {Number(user.tokenBalance).toFixed(4)} $TRIBIFY</span>
                     </div>
                   ))}
                 </div>
