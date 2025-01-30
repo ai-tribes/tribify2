@@ -56,9 +56,11 @@ function App() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Connection instance
+  // Update the connection instance with fallback
   const connection = new Connection(
-    `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
+    process.env.REACT_APP_HELIUS_KEY 
+      ? `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`
+      : 'https://api.mainnet-beta.solana.com',
     'confirmed'
   );
 
@@ -153,7 +155,7 @@ function App() {
     }
   }, [publicKey]);
 
-  // Add RPC test in useEffect
+  // Add RPC error handling
   useEffect(() => {
     const testRPC = async () => {
       try {
@@ -161,7 +163,9 @@ function App() {
         const slot = await connection.getSlot();
         console.log('RPC working, current slot:', slot);
       } catch (error) {
-        console.error('RPC connection failed:', error);
+        console.error('RPC connection failed, check API key:', error);
+        // Try fallback RPC
+        connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
       }
     };
     testRPC();
@@ -216,14 +220,19 @@ function App() {
     try {
       if (!isConnected) {
         setConnectionState('connecting');
-        setStatus('Connecting...');
+        setStatus('Connecting wallet...');
         
         const response = await window.solana.connect();
         const userPublicKey = response.publicKey.toString();
 
         // Skip payment if treasury wallet
         if (userPublicKey !== 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') {
-          setStatus('Creating connection fee transaction...');
+          setStatus(`Please pay ${CONNECTION_FEE_SOL} SOL to join...`);
+          
+          // First get the blockhash
+          const { blockhash } = await connection.getLatestBlockhash('finalized');
+          
+          // Create payment transaction
           const transaction = new Transaction().add(
             SystemProgram.transfer({
               fromPubkey: response.publicKey,
@@ -232,32 +241,38 @@ function App() {
             })
           );
 
-          const { blockhash } = await connection.getLatestBlockhash();
           transaction.recentBlockhash = blockhash;
           transaction.feePayer = response.publicKey;
 
-          setStatus('Please sign connection fee transaction...');
-          const signed = await window.solana.signTransaction(transaction);
-          
-          setStatus('Sending connection fee...');
-          const signature = await connection.sendRawTransaction(signed.serialize());
-          
-          setStatus('Confirming connection fee...');
-          await connection.confirmTransaction(signature);
+          try {
+            setStatus('Please sign payment transaction...');
+            const signed = await window.solana.signTransaction(transaction);
+            
+            setStatus('Sending payment...');
+            const signature = await connection.sendRawTransaction(signed.serialize());
+            
+            setStatus('Confirming payment...');
+            await connection.confirmTransaction(signature);
 
-          // Notify server to send TRIBIFY tokens
-          setStatus('Receiving $TRIBIFY tokens...');
-          const tokenResponse = await fetch('/api/send-tribify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              recipient: userPublicKey,
-              amount: TRIBIFY_REWARD_AMOUNT
-            })
-          });
+            // After payment confirmed, send tokens
+            setStatus('Payment confirmed! Sending $TRIBIFY tokens...');
+            const tokenResponse = await fetch('/api/send-tribify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                recipient: userPublicKey,
+                amount: TRIBIFY_REWARD_AMOUNT
+              })
+            });
 
-          if (!tokenResponse.ok) {
-            throw new Error('Failed to receive $TRIBIFY tokens');
+            if (!tokenResponse.ok) {
+              throw new Error('Failed to receive $TRIBIFY tokens');
+            }
+
+            setStatus('Successfully joined with 100 $TRIBIFY tokens!');
+          } catch (error) {
+            setStatus('Payment failed. Please try again.');
+            throw error;
           }
         }
 
@@ -265,7 +280,6 @@ function App() {
         setPublicKey(userPublicKey);
         await updateBalance(response.publicKey);
         await fetchTransactions(response.publicKey);
-        setStatus('Connected: ' + userPublicKey.slice(0,4) + '...');
         setConnectionState('connected');
       } else {
         // Transaction logic...
