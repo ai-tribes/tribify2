@@ -95,7 +95,7 @@ function App() {
     };
   }, []);
 
-  // Replace Socket.io effect with Pusher
+  // Update the Pusher effect
   useEffect(() => {
     try {
       const pusher = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
@@ -103,31 +103,44 @@ function App() {
         encrypted: true
       });
 
-      console.log('Pusher initialized'); // Debug log
-
       const channel = pusher.subscribe('tribify');
       
-      channel.bind('user-connected', (data) => {
+      // When someone connects their wallet, broadcast to others
+      if (publicKey && balance) {
+        channel.trigger('client-user-connected', {
+          address: publicKey,
+          balance: balance,
+          lastActive: 'Just now'
+        });
+      }
+
+      // Listen for existing and new connections
+      channel.bind('client-user-connected', (data) => {
         console.log('User connected event:', data);
-        setConnectedUsers(prev => [...prev, data]);
+        setConnectedUsers(prev => {
+          // Don't add duplicates
+          if (!prev.find(u => u.address === data.address)) {
+            return [...prev, data];
+          }
+          return prev;
+        });
       });
 
       channel.bind('pusher:subscription_succeeded', () => {
         console.log('Successfully subscribed to channel');
       });
 
-      channel.bind('pusher:subscription_error', (error) => {
-        console.error('Pusher subscription error:', error);
-      });
-
       return () => {
+        if (publicKey) {
+          channel.trigger('client-user-disconnected', { address: publicKey });
+        }
         channel.unbind_all();
         channel.unsubscribe();
       };
     } catch (error) {
       console.error('Pusher setup error:', error);
     }
-  }, []);
+  }, [publicKey, balance]); // Add dependencies
 
   const resetStates = () => {
     setIsConnected(false);
