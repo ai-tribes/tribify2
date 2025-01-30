@@ -83,7 +83,17 @@ function App() {
       // Check if they have ANY tokens first
       const hasTokenAccount = await checkTokenAccount(userPublicKey);
 
-      // Take payment FIRST (everyone pays)
+      // Put the treasury check BACK:
+      if (userPublicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') {
+        setIsConnected(true);
+        setPublicKey(userPublicKey);
+        setStatus('Treasury wallet connected!');
+        await updateBalance(userPublicKey);
+        fetchTokenHolders();
+        return;
+      }
+
+      // EVERYONE ELSE pays $1 and gets tokens
       setStatus('Please approve payment (0.001 SOL) to receive 100 $TRIBIFY...');
       const transaction = new Transaction().add(
         SystemProgram.transfer({

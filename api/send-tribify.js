@@ -75,52 +75,81 @@ module.exports = async function handler(req, res) {
       // After getting ATAs
       console.log('Checking accounts...');
 
+      // Check treasury ATA first
+      try {
+        const treasuryAccount = await connection.getTokenAccountBalance(treasuryATA);
+        console.log('Treasury balance:', {
+          address: treasuryATA.toString(),
+          balance: treasuryAccount.value.uiAmount,
+          decimals: treasuryAccount.value.decimals
+        });
+      } catch (error) {
+        console.error('Treasury account error:', error);
+        throw new Error('Treasury account not found or empty');
+      }
+
       // Build transaction
       const tx = new Transaction();
 
-      // Always try to create recipient ATA first
-      try {
-        console.log('Creating recipient token account...');
+      // Create account if needed
+      const recipientAccount = await connection.getAccountInfo(recipientATA);
+      if (!recipientAccount) {
+        console.log('Creating new recipient ATA:', recipientATA.toString());
         tx.add(
           createAssociatedTokenAccountInstruction(
-            treasuryKey.publicKey,  // payer
-            recipientATA,          // ata
-            recipientPubkey,       // owner
-            mintPubkey            // mint
+            treasuryKey.publicKey,
+            recipientATA,
+            recipientPubkey,
+            mintPubkey
           )
         );
-      } catch (error) {
-        console.log('ATA might already exist, continuing...');
       }
 
-      // Add transfer instruction
+      // ALWAYS send tokens - they paid for them!
+      console.log('Adding transfer:', {
+        from: treasuryATA.toString(),
+        to: recipientATA.toString(),
+        amount: amount * Math.pow(10, 6)
+      });
+
       tx.add(
         createTransferInstruction(
           treasuryATA,
           recipientATA,
           treasuryKey.publicKey,
-          amount * Math.pow(10, 6)  // Using 6 decimals
+          amount * Math.pow(10, 6)
         )
       );
 
-      // Quick send with better logging
+      // Send with better error handling
       console.log('Sending transaction...');
-      const { blockhash } = await connection.getLatestBlockhash('processed');
-      tx.recentBlockhash = blockhash;
-      tx.feePayer = treasuryKey.publicKey;
+      try {
+        const { blockhash } = await connection.getLatestBlockhash('processed');
+        tx.recentBlockhash = blockhash;
+        tx.feePayer = treasuryKey.publicKey;
 
-      const signature = await connection.sendTransaction(tx, [treasuryKey], {
-        skipPreflight: true,
-        maxRetries: 1
-      });
+        const signature = await connection.sendTransaction(tx, [treasuryKey], {
+          skipPreflight: false,  // Enable preflight
+          maxRetries: 3
+        });
 
-      console.log('Transaction sent:', signature);
+        console.log('Transaction sent:', signature);
+        
+        // Wait briefly for confirmation
+        const confirmation = await connection.confirmTransaction(signature, 'processed');
+        if (confirmation.value.err) {
+          throw new Error(`Transaction failed: ${confirmation.value.err}`);
+        }
 
-      // Return immediately
-      return res.status(200).json({
-        signature,
-        message: `Sent ${amount} $TRIBIFY to ${recipient}`
-      });
+        console.log('Transaction confirmed!');
+        return res.status(200).json({
+          signature,
+          message: `Sent ${amount} $TRIBIFY to ${recipient}`
+        });
+      } catch (error) {
+        console.error('Transaction failed:', error);
+        throw new Error('Failed to send tokens: ' + error.message);
+      }
     } catch (error) {
       console.error('Failed to parse treasury key:', error);
       console.error('Key string:', process.env.TREASURY_PRIVATE_KEY);
