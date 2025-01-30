@@ -373,4 +373,17 @@ button:hover {
   border: 1px solid currentColor;
   text-align: center;
   font-family: monospace;
+}
+
+.clickable-address {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.clickable-address:hover {
+  opacity: 0.8;
+}
+
+.clickable-address:active {
+  opacity: 0.6;
 } 

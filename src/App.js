@@ -65,7 +65,13 @@ const validateEnvVars = () => {
 };
 
 function App() {
-  // Move all useState hooks to the top, before any conditionals
+  // 1. Helper functions first
+  const isDaytime = () => {
+    const hours = new Date().getHours();
+    return hours >= 6 && hours < 18;
+  };
+
+  // 2. All useState hooks together
   const [isDark, setIsDark] = useState(!isDaytime());
   const [status, setStatus] = useState('');
   const [isConnected, setIsConnected] = useState(false);
@@ -89,66 +95,27 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [treasuryBalances, setTreasuryBalances] = useState([]);
 
-  // Now we can have the conditional return
-  if (envError) {
-    return (
-      <div className="App">
-        <div className="error-message">
-          Environment configuration error. Please check console for details.
-        </div>
-      </div>
-    );
-  }
-
-  console.log('Environment check:', {
-    hasHeliusKey: !!process.env.REACT_APP_HELIUS_KEY,
-    hasPusherKey: !!process.env.REACT_APP_PUSHER_KEY,
-    hasPusherCluster: !!process.env.REACT_APP_PUSHER_CLUSTER
-  });
-
-  console.log('Raw env values:', {
-    pusherKey: process.env.REACT_APP_PUSHER_KEY,
-    pusherCluster: process.env.REACT_APP_PUSHER_CLUSTER
-  });
-
-  // Check if it's daytime (between 6am and 6pm)
-  const isDaytime = () => {
-    const hours = new Date().getHours();
-    return hours >= 6 && hours < 18;
-  };
-
-  const [otherWallets, setOtherWallets] = useState([
-    { name: 'Phantom', connected: true },
-    { name: 'Solflare', connected: false },
-    { name: 'Backpack', connected: false },
-    { name: 'Glow', connected: false }
-  ]);
-  const [tokenHolders, setTokenHolders] = useState([]);
-  const [connectedUsers, setConnectedUsers] = useState([]);
-  const [socket, setSocket] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  // Update theme based on time of day
+  // 3. ALL useEffect hooks together - BEFORE ANY OTHER CODE
   useEffect(() => {
-    const interval = setInterval(() => {
-      setIsDark(!isDaytime());
-    }, 60000); // Check every minute
-
+    const interval = setInterval(() => setIsDark(!isDaytime()), 60000);
     return () => clearInterval(interval);
   }, []);
 
-  // Enhanced connection check
+  useEffect(() => {
+    console.log('Environment check:', {
+      hasHeliusKey: !!process.env.REACT_APP_HELIUS_KEY,
+      hasPusherKey: !!process.env.REACT_APP_PUSHER_KEY,
+      hasPusherCluster: !!process.env.REACT_APP_PUSHER_CLUSTER
+    });
+  }, []);
+
   useEffect(() => {
     const checkConnection = async () => {
       try {
         setConnectionState('connecting');
         if (window.solana) {
-          // Remove the auto-connect
           setConnectionState('disconnected');
         }
       } catch (error) {
@@ -158,7 +125,6 @@ function App() {
     };
     checkConnection();
 
-    // Listen for wallet connection changes
     const handleWalletChange = () => {
       if (!window.solana?.isConnected) {
         resetStates();
@@ -173,7 +139,19 @@ function App() {
     };
   }, []);
 
-  // Update the Pusher effect
+  useEffect(() => {
+    if (isConnected) {
+      fetchTokenHolders();
+    }
+  }, [isConnected]);
+
+  useEffect(() => {
+    if (publicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') {
+      setIsAdmin(true);
+    }
+  }, [publicKey]);
+
+  // Move Pusher effect here
   useEffect(() => {
     try {
       const pusher = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
@@ -188,7 +166,7 @@ function App() {
         console.log('Currently connected users:', members);
         const users = [];
         members.each((member) => users.push(member.info));
-        setConnectedUsers(users); // Only real connected users
+        setConnectedUsers(users);
       });
 
       channel.bind('pusher:member_added', (member) => {
@@ -207,20 +185,6 @@ function App() {
       };
     } catch (error) {
       console.error('Pusher setup error:', error);
-    }
-  }, [publicKey]);
-
-  // Add this effect to fetch token holders
-  useEffect(() => {
-    if (isConnected) {
-      fetchTokenHolders();
-    }
-  }, [isConnected]);
-
-  // Add admin check when wallet connects
-  useEffect(() => {
-    if (publicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') {
-      setIsAdmin(true);
     }
   }, [publicKey]);
 
@@ -263,113 +227,75 @@ function App() {
     }
   };
 
-  const handleClick = async () => {
-    if (!window.solana) {
-      setConnectionState('error');
-      setErrorMessage('Please install Phantom wallet');
-      return;
-    }
-
+  const fetchTreasuryBalances = async () => {
     try {
-      if (!isConnected) {
-        setConnectionState('connecting');
-        setStatus('Connecting wallet...');
-        
-        const response = await window.solana.connect();
-        const userPublicKey = response.publicKey.toString();
-
-        // Skip payment if treasury wallet
-        if (userPublicKey !== 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') {
-          setStatus(`Join tribify.ai: Send 0.003 SOL to receive 100 $TRIBIFY tokens...`);
-          
-          // First get the blockhash
-          const blockhash = await getRecentBlockhash();
-          
-          // Create payment transaction
-          const transaction = new Transaction().add(
-            SystemProgram.transfer({
-              fromPubkey: response.publicKey,
-              toPubkey: new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
-              lamports: LAMPORTS_PER_SOL * CONNECTION_FEE_SOL
-            })
-          );
-
-          transaction.recentBlockhash = blockhash;
-          transaction.feePayer = response.publicKey;
-
-          try {
-            setStatus('Please approve payment in Phantom...');
-            const signed = await window.solana.signTransaction(transaction);
-            
-            setStatus('Processing payment...');
-            const signature = await connection.sendRawTransaction(signed.serialize());
-            
-            setStatus('Confirming payment...');
-            await connection.confirmTransaction(signature);
-
-            setStatus('Payment confirmed! Sending your $TRIBIFY tokens...');
-            const tokenResponse = await fetch('/api/send-tribify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                recipient: userPublicKey,
-                amount: TRIBIFY_REWARD_AMOUNT
-              })
-            });
-
-            if (!tokenResponse.ok) {
-              const error = await tokenResponse.json();
-              console.error('Token distribution error:', error);
-              throw new Error(`Token distribution failed: ${error.message || 'Unknown error'}`);
-            }
-
-            setStatus('Welcome to tribify.ai! You received 100 $TRIBIFY tokens.');
-          } catch (error) {
-            setStatus('Connection failed. Please try again.');
-            throw error;
-          }
+      const solBalance = await connection.getBalance(new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'));
+      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+        new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
+        {
+          programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
         }
+      );
 
+      const balances = tokenAccounts.value.map(account => ({
+        mint: account.account.data.parsed.info.mint,
+        balance: account.account.data.parsed.info.tokenAmount.uiAmount
+      }));
+
+      setBalance(solBalance / LAMPORTS_PER_SOL);
+      setTreasuryBalances(balances);
+
+    } catch (error) {
+      console.error('Failed to fetch treasury balances:', error);
+    }
+  };
+
+  const handleConnection = async () => {
+    try {
+      setStatus('Checking wallet...');
+      const resp = await window.solana.connect();
+      const userPublicKey = resp.publicKey.toString();
+
+      // Skip payment if treasury wallet
+      if (userPublicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') {
         setIsConnected(true);
         setPublicKey(userPublicKey);
-        await updateBalance(response.publicKey);
-        await fetchTransactions(response.publicKey);
-        setConnectionState('connected');
-      } else {
-        // Transaction logic...
-        const transaction = new Transaction().add(
-          SystemProgram.transfer({
-            fromPubkey: window.solana.publicKey,
-            toPubkey: window.solana.publicKey,
-            lamports: LAMPORTS_PER_SOL * 0.001
-          })
-        );
-
-        const blockhash = await getRecentBlockhash();
-        transaction.recentBlockhash = blockhash;
-        transaction.feePayer = window.solana.publicKey;
-
-        setStatus('Please sign...');
-        const signed = await window.solana.signTransaction(transaction);
-        
-        setStatus('Sending...');
-        const signature = await connection.sendRawTransaction(signed.serialize());
-        
-        setStatus('Confirming...');
-        await connection.confirmTransaction(signature);
-        setStatus('Transaction confirmed! ◈');
-
-        // Update balance and transactions after confirmation
-        await updateBalance(window.solana.publicKey);
-        await fetchTransactions(window.solana.publicKey);
+        setStatus('Treasury wallet connected!');
+        await fetchTreasuryBalances();
+        return;
       }
+
+      // Everyone else pays to connect
+      setStatus('Please approve connection fee (0.001 SOL) to receive 100 $TRIBIFY tokens...');
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: resp.publicKey,
+          toPubkey: new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
+          lamports: LAMPORTS_PER_SOL * 0.001
+        })
+      );
+
+      const { blockhash } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = resp.publicKey;
+
+      const signed = await window.solana.signTransaction(transaction);
+      const signature = await connection.sendRawTransaction(signed.serialize());
+      await connection.confirmTransaction(signature);
+
+      // Send them their TRIBIFY tokens
+      setStatus('Payment received! Sending your TRIBIFY tokens...');
+      // API call to send tokens here
+
+      setIsConnected(true);
+      setPublicKey(userPublicKey);
+      setStatus('Connected! You received 100 TRIBIFY tokens.');
+
     } catch (error) {
-      console.error('Connection error:', error);
-      setConnectionState('error');
-      setErrorMessage(error.message);
-      if (error.code === 4001) {
-        resetStates();
-      }
+      console.error('Connection failed:', error);
+      setStatus('Connection failed: ' + error.message);
+      setIsConnected(false);
+      setPublicKey(null);
     }
   };
 
@@ -413,38 +339,20 @@ function App() {
   // Update the fetchTokenHolders function
   const fetchTokenHolders = async () => {
     try {
-      console.log('Fetching token holders with mint:', TRIBIFY_TOKEN_MINT);
       const mintPubkey = new PublicKey(TRIBIFY_TOKEN_MINT);
-      console.log('Mint pubkey:', mintPubkey.toBase58());
-
       const largestAccounts = await connection.getTokenLargestAccounts(mintPubkey);
-      console.log('Largest accounts:', largestAccounts);
-
+      
       const holders = await Promise.all(
         largestAccounts.value.map(async (account) => {
           const accountInfo = await connection.getParsedAccountInfo(account.address);
-          console.log('Account info:', accountInfo);
-          
-          if (accountInfo.value?.data.parsed?.info?.owner) {
-            const tokenBalance = account.amount / Math.pow(10, 9);
-            // Only include holders with 1 or more tokens
-            if (tokenBalance >= 1) {
-              return {
-                address: accountInfo.value.data.parsed.info.owner,
-                tokenBalance: tokenBalance
-              };
-            }
-          }
-          return null;
+          return {
+            address: accountInfo.value.data.parsed.info.owner,
+            tokenBalance: account.amount / Math.pow(10, 9)
+          };
         })
       );
 
-      const validHolders = holders
-        .filter(h => h !== null)
-        .sort((a, b) => b.tokenBalance - a.tokenBalance); // Sort by balance descending
-
-      console.log('Valid holders (1+ tokens):', validHolders);
-      setTokenHolders(validHolders);
+      setTokenHolders(holders.filter(h => h.tokenBalance > 0));
     } catch (error) {
       console.error('Failed to fetch token holders:', error);
     }
@@ -482,15 +390,6 @@ function App() {
     }
   };
 
-  useEffect(() => {
-    console.log('Production check:', {
-      NODE_ENV: process.env.NODE_ENV,
-      hasHelius: !!process.env.REACT_APP_HELIUS_KEY,
-      hasPusher: !!process.env.REACT_APP_PUSHER_KEY,
-      hasPusherCluster: !!process.env.REACT_APP_PUSHER_CLUSTER
-    });
-  }, []);
-
   // Add search handler function
   const handleSearch = (e) => {
     e.preventDefault(); // Prevent page refresh
@@ -503,6 +402,29 @@ function App() {
     const { blockhash } = await connection.getLatestBlockhash('finalized');
     return blockhash;
   };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setStatus('Address copied to clipboard!');
+      setTimeout(() => setStatus(''), 2000);
+    });
+  };
+
+  // 4. THEN the conditional return
+  if (envError) {
+    return (
+      <div className="App">
+        <div className="error-message">
+          Environment configuration error. Please check console for details.
+        </div>
+      </div>
+    );
+  }
+
+  console.log('Raw env values:', {
+    pusherKey: process.env.REACT_APP_PUSHER_KEY,
+    pusherCluster: process.env.REACT_APP_PUSHER_CLUSTER
+  });
 
   return (
     <div className={`App ${isDark ? 'dark' : 'light'}`}>
@@ -517,7 +439,7 @@ function App() {
       </button>
       <div className="content">
         <div className="button-group">
-          <button onClick={handleClick}>
+          <button onClick={handleConnection}>
             {isConnected ? '⬡ Send' : '⬢ Connect'}
           </button>
           {isConnected && (
@@ -529,8 +451,27 @@ function App() {
         {isConnected && (
           <>
             <div className="wallet-info">
-              <div>◈ {publicKey?.slice(0,4)}...{publicKey?.slice(-4)}</div>
-              <div>◇ {balance?.toFixed(4)} SOL</div>
+              <div className="clickable-address" onClick={() => copyToClipboard(publicKey)}>
+                ◈ {publicKey?.slice(0,4)}...{publicKey?.slice(-4)}
+              </div>
+              {publicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv' ? (
+                <>
+                  <div>Treasury Balances:</div>
+                  <div>◇ {balance?.toFixed(4)} SOL</div>
+                  {treasuryBalances.map((token, i) => {
+                    if (token.mint === TRIBIFY_TOKEN_MINT) {
+                      return (
+                        <div key={i}>
+                          ◈ {token.balance.toFixed(4)} $TRIBIFY
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+                </>
+              ) : (
+                <div>◇ {balance?.toFixed(4)} SOL</div>
+              )}
             </div>
             {transactions.length > 0 && (
               <div className="transactions">
@@ -547,7 +488,7 @@ function App() {
                 <div className="users-header">Currently Online $TRIBIFY Holders</div>
                 {connectedUsers.map((user, i) => (
                   <div key={i} className="user-item">
-                    <div className="user-address">
+                    <div className="user-address clickable-address" onClick={() => copyToClipboard(user.address)}>
                       ◈ {user.address?.slice(0,4)}...{user.address?.slice(-4)}
                       <span className="online-indicator">● Online</span>
                     </div>
@@ -563,7 +504,7 @@ function App() {
               <div className="holders-list">
                 {tokenHolders.map((user, i) => (
                   <div key={i} className="holder-item">
-                    <div className="holder-address">
+                    <div className="holder-address clickable-address" onClick={() => copyToClipboard(user.address)}>
                       ◈ {user.address.slice(0,4)}...{user.address.slice(-4)}
                     </div>
                     <div className="holder-balance">
