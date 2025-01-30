@@ -72,19 +72,48 @@ module.exports = async function handler(req, res) {
         treasuryKey.publicKey
       );
 
+      // After getting ATAs
+      console.log('Checking treasury balance...');
+      try {
+        const treasuryAccount = await connection.getTokenAccountBalance(treasuryATA);
+        console.log('Treasury balance:', {
+          amount: treasuryAccount.value.uiAmount,
+          decimals: treasuryAccount.value.decimals
+        });
+      } catch (error) {
+        console.error('Failed to get treasury balance:', error);
+        throw new Error('Treasury account not found or has no tokens');
+      }
+
       // Build transaction
       const tx = new Transaction();
 
-      // Add ATA creation instructions if needed
+      // Check and create treasury ATA if needed
+      try {
+        await connection.getAccountInfo(treasuryATA);
+      } catch {
+        console.log('Creating treasury ATA...');
+        tx.add(
+          createAssociatedTokenAccountInstruction(
+            treasuryKey.publicKey,  // payer
+            treasuryATA,           // ata
+            treasuryKey.publicKey,  // owner
+            mintPubkey             // mint
+          )
+        );
+      }
+
+      // Check and create recipient ATA if needed
       try {
         await connection.getAccountInfo(recipientATA);
       } catch {
+        console.log('Creating recipient ATA...');
         tx.add(
           createAssociatedTokenAccountInstruction(
             treasuryKey.publicKey,  // payer
             recipientATA,           // ata
             recipientPubkey,        // owner
-            mintPubkey              // mint
+            mintPubkey             // mint
           )
         );
       }
