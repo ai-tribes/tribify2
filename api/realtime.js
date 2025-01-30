@@ -1,30 +1,28 @@
-import { createClient } from '@vercel/edge';
 import Pusher from 'pusher';
-
-export const config = {
-  runtime: 'edge',
-};
 
 const pusher = new Pusher({
   appId: process.env.PUSHER_APP_ID,
-  key: process.env.PUSHER_KEY,
+  key: process.env.REACT_APP_PUSHER_KEY,
   secret: process.env.PUSHER_SECRET,
-  cluster: process.env.PUSHER_CLUSTER,
+  cluster: process.env.REACT_APP_PUSHER_CLUSTER,
   useTLS: true
 });
 
-export default async function handler(req) {
+export default async function handler(req, res) {
   if (req.method === 'POST') {
-    const { address, balance } = await req.json();
-    
-    await pusher.trigger('tribify', 'user-connected', {
-      address,
-      balance,
-      timestamp: Date.now()
-    });
+    try {
+      const { address, balance } = req.body;
+      
+      await pusher.trigger('tribify', 'user-connected', {
+        address,
+        balance,
+        timestamp: Date.now()
+      });
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
   }
+  return res.status(405).json({ error: 'Method not allowed' });
 } 
