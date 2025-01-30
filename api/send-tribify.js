@@ -1,6 +1,7 @@
 const { Connection, PublicKey, Keypair } = require('@solana/web3.js');
-const { Token, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } = require('@solana/spl-token');
+const { getAssociatedTokenAddress, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, createTransferInstruction } = require('@solana/spl-token');
 const bs58 = require('bs58');
+const { Transaction } = require('@solana/web3.js');
 
 module.exports = async function handler(req, res) {
   console.log('=== API CALLED ===');
@@ -52,44 +53,32 @@ module.exports = async function handler(req, res) {
       );
       console.log('Treasury wallet ready:', treasuryKey.publicKey.toString());
 
-      // Store it for later use
-      const treasury = treasuryKey;  // Important! Remove the return
-
       // Initialize token
       const mintPubkey = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
       const recipientPubkey = new PublicKey(recipient);
 
-      // Get or create token accounts
-      const recipientATA = await Token.getAssociatedTokenAddress(
-        ASSOCIATED_TOKEN_PROGRAM_ID,
-        TOKEN_PROGRAM_ID,
+      // Get token accounts
+      const recipientATA = await getAssociatedTokenAddress(
         mintPubkey,
         recipientPubkey
       );
 
-      const treasuryATA = await Token.getAssociatedTokenAddress(
-        ASSOCIATED_TOKEN_PROGRAM_ID,
-        TOKEN_PROGRAM_ID,
+      const treasuryATA = await getAssociatedTokenAddress(
         mintPubkey,
         treasuryKey.publicKey
       );
 
-      // Create token instance
-      const token = new Token(
-        connection,
-        mintPubkey,
-        TOKEN_PROGRAM_ID,
-        treasuryKey
-      );
-
-      // Send tokens
-      const signature = await token.transfer(
+      // Create transfer instruction
+      const transferIx = createTransferInstruction(
         treasuryATA,
         recipientATA,
-        treasuryKey,
-        [],
+        treasuryKey.publicKey,
         amount * Math.pow(10, 9)
       );
+
+      // Send transaction
+      const tx = new Transaction().add(transferIx);
+      const signature = await connection.sendTransaction(tx, [treasuryKey]);
 
       return res.status(200).json({
         signature,
