@@ -187,6 +187,20 @@ function App() {
     }
   }, [publicKey]);
 
+  // Add RPC test in useEffect
+  useEffect(() => {
+    const testRPC = async () => {
+      try {
+        console.log('Testing RPC connection...');
+        const slot = await connection.getSlot();
+        console.log('RPC working, current slot:', slot);
+      } catch (error) {
+        console.error('RPC connection failed:', error);
+      }
+    };
+    testRPC();
+  }, []);
+
   const resetStates = () => {
     setIsConnected(false);
     setPublicKey(null);
@@ -333,29 +347,40 @@ function App() {
   // Add function to check token holdings
   const fetchTokenHolders = async () => {
     try {
-      console.log('Fetching token holders...');
+      console.log('Fetching token holders with mint:', TRIBIFY_TOKEN_MINT);
+      // Convert mint to proper format
+      const mintPubkey = new PublicKey(TRIBIFY_TOKEN_MINT);
+      console.log('Mint pubkey:', mintPubkey.toBase58());
+
       const tokenAccounts = await connection.getParsedProgramAccounts(
-        new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'), // SPL Token program
+        new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
         {
           filters: [
             {
-              dataSize: 165, // Size of token account data
+              dataSize: 165,
             },
             {
               memcmp: {
-                offset: 0, // Mint offset in token account data
-                bytes: TRIBIFY_TOKEN_MINT, // Filter by token mint
+                offset: 0,
+                bytes: mintPubkey.toBase58(),
               },
             },
           ],
         }
       );
-      console.log('Found token accounts:', tokenAccounts);
-      const holders = tokenAccounts.map(account => ({
-        address: account.pubkey.toString(),
-        tokenBalance: account.account.data.parsed.info.tokenAmount.uiAmount
-      }));
+      console.log('Raw token accounts:', tokenAccounts);
+      console.log('Number of holders found:', tokenAccounts.length);
 
+      const holders = tokenAccounts.map(account => {
+        const data = account.account.data.parsed.info;
+        console.log('Processing holder:', data);
+        return {
+          address: account.pubkey.toString(),
+          tokenBalance: data.tokenAmount.uiAmount
+        };
+      });
+
+      console.log('Processed holders:', holders);
       setConnectedUsers(holders);
     } catch (error) {
       console.error('Failed to fetch token holders:', error);
