@@ -15,10 +15,11 @@ const TRIBIFY_TOKEN_MINT = "672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump";
 const CONNECTION_FEE_SOL = 0.003; // 0.003 SOL connection fee
 const TRIBIFY_REWARD_AMOUNT = 100; // 100 $TRIBIFY tokens reward
 
-// Just use one simple connection
-const connection = new Connection('https://api.mainnet-beta.solana.com', {
-  commitment: 'confirmed'
-});
+// Use GenesysGo Pro endpoint
+const connection = new Connection(
+  'https://tribify.genesysgo.net/path?api-key=9c0489c2-1234-4321-9876-123456789abc',
+  'confirmed'
+);
 
 function App() {
   console.log('Environment check:', {
@@ -424,7 +425,7 @@ function App() {
     // Search is already handled by filteredUsers
   };
 
-  // Simplify the getRecentBlockhash function
+  // Keep the getRecentBlockhash simple
   const getRecentBlockhash = async () => {
     const { blockhash } = await connection.getLatestBlockhash('finalized');
     return blockhash;
