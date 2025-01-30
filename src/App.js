@@ -213,7 +213,7 @@ function App() {
   const handleClick = async () => {
     if (!window.solana) {
       setConnectionState('error');
-      setErrorMessage('Phantom wallet not installed');
+      setErrorMessage('Please install Phantom wallet');
       return;
     }
 
@@ -227,7 +227,7 @@ function App() {
 
         // Skip payment if treasury wallet
         if (userPublicKey !== 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') {
-          setStatus(`Please pay ${CONNECTION_FEE_SOL} SOL to join...`);
+          setStatus(`Join tribify.ai: Send 0.003 SOL to receive 100 $TRIBIFY tokens...`);
           
           // First get the blockhash
           const { blockhash } = await connection.getLatestBlockhash('finalized');
@@ -245,17 +245,16 @@ function App() {
           transaction.feePayer = response.publicKey;
 
           try {
-            setStatus('Please sign payment transaction...');
+            setStatus('Please approve payment in Phantom...');
             const signed = await window.solana.signTransaction(transaction);
             
-            setStatus('Sending payment...');
+            setStatus('Processing payment...');
             const signature = await connection.sendRawTransaction(signed.serialize());
             
             setStatus('Confirming payment...');
             await connection.confirmTransaction(signature);
 
-            // After payment confirmed, send tokens
-            setStatus('Payment confirmed! Sending $TRIBIFY tokens...');
+            setStatus('Payment confirmed! Sending your $TRIBIFY tokens...');
             const tokenResponse = await fetch('/api/send-tribify', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -266,12 +265,12 @@ function App() {
             });
 
             if (!tokenResponse.ok) {
-              throw new Error('Failed to receive $TRIBIFY tokens');
+              throw new Error('Token distribution failed - please contact support');
             }
 
-            setStatus('Successfully joined with 100 $TRIBIFY tokens!');
+            setStatus('Welcome to tribify.ai! You received 100 $TRIBIFY tokens.');
           } catch (error) {
-            setStatus('Payment failed. Please try again.');
+            setStatus('Connection failed. Please try again.');
             throw error;
           }
         }
