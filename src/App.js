@@ -97,7 +97,8 @@ function App() {
 
       const pusher = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
         cluster: process.env.REACT_APP_PUSHER_CLUSTER,
-        encrypted: true
+        encrypted: true,
+        authEndpoint: '/api/pusher-auth'
       });
 
       const channel = pusher.subscribe('presence-tribify');
