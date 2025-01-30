@@ -15,8 +15,14 @@ const TRIBIFY_TOKEN_MINT = "672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump";
 const CONNECTION_FEE_SOL = 0.003; // 0.003 SOL connection fee
 const TRIBIFY_REWARD_AMOUNT = 100; // 100 $TRIBIFY tokens reward
 
-// Change from const to let for the connection
-let connection;
+// At the top, with other constants
+const RPC_URL = 'https://solana-mainnet.rpc.extrnode.com';
+
+// Initialize connection ONCE
+let connection = new Connection(RPC_URL, {
+  commitment: 'confirmed',
+  wsEndpoint: undefined
+});
 
 function App() {
   console.log('Environment check:', {
@@ -457,17 +463,15 @@ function App() {
     // Search is already handled by filteredUsers
   };
 
-  // Add back the getRecentBlockhash function
+  // Simplify the getRecentBlockhash function
   const getRecentBlockhash = async () => {
     try {
-      const { blockhash } = await connection.getLatestBlockhash('finalized');
+      const { blockhash } = await connection.getLatestBlockhash();
       return blockhash;
     } catch (error) {
-      console.error('Failed to get blockhash:', error);
-      // Try fallback RPC
-      connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
-      const { blockhash } = await connection.getLatestBlockhash('finalized');
-      return blockhash;
+      console.error('RPC Error:', error);
+      // Just throw the error - no fancy retries
+      throw new Error('Connection failed - please refresh and try again');
     }
   };
 
