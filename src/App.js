@@ -100,78 +100,41 @@ function App() {
   // Update the Pusher effect
   useEffect(() => {
     try {
-      console.log('Initializing Pusher with:', {
-        key: process.env.REACT_APP_PUSHER_KEY,
-        cluster: process.env.REACT_APP_PUSHER_CLUSTER
-      });
-
       const pusher = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
         cluster: process.env.REACT_APP_PUSHER_CLUSTER,
         encrypted: true,
         authEndpoint: '/api/pusher-auth'
       });
 
+      // Use a presence channel for real-time user tracking
       const channel = pusher.subscribe('presence-tribify');
-      console.log('Subscribed to channel: presence-tribify');
       
-      // Notify server when connected
-      const notifyConnection = async () => {
-        if (publicKey && balance) {
-          console.log('Attempting to notify server of connection:', {
-            address: publicKey,
-            balance: balance
-          });
-
-          try {
-            const response = await fetch('/api/realtime', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                address: publicKey,
-                balance: balance,
-                lastActive: 'Just now'
-              })
-            });
-            const result = await response.json();
-            console.log('Server response:', result);
-          } catch (error) {
-            console.error('Failed to notify connection:', error);
-          }
-        }
-      };
-
-      notifyConnection();
-
-      channel.bind('user-connected', (data) => {
-        console.log('Received user-connected event:', data);
-        console.log('Current publicKey:', publicKey);
-        setConnectedUsers(prev => {
-          console.log('Previous users:', prev);
-          if (!prev.find(u => u.address === data.address) && data.address !== publicKey) {
-            console.log('Adding new user:', data);
-            return [...prev, data];
-          }
-          console.log('User already exists or is self');
-          return prev;
-        });
+      channel.bind('pusher:subscription_succeeded', (members) => {
+        console.log('Successfully subscribed to presence channel', members);
+        // Update connected users from presence data
+        const users = [];
+        members.each((member) => users.push(member.info));
+        setConnectedUsers(prev => [...prev, ...users]);
       });
 
-      channel.bind('new-message', (data) => {
-        console.log('New message received:', data);
-        setMessages(prev => [...prev, data]);
+      channel.bind('pusher:member_added', (member) => {
+        console.log('Member added:', member);
+        setConnectedUsers(prev => [...prev, member.info]);
+      });
+
+      channel.bind('pusher:member_removed', (member) => {
+        console.log('Member removed:', member);
+        setConnectedUsers(prev => prev.filter(u => u.address !== member.info.address));
       });
 
       return () => {
-        console.log('Cleaning up Pusher connection');
         channel.unbind_all();
         channel.unsubscribe();
       };
     } catch (error) {
       console.error('Pusher setup error:', error);
     }
-  }, [publicKey, balance]);
+  }, [publicKey]);
 
   // Add this effect to fetch token holders
   useEffect(() => {
