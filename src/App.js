@@ -27,6 +27,18 @@ const connection = new Connection(
 
 // Update the validation to only check required vars
 const validateEnvVars = () => {
+  // Debug info first
+  console.log('Environment:', {
+    NODE_ENV: process.env.NODE_ENV,
+    vars: {
+      REACT_APP_HELIUS_KEY: !!process.env.REACT_APP_HELIUS_KEY,
+      REACT_APP_PUSHER_KEY: !!process.env.REACT_APP_PUSHER_KEY,
+      REACT_APP_PUSHER_CLUSTER: !!process.env.REACT_APP_PUSHER_CLUSTER,
+      PUSHER_APP_ID: !!process.env.PUSHER_APP_ID,
+      PUSHER_SECRET: !!process.env.PUSHER_SECRET
+    }
+  });
+
   // Always required
   const required = {
     'REACT_APP_HELIUS_KEY': process.env.REACT_APP_HELIUS_KEY,
@@ -45,15 +57,29 @@ const validateEnvVars = () => {
     .map(([key]) => key);
 
   if (missing.length > 0) {
+    // Log error but don't throw
     console.error('Missing environment variables:', missing);
-    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+    return false;
   }
+  return true;
 };
 
 // Call it immediately
 validateEnvVars();
 
 function App() {
+  const [envError, setEnvError] = useState(!validateEnvVars());
+
+  if (envError) {
+    return (
+      <div className="App">
+        <div className="error-message">
+          Environment configuration error. Please check console for details.
+        </div>
+      </div>
+    );
+  }
+
   console.log('Environment check:', {
     hasHeliusKey: !!process.env.REACT_APP_HELIUS_KEY,
     hasPusherKey: !!process.env.REACT_APP_PUSHER_KEY,
