@@ -73,17 +73,7 @@ module.exports = async function handler(req, res) {
       );
 
       // After getting ATAs
-      console.log('Checking treasury balance...');
-      try {
-        const treasuryAccount = await connection.getTokenAccountBalance(treasuryATA);
-        console.log('Treasury balance:', {
-          amount: treasuryAccount.value.uiAmount,
-          decimals: treasuryAccount.value.decimals
-        });
-      } catch (error) {
-        console.error('Failed to get treasury balance:', error);
-        throw new Error('Treasury account not found or has no tokens');
-      }
+      console.log('Checking accounts...');
 
       // Build transaction with proper options
       const { blockhash } = await connection.getLatestBlockhash();
@@ -92,12 +82,10 @@ module.exports = async function handler(req, res) {
         recentBlockhash: blockhash
       });
 
-      // Check and create treasury ATA if needed
-      try {
-        const treasuryInfo = await connection.getAccountInfo(treasuryATA);
-        console.log('Treasury ATA exists:', !!treasuryInfo);
-      } catch {
-        console.log('Creating treasury ATA...');
+      // Check treasury account first
+      const treasuryInfo = await connection.getAccountInfo(treasuryATA);
+      if (!treasuryInfo) {
+        console.log('Treasury ATA does not exist, creating...');
         tx.add(
           createAssociatedTokenAccountInstruction(
             treasuryKey.publicKey,
@@ -106,14 +94,20 @@ module.exports = async function handler(req, res) {
             mintPubkey
           )
         );
+      } else {
+        console.log('Treasury ATA exists, checking balance...');
+        const treasuryAccount = await connection.getTokenAccountBalance(treasuryATA);
+        console.log('Treasury balance:', {
+          address: treasuryATA.toString(),
+          amount: treasuryAccount.value.uiAmount,
+          decimals: treasuryAccount.value.decimals
+        });
       }
 
-      // Check and create recipient ATA if needed
-      try {
-        const recipientInfo = await connection.getAccountInfo(recipientATA);
-        console.log('Recipient ATA exists:', !!recipientInfo);
-      } catch {
-        console.log('Creating recipient ATA...');
+      // Check recipient account
+      const recipientInfo = await connection.getAccountInfo(recipientATA);
+      if (!recipientInfo) {
+        console.log('Recipient ATA does not exist, creating...');
         tx.add(
           createAssociatedTokenAccountInstruction(
             treasuryKey.publicKey,
@@ -122,6 +116,8 @@ module.exports = async function handler(req, res) {
             mintPubkey
           )
         );
+      } else {
+        console.log('Recipient ATA exists');
       }
 
       // Add transfer instruction
