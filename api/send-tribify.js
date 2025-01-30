@@ -1,5 +1,6 @@
 const { Connection, PublicKey, Keypair } = require('@solana/web3.js');
 const { Token, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } = require('@solana/spl-token');
+const bs58 = require('bs58');
 
 module.exports = async function handler(req, res) {
   console.log('=== API CALLED ===');
@@ -38,19 +39,37 @@ module.exports = async function handler(req, res) {
     // Set up treasury wallet
     console.log('Setting up treasury...');
     try {
-      // Try parsing if it's a JSON string
       const privateKeyString = process.env.TREASURY_PRIVATE_KEY;
+      console.log('Private key format:', {
+        length: privateKeyString?.length,
+        startsWith: privateKeyString?.substring(0, 20),
+        isString: typeof privateKeyString === 'string'
+      });
+
+      // First try base58 decode
+      try {
+        const treasuryKey = Keypair.fromSecretKey(
+          bs58.decode(privateKeyString)
+        );
+        console.log('Treasury wallet ready (base58):', treasuryKey.publicKey.toString());
+        return treasuryKey;
+      } catch (e) {
+        console.log('Not base58, trying array format...');
+      }
+
+      // Then try array format
       const privateKeyData = privateKeyString.startsWith('[') 
-        ? JSON.parse(privateKeyString)  // If it's JSON array
-        : privateKeyString.split(',');  // If it's comma-separated
+        ? JSON.parse(privateKeyString)
+        : privateKeyString.split(',').map(Number);
 
       const treasuryKey = Keypair.fromSecretKey(
         Buffer.from(privateKeyData)
       );
-      console.log('Treasury wallet ready:', treasuryKey.publicKey.toString());
+      console.log('Treasury wallet ready (array):', treasuryKey.publicKey.toString());
     } catch (error) {
       console.error('Failed to parse treasury key:', error);
-      throw new Error('Treasury key configuration error');
+      console.error('Key string:', process.env.TREASURY_PRIVATE_KEY);
+      throw new Error('Treasury key configuration error: ' + error.message);
     }
 
     // Initialize token
