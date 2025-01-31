@@ -12,10 +12,11 @@ export default async function handler(req, res) {
   const { socket_id, channel_name } = req.body;
   const { publicKey } = req.query;
 
-  console.log('Auth request received:', {
+  console.log('Pusher auth request received:', {
     socket_id,
     channel_name,
-    publicKey
+    publicKey,
+    timestamp: new Date().toISOString()
   });
 
   try {
