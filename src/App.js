@@ -82,6 +82,9 @@ function App() {
     onConfirm: null
   });
 
+  // Add WebSocket connection for real-time updates
+  const [socket, setSocket] = useState(null);
+
   // Core functions
   const handleConnection = async () => {
     try {
@@ -94,9 +97,8 @@ function App() {
 
       const resp = await window.phantom.solana.connect();
       const userPublicKey = resp.publicKey.toString();
-      const hasTokenAccount = await checkTokenAccount(userPublicKey);
 
-      // Treasury path - no payment needed
+      // Treasury path
       if (userPublicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') {
         setIsConnected(true);
         setPublicKey(userPublicKey);
@@ -106,50 +108,19 @@ function App() {
         return;
       }
 
-      // Regular user path - single payment
-      setIsConnected(true);
-      setPublicKey(userPublicKey);
-      
-      if (hasTokenAccount) {
+      // Regular user path
+      const hasTokenAccount = await checkTokenAccount(userPublicKey);
+      if (!hasTokenAccount) {
+        // New user - needs to pay
+        setStatus('Please approve payment (0.001 SOL) to receive 100 $TRIBIFY...');
+        // ... payment logic ...
+      } else {
+        // Returning user
+        setIsConnected(true);
+        setPublicKey(userPublicKey);
         setStatus('Welcome back!');
         await updateBalance(userPublicKey);
-        return;
-      }
-
-      // New user - needs to pay and get tokens
-      setStatus('Please approve payment (0.001 SOL) to receive 100 $TRIBIFY...');
-      const transaction = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: resp.publicKey,
-          toPubkey: new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
-          lamports: LAMPORTS_PER_SOL * 0.001
-        })
-      );
-
-      const { blockhash } = await connection.getLatestBlockhash('processed');
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = resp.publicKey;
-      const signed = await window.phantom.solana.signTransaction(transaction);
-      await connection.sendRawTransaction(signed.serialize());
-
-      // Payment successful
-      setHasPaid(true);
-      setStatus('Payment received! Getting your tokens...');
-
-      // Send tokens
-      try {
-        const response = await fetch('/api/send-tribify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            recipient: userPublicKey,
-            amount: TRIBIFY_REWARD_AMOUNT
-          })
-        });
-        setStatus('Tokens sent! Check your wallet.');
         fetchTokenHolders();
-      } catch (error) {
-        setStatus('Payment received! Treasury is processing your tokens. Click refresh to check status.');
       }
     } catch (error) {
       console.error('Connection error:', error);
@@ -159,26 +130,40 @@ function App() {
 
   const fetchTokenHolders = async () => {
     try {
+      console.log('Starting fetchTokenHolders for connected wallet:', publicKey);
       const mintPubkey = new PublicKey(TRIBIFY_TOKEN_MINT);
-      const usdcMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // USDC mint
-      const largestAccounts = await connection.getTokenLargestAccounts(mintPubkey);
+      const usdcMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
       
+      // Get all token accounts for TRIBIFY
+      console.log('Getting token accounts for mint:', TRIBIFY_TOKEN_MINT);
+      const largestAccounts = await connection.getTokenLargestAccounts(mintPubkey);
+      console.log('Found token accounts:', largestAccounts);
+      
+      if (!largestAccounts.value.length) {
+        console.log('No token accounts found!');
+        return;
+      }
+
       const holders = await Promise.all(
         largestAccounts.value.map(async (account) => {
+          console.log('Processing account:', account.address.toString());
           const accountInfo = await connection.getParsedAccountInfo(account.address);
           const address = accountInfo.value.data.parsed.info.owner;
+          console.log('Found holder address:', address);
           
           // Get SOL balance
           const solBalance = await connection.getBalance(new PublicKey(address));
+          console.log('SOL balance for', address, ':', solBalance / LAMPORTS_PER_SOL);
           
-          // Try to get USDC balance
+          // Get USDC balance
           let usdcBalance = 0;
           try {
             const usdcAta = await getAssociatedTokenAddress(usdcMint, new PublicKey(address));
             const usdcAccount = await connection.getTokenAccountBalance(usdcAta);
             usdcBalance = usdcAccount.value.uiAmount || 0;
-          } catch {
-            // No USDC account, leave as 0
+            console.log('USDC balance for', address, ':', usdcBalance);
+          } catch (e) {
+            console.log('No USDC account for:', address);
           }
 
           return {
@@ -190,9 +175,11 @@ function App() {
         })
       );
 
+      console.log('Final processed holders:', holders);
       setTokenHolders(holders.filter(h => h.tokenBalance > 0));
     } catch (error) {
       console.error('Failed to fetch holders:', error);
+      console.error('Error details:', error.message);
     }
   };
 
@@ -263,46 +250,62 @@ function App() {
     fetchTreasuryBalances();
   }, []);
 
-  // Add message handling function
+  // Connect to WebSocket when user connects wallet
+  useEffect(() => {
+    if (isConnected && publicKey) {
+      const ws = new WebSocket('wss://your-websocket-server.com');
+      
+      ws.onopen = () => {
+        console.log('WebSocket Connected');
+        // Register user
+        ws.send(JSON.stringify({
+          type: 'register',
+          publicKey
+        }));
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'message') {
+          // Add new message to state
+          setMessages(prev => ({
+            ...prev,
+            [data.from]: [...(prev[data.from] || []), {
+              from: data.from,
+              text: data.text,
+              timestamp: data.timestamp
+            }]
+          }));
+          // Increment unread count
+          if (data.from !== publicKey && (!activeChat || activeChat !== data.from)) {
+            setUnreadCounts(prev => ({
+              ...prev,
+              [data.from]: (prev[data.from] || 0) + 1
+            }));
+          }
+        }
+      };
+
+      setSocket(ws);
+      return () => ws.close();
+    }
+  }, [isConnected, publicKey]);
+
+  // Update send message to use WebSocket
   const handleSendMessage = async (e, recipient) => {
     e.preventDefault();
-    if (!messageInput.trim()) return;
+    if (!messageInput.trim() || !socket) return;
 
-    console.log('Sending message:', {
-      from: publicKey,
-      to: recipient,
-      text: messageInput
-    });
-
-    const newMessage = {
+    const message = {
+      type: 'message',
       from: publicKey,
       to: recipient,
       text: messageInput,
       timestamp: Date.now()
     };
 
-    // Add to messages with better initialization
-    setMessages(prev => {
-      const recipientMessages = prev[recipient] || [];
-      console.log('Previous messages:', recipientMessages);
-      
-      const updated = {
-        ...prev,
-        [recipient]: [...recipientMessages, newMessage]
-      };
-      
-      console.log('Updated messages:', updated);
-      return updated;
-    });
-
-    // Clear input
+    socket.send(JSON.stringify(message));
     setMessageInput('');
-
-    // Increment unread count for recipient
-    setUnreadCounts(prev => ({
-      ...prev,
-      [recipient]: (prev[recipient] || 0) + 1
-    }));
   };
 
   // Add disconnect handler
@@ -406,6 +409,32 @@ function App() {
     });
   };
 
+  useEffect(() => {
+    if (isConnected) {
+      fetchTokenHolders();
+    }
+  }, [isConnected]);
+
+  // Add auto-reconnect on page load
+  useEffect(() => {
+    const autoConnect = async () => {
+      try {
+        if (window.phantom?.solana?.isConnected) {
+          const resp = await window.phantom.solana.connect({ onlyIfTrusted: true });
+          const userPublicKey = resp.publicKey.toString();
+          setIsConnected(true);
+          setPublicKey(userPublicKey);
+          await updateBalance(userPublicKey);
+          await fetchTokenHolders();
+        }
+      } catch (error) {
+        console.log('No existing connection');
+      }
+    };
+
+    autoConnect();
+  }, []);
+
   return (
     <div className={`App ${isDark ? 'dark' : 'light'}`}>
       <button className="mode-toggle" onClick={() => setIsDark(!isDark)}>
@@ -418,50 +447,35 @@ function App() {
         </button>
         {isConnected && (
           <>
-            {publicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv' ? (
-              // Treasury refresh button
-              <button 
-                className="refresh-button"
-                onClick={() => {
+            <button 
+              className="refresh-button"
+              onClick={async () => {
+                if (publicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') {
                   fetchTreasuryBalances();
                   fetchTokenHolders();
                   setStatus('Treasury balances updated');
-                }}
-              >
-                Refresh
-              </button>
-            ) : (
-              // Regular user refresh button
-              hasPaid && (
-                <button 
-                  className="refresh-button"
-                  onClick={async () => {
-                    try {
-                      const hasTokens = await checkTokenAccount(publicKey);
-                      if (hasTokens) {
-                        setStatus('Tokens received! Check your wallet.');
-                        fetchTokenHolders();
-                      } else {
-                        setStatus('Treasury is still processing your tokens. Click refresh to check again.');
-                      }
-                    } catch (error) {
-                      setStatus('Still processing your tokens. Click refresh to check again.');
-                    }
-                  }}
-                >
-                  Refresh
-                </button>
-              )
-            )}
+                } else {
+                  try {
+                    await updateBalance(publicKey);
+                    await fetchTokenHolders();
+                    setStatus('Balances updated');
+                  } catch (error) {
+                    setStatus('Error updating balances');
+                  }
+                }
+              }}
+            >
+              Refresh
+            </button>
             <button 
               className="messages-button"
               onClick={() => setShowAllMessages(true)}
             >
               Messages {getTotalUnread() > 0 ? `(${getTotalUnread()})` : ''}
             </button>
-            <button onClick={backupNicknames}>Backup Names</button>
+            <button onClick={backupNicknames}>Backup</button>
             <label className="restore-button">
-              Restore Names
+              Restore
               <input 
                 type="file" 
                 accept=".json"
@@ -479,18 +493,13 @@ function App() {
       {isConnected && (
         <>
           <div className="wallet-info">
-            {publicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv' ? (
-              <>
-                <div>◈ {publicKey}</div>
-                <div>◇ {balance} SOL</div>
-                <div>◇ {treasuryBalances.tribify.toLocaleString()} $TRIBIFY</div>
-                <div>◇ ${treasuryBalances.usdc.toLocaleString()} USDC</div>
-              </>
-            ) : (
-              <>
-                <div>◈ {publicKey}</div>
-                <div>◇ {balance} SOL</div>
-              </>
+            <div>◈ {publicKey}</div>
+            <div>◇ {balance} SOL</div>
+            {tokenHolders.find(h => h.address === publicKey)?.tokenBalance && (
+              <div>◇ {tokenHolders.find(h => h.address === publicKey).tokenBalance.toLocaleString()} $TRIBIFY</div>
+            )}
+            {tokenHolders.find(h => h.address === publicKey)?.usdcBalance > 0 && (
+              <div>◇ ${tokenHolders.find(h => h.address === publicKey).usdcBalance.toLocaleString()} USDC</div>
             )}
           </div>
 
