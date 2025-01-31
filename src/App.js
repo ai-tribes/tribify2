@@ -68,6 +68,8 @@ function App() {
     tribify: 0
   });
   const [activeChat, setActiveChat] = useState(null);  // Will hold the address we're chatting with
+  const [messages, setMessages] = useState({});  // Object to store messages by chat address
+  const [messageInput, setMessageInput] = useState('');  // For the input field
 
   // Core functions
   const handleConnection = async () => {
@@ -262,6 +264,28 @@ function App() {
     fetchTreasuryBalances();
   }, []);
 
+  // Add message handling function
+  const handleSendMessage = async (e, recipient) => {
+    e.preventDefault();
+    if (!messageInput.trim()) return;
+
+    const newMessage = {
+      from: publicKey,
+      to: recipient,
+      text: messageInput,
+      timestamp: Date.now()
+    };
+
+    // Add to messages
+    setMessages(prev => ({
+      ...prev,
+      [recipient]: [...(prev[recipient] || []), newMessage]
+    }));
+
+    // Clear input
+    setMessageInput('');
+  };
+
   return (
     <div className={`App ${isDark ? 'dark' : 'light'}`}>
       <button className="mode-toggle" onClick={() => setIsDark(!isDark)}>
@@ -350,13 +374,16 @@ function App() {
                   <button onClick={() => setActiveChat(null)}>×</button>
                 </div>
                 <div className="chat-messages">
-                  {/* Messages will go here */}
+                  {(messages[activeChat] || []).map((msg, i) => (
+                    <div key={i} className={`message ${msg.from === publicKey ? 'sent' : 'received'}`}>
+                      {msg.text}
+                    </div>
+                  ))}
                 </div>
-                <form className="chat-input" onSubmit={(e) => {
-                  e.preventDefault();
-                  alert('Messaging coming soon!');
-                }}>
+                <form className="chat-input" onSubmit={(e) => handleSendMessage(e, activeChat)}>
                   <input 
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
                     placeholder="Type a message..."
                     autoFocus
                   />
