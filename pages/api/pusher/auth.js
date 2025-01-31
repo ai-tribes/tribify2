@@ -9,14 +9,25 @@ const pusher = new Pusher({
 });
 
 export default async function handler(req, res) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   const { socket_id, channel_name } = req.body;
   const { publicKey } = req.query;
 
-  console.log('Pusher auth request received:', {
+  console.log('Auth request:', {
     socket_id,
     channel_name,
     publicKey,
-    timestamp: new Date().toISOString()
+    method: req.method
   });
 
   try {
@@ -30,7 +41,6 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'No public key provided' });
     }
 
-    // Generate auth signature for presence channel
     const authResponse = pusher.authorizeChannel(
       socket_id,
       channel_name,
@@ -42,11 +52,11 @@ export default async function handler(req, res) {
         }
       }
     );
-    
+
     console.log('Auth successful:', authResponse);
     res.json(authResponse);
   } catch (error) {
-    console.error('Pusher auth error:', error);
+    console.error('Auth error:', error);
     res.status(500).json({ error: 'Failed to authorize channel' });
   }
 } 
