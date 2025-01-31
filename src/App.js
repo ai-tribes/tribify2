@@ -132,13 +132,6 @@ const TokenHolderGraph = ({ holders, onNodeClick }) => {
   );
 };
 
-// Update Pusher initialization with auth endpoint
-const pusher = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
-  cluster: process.env.REACT_APP_PUSHER_CLUSTER,
-  encrypted: true,
-  authEndpoint: '/api/pusher/auth'
-});
-
 function App() {
   // Core states only
   const [status, setStatus] = useState('');
@@ -185,6 +178,20 @@ function App() {
   // Add new state for tribify prompt responses
   const [tribifyResponses, setTribifyResponses] = useState([]);
   const [tribifyInput, setTribifyInput] = useState('');
+
+  // Move Pusher initialization inside component
+  const pusher = React.useMemo(() => {
+    return new Pusher(process.env.REACT_APP_PUSHER_KEY, {
+      cluster: 'eu',
+      encrypted: true,
+      authEndpoint: publicKey ? `/api/pusher/auth?publicKey=${publicKey}` : null,
+      auth: {
+        params: {
+          publicKey: publicKey || null
+        }
+      }
+    });
+  }, [publicKey]); // Re-initialize when publicKey changes
 
   // Core functions
   const handleConnection = async () => {
@@ -446,30 +453,33 @@ function App() {
     fetchTreasuryBalances();
   }, []);
 
-  // Update the WebSocket connection to use existing Pusher instance
+  // Update the presence channel subscription
   useEffect(() => {
     if (isConnected && publicKey) {
       console.log('Attempting to subscribe to presence channel...');
       
+      // Use proper presence channel name
       const presenceChannel = pusher.subscribe('presence-tribify');
-      const userChannel = pusher.subscribe(publicKey);
       
+      // Debug subscription status
       presenceChannel.bind('pusher:subscription_succeeded', members => {
         console.log('Presence subscription succeeded!', members);
         const onlineMembers = new Set();
         members.each(member => {
-          console.log('Found online member:', member.id);
+          console.log('Found online member:', member.id, member.info);
           onlineMembers.add(member.id);
         });
         setOnlineUsers(onlineMembers);
       });
 
+      // Debug subscription errors
       presenceChannel.bind('pusher:subscription_error', error => {
         console.error('Presence subscription failed:', error);
       });
 
+      // Handle member join/leave with user info
       presenceChannel.bind('pusher:member_added', member => {
-        console.log('Member joined:', member.id);
+        console.log('Member joined:', member.id, member.info);
         setOnlineUsers(prev => new Set([...prev, member.id]));
       });
 
@@ -482,29 +492,8 @@ function App() {
         });
       });
 
-      // Handle messages
-      userChannel.bind('message', data => {
-        setMessages(prev => ({
-          ...prev,
-          [data.from]: [...(prev[data.from] || []), {
-            from: data.from,
-            text: data.text,
-            timestamp: data.timestamp,
-            delivered: true
-          }]
-        }));
-        
-        if (data.from !== activeChat) {
-          setUnreadCounts(prev => ({
-            ...prev,
-            [data.from]: (prev[data.from] || 0) + 1
-          }));
-        }
-      });
-
       return () => {
         pusher.unsubscribe('presence-tribify');
-        pusher.unsubscribe(publicKey);
       };
     }
   }, [isConnected, publicKey]);
