@@ -187,14 +187,15 @@ function App() {
       cluster: 'eu',
       forceTLS: true,
       enabledTransports: ['ws', 'wss'],
+      authTransport: 'ajax',
+      authEndpoint: '/api/pusher/auth',
       auth: {
         headers: {
           'Content-Type': 'application/json',
         },
         params: {
           publicKey: publicKey
-        },
-        endpoint: `/api/pusher/auth?publicKey=${publicKey}`
+        }
       }
     });
 
