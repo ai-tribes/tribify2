@@ -71,6 +71,9 @@ function App() {
   const [messages, setMessages] = useState({});  // Object to store messages by chat address
   const [messageInput, setMessageInput] = useState('');  // For the input field
   const [hasPaid, setHasPaid] = useState(false);
+  const [unreadCounts, setUnreadCounts] = useState({});  // { address: count }
+  const [showInbox, setShowInbox] = useState(false);
+  const [showAllMessages, setShowAllMessages] = useState(false);
 
   // Core functions
   const handleConnection = async () => {
@@ -287,6 +290,12 @@ function App() {
 
     // Clear input
     setMessageInput('');
+
+    // Increment unread count for recipient
+    setUnreadCounts(prev => ({
+      ...prev,
+      [recipient]: (prev[recipient] || 0) + 1
+    }));
   };
 
   // Add disconnect handler
@@ -301,6 +310,27 @@ function App() {
     } catch (error) {
       console.error('Disconnect error:', error);
     }
+  };
+
+  // Add function to clear unread when opening chat
+  const handleOpenChat = (address) => {
+    setActiveChat(address);
+    // Clear unread count when opening chat
+    setUnreadCounts(prev => ({
+      ...prev,
+      [address]: 0
+    }));
+  };
+
+  // Add inbox click handler
+  const handleInboxClick = (address) => {
+    setShowInbox(true);
+    setActiveChat(address);
+  };
+
+  // Add helper function to get total unread
+  const getTotalUnread = () => {
+    return Object.values(unreadCounts).reduce((a, b) => a + b, 0);
   };
 
   return (
@@ -350,6 +380,12 @@ function App() {
                 </button>
               )
             )}
+            <button 
+              className="messages-button"
+              onClick={() => setShowAllMessages(true)}
+            >
+              Messages {getTotalUnread() > 0 ? `(${getTotalUnread()})` : ''}
+            </button>
             <button className="disconnect-button" onClick={handleDisconnect}>
               Disconnect
             </button>
@@ -411,9 +447,15 @@ function App() {
                           </div>
                           <div 
                             className="send-message"
-                            onClick={() => setActiveChat(holder.address)}
+                            onClick={() => handleOpenChat(holder.address)}
                           >
                             + Send message
+                          </div>
+                          <div 
+                            className="inbox-status"
+                            onClick={() => handleInboxClick(holder.address)}
+                          >
+                            {unreadCounts[holder.address] || '0'} unread messages
                           </div>
                         </>
                       )}
@@ -428,11 +470,20 @@ function App() {
               ))}
             </div>
 
-            {activeChat && (
+            {(activeChat || showInbox) && (
               <div className="chat-box">
                 <div className="chat-header">
-                  <div>Chat with: {nicknames[activeChat] || activeChat}</div>
-                  <button onClick={() => setActiveChat(null)}>×</button>
+                  <div>
+                    {showInbox ? (
+                      <>Inbox: {nicknames[activeChat] || activeChat}</>
+                    ) : (
+                      <>Chat with: {nicknames[activeChat] || activeChat}</>
+                    )}
+                  </div>
+                  <button onClick={() => {
+                    setActiveChat(null);
+                    setShowInbox(false);
+                  }}>×</button>
                 </div>
                 <div className="chat-messages">
                   {(messages[activeChat] || []).map((msg, i) => (
@@ -465,6 +516,38 @@ function App() {
                 {DOCS_CONTENT.split('\n').map((line, i) => (
                   <p key={i}>{line}</p>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {showAllMessages && (
+            <div className="messages-box">
+              <div className="messages-header">
+                <h3>Messages</h3>
+                <button onClick={() => setShowAllMessages(false)}>×</button>
+              </div>
+              <div className="messages-list">
+                {getTotalUnread() === 0 ? (
+                  <div className="empty-messages">
+                    No Messages! Your inbox is empty!
+                  </div>
+                ) : (
+                  tokenHolders.map(holder => (
+                    unreadCounts[holder.address] > 0 && (
+                      <div key={holder.address} className="message-item" onClick={() => {
+                        handleInboxClick(holder.address);
+                        setShowAllMessages(false);
+                      }}>
+                        <div className="message-from">
+                          {nicknames[holder.address] || holder.address}
+                        </div>
+                        <div className="unread-count">
+                          {unreadCounts[holder.address]} unread
+                        </div>
+                      </div>
+                    )
+                  ))
+                )}
               </div>
             </div>
           )}

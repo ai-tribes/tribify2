@@ -479,7 +479,7 @@ button:hover {
   width: 100%;
 }
 
-.nickname, .send-message {
+.nickname, .send-message, .inbox-status {
   font-size: 20px;
   font-weight: 600;
   opacity: 0.8;
@@ -491,7 +491,7 @@ button:hover {
   text-align: right;
 }
 
-.nickname:hover, .send-message:hover {
+.nickname:hover, .send-message:hover, .inbox-status:hover {
   opacity: 1;
 }
 
@@ -677,4 +677,78 @@ button {
 
 .disconnect-button:hover {
   opacity: 1;
+}
+
+.inbox-status {
+  font-size: 16px;
+  opacity: 0.8;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: #2ecc71;
+  text-align: right;
+}
+
+.inbox-status:hover {
+  opacity: 1;
+}
+
+.messages-button {
+  background: #2ecc71;
+  color: white;
+  border-color: #2ecc71;
+}
+
+.messages-box {
+  position: fixed;
+  top: 100px;
+  right: 40px;
+  width: 300px;
+  background: var(--bg-color);
+  border: 1px solid currentColor;
+  z-index: 1000;
+}
+
+.messages-header {
+  padding: 15px;
+  border-bottom: 1px solid currentColor;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.messages-header h3 {
+  margin: 0;
+}
+
+.messages-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.message-item {
+  padding: 15px;
+  border-bottom: 1px solid currentColor;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.message-item:hover {
+  opacity: 1;
+}
+
+.message-from {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.unread-count {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.empty-messages {
+  padding: 30px 15px;
+  text-align: center;
+  opacity: 0.7;
+  font-style: italic;
 } 
