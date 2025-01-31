@@ -273,29 +273,30 @@ function App() {
     lastAuthError: null
   });
 
-  // Update Pusher initialization with production settings
+  // Update Pusher initialization with consistent API URL
   const pusher = React.useMemo(() => {
     if (!publicKey) {
       console.log('No public key, skipping Pusher init');
       return null;
     }
 
+    const authEndpoint = `${process.env.REACT_APP_API_URL}/pusher/auth`;
+
     console.log('Initializing Pusher with:', {
       key: process.env.REACT_APP_PUSHER_KEY,
       cluster: process.env.REACT_APP_PUSHER_CLUSTER,
-      authEndpoint: 'https://www.tribify.ai/api/pusher/auth',
+      authEndpoint,
       publicKey
     });
 
     const pusherClient = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
       cluster: process.env.REACT_APP_PUSHER_CLUSTER,
-      forceTLS: true,
+      forceTLS: false, // Allow non-TLS for localhost
       enabledTransports: ['ws', 'wss'],
-      authEndpoint: 'https://www.tribify.ai/api/pusher/auth',
+      authEndpoint,
       auth: {
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
         },
         params: {
           publicKey: publicKey
@@ -306,7 +307,7 @@ function App() {
     // Add more detailed connection logging
     pusherClient.connection.bind('connecting', () => {
       console.log('Pusher connecting...', {
-        endpoint: 'https://www.tribify.ai/api/pusher/auth',
+        endpoint: authEndpoint,
         publicKey,
         state: pusherClient.connection.state
       });
@@ -357,7 +358,7 @@ function App() {
     return pusherClient;
   }, [publicKey]);
 
-  // Add presence channel subscription with better logging
+  // Update presence channel subscription
   useEffect(() => {
     if (!pusher || !publicKey) {
       console.log('Skipping presence setup:', { 
@@ -373,8 +374,10 @@ function App() {
       publicKey
     });
 
+    // Subscribe to presence channel
     const channel = pusher.subscribe('presence-tribify');
 
+    // Handle successful subscription
     channel.bind('pusher:subscription_succeeded', members => {
       console.log('Presence subscription succeeded:', {
         count: members.count,
@@ -382,6 +385,7 @@ function App() {
         members: Array.from(members.members)
       });
 
+      // Update online users from members list
       const online = new Set();
       members.each(member => {
         console.log('Member online:', member);
@@ -390,13 +394,36 @@ function App() {
       setOnlineUsers(online);
     });
 
+    // Handle member added
+    channel.bind('pusher:member_added', member => {
+      console.log('Member joined:', member);
+      setOnlineUsers(prev => new Set([...prev, member.id]));
+    });
+
+    // Handle member removed
+    channel.bind('pusher:member_removed', member => {
+      console.log('Member left:', member);
+      setOnlineUsers(prev => {
+        const next = new Set(prev);
+        next.delete(member.id);
+        return next;
+      });
+    });
+
+    // Handle subscription error
     channel.bind('pusher:subscription_error', error => {
-      console.error('Presence subscription failed:', error);
+      console.error('Presence subscription failed:', {
+        error,
+        state: pusher.connection.state,
+        socketId: pusher.connection.socket_id
+      });
     });
 
     return () => {
       console.log('Cleaning up presence channel');
-      pusher.unsubscribe('presence-tribify');
+      if (pusher && pusher.connection.state === 'connected') {
+        pusher.unsubscribe('presence-tribify');
+      }
     };
   }, [pusher, publicKey]);
 
