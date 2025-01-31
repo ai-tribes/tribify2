@@ -67,6 +67,7 @@ function App() {
     usdc: 0,
     tribify: 0
   });
+  const [activeChat, setActiveChat] = useState(null);  // Will hold the address we're chatting with
 
   // Core functions
   const handleConnection = async () => {
@@ -289,46 +290,80 @@ function App() {
             )}
           </div>
 
-          <div className="token-holders">
-            <h3>TRIBIFY Holders</h3>
-            {tokenHolders.map((holder, i) => (
-              <div key={i} className="holder-item">
-                <div className="address-container">
-                  <div>◈ {holder.address}</div>
-                  {editingNickname === holder.address ? (
-                    <form 
-                      className="nickname-form"
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        const nickname = e.target.nickname.value;
-                        setNicknames({...nicknames, [holder.address]: nickname});
-                        setEditingNickname(null);
-                      }}
-                    >
-                      <input 
-                        name="nickname"
-                        defaultValue={nicknames[holder.address] || ''}
-                        placeholder="Enter nickname"
-                        autoFocus
-                      />
-                      <button type="submit">✓</button>
-                    </form>
-                  ) : (
-                    <div 
-                      className="nickname"
-                      onClick={() => setEditingNickname(holder.address)}
-                    >
-                      {nicknames[holder.address] || '+ Add nickname'}
+          <div className="main-layout">
+            <div className="token-holders">
+              <h3>TRIBIFY Holders</h3>
+              {tokenHolders.map((holder, i) => (
+                <div key={i} className="holder-item">
+                  <div className="address-container">
+                    <div>◈ {holder.address}</div>
+                    <div className="actions">
+                      {editingNickname === holder.address ? (
+                        <form 
+                          className="nickname-form"
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            const nickname = e.target.nickname.value;
+                            setNicknames({...nicknames, [holder.address]: nickname});
+                            setEditingNickname(null);
+                          }}
+                        >
+                          <input 
+                            name="nickname"
+                            defaultValue={nicknames[holder.address] || ''}
+                            placeholder="Enter nickname"
+                            autoFocus
+                          />
+                          <button type="submit">✓</button>
+                        </form>
+                      ) : (
+                        <>
+                          <div 
+                            className="nickname"
+                            onClick={() => setEditingNickname(holder.address)}
+                          >
+                            {nicknames[holder.address] || '+ Add nickname'}
+                          </div>
+                          <div 
+                            className="send-message"
+                            onClick={() => setActiveChat(holder.address)}
+                          >
+                            + Send message
+                          </div>
+                        </>
+                      )}
                     </div>
-                  )}
+                  </div>
+                  <div className="balances">
+                    <div>◇ {(holder.tokenBalance || 0).toLocaleString()} $TRIBIFY</div>
+                    <div>◇ {(holder.solBalance || 0).toLocaleString()} SOL</div>
+                    <div>◇ ${(holder.usdcBalance || 0).toLocaleString()} USDC</div>
+                  </div>
                 </div>
-                <div className="balances">
-                  <div>◇ {(holder.tokenBalance || 0).toLocaleString()} $TRIBIFY</div>
-                  <div>◇ {(holder.solBalance || 0).toLocaleString()} SOL</div>
-                  <div>◇ ${(holder.usdcBalance || 0).toLocaleString()} USDC</div>
+              ))}
+            </div>
+
+            {activeChat && (
+              <div className="chat-box">
+                <div className="chat-header">
+                  <div>Chat with: {nicknames[activeChat] || activeChat}</div>
+                  <button onClick={() => setActiveChat(null)}>×</button>
                 </div>
+                <div className="chat-messages">
+                  {/* Messages will go here */}
+                </div>
+                <form className="chat-input" onSubmit={(e) => {
+                  e.preventDefault();
+                  alert('Messaging coming soon!');
+                }}>
+                  <input 
+                    placeholder="Type a message..."
+                    autoFocus
+                  />
+                  <button type="submit">Send</button>
+                </form>
               </div>
-            ))}
+            )}
           </div>
 
           {!showDocs ? (
