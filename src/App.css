@@ -206,9 +206,16 @@ button:hover {
 
 /* Status Messages */
 .status {
-  font-size: 18px;
-  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin: 20px 0;
+}
+
+.refresh-button {
+  margin: 0;  /* Override default button margin */
+  padding: 8px 16px;
+  font-size: 16px;
 }
 
 .App-header {
@@ -651,4 +658,23 @@ button {
 .chat-messages {
   display: flex;
   flex-direction: column;
+}
+
+.connection-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.connection-group button {
+  margin: 0;  /* Remove default button margin */
+}
+
+.disconnect-button {
+  opacity: 0.7;
+  border-style: dashed;
+}
+
+.disconnect-button:hover {
+  opacity: 1;
 } 

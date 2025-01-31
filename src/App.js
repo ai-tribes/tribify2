@@ -70,6 +70,7 @@ function App() {
   const [activeChat, setActiveChat] = useState(null);  // Will hold the address we're chatting with
   const [messages, setMessages] = useState({});  // Object to store messages by chat address
   const [messageInput, setMessageInput] = useState('');  // For the input field
+  const [hasPaid, setHasPaid] = useState(false);
 
   // Core functions
   const handleConnection = async () => {
@@ -115,41 +116,30 @@ function App() {
       const signed = await window.phantom.solana.signTransaction(transaction);
       await connection.sendRawTransaction(signed.serialize());
 
-      // They paid! Let them in
-      setIsConnected(true);
-      setPublicKey(userPublicKey);
+      // After payment is confirmed
+      if (await handlePayment(userPublicKey)) {
+        setIsConnected(true);
+        setPublicKey(userPublicKey);
+        setStatus('Payment received! Getting your tokens...');
 
-      if (!hasTokenAccount) {
-        // New user - need to create account first
-        setStatus('Creating your token account...');
-      }
-
-      // Send tokens with retries
-      let retries = 3;
-      while (retries > 0) {
+        // First attempt
         try {
           const response = await fetch('/api/send-tribify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               recipient: userPublicKey,
-              amount: TRIBIFY_REWARD_AMOUNT,
-              createAccount: !hasTokenAccount  // Tell API if we need account creation
+              amount: TRIBIFY_REWARD_AMOUNT
             })
           });
 
           const data = await response.json();
           setStatus('Tokens sent! Check your wallet.');
           fetchTokenHolders();
-          break;
         } catch (error) {
-          retries--;
-          if (retries === 0) {
-            setStatus('Connected, but token send failed. Please try refreshing.');
-          } else {
-            setStatus(`Retrying token send (${retries} attempts left)...`);
-            await new Promise(r => setTimeout(r, 1000));
-          }
+          // If first attempt fails, show comforting message
+          setStatus('Payment received! Treasury is processing your tokens. You can refresh to check status.');
+          // Treasury will keep retrying in the background
         }
       }
     } catch (error) {
@@ -269,6 +259,12 @@ function App() {
     e.preventDefault();
     if (!messageInput.trim()) return;
 
+    console.log('Sending message:', {
+      from: publicKey,
+      to: recipient,
+      text: messageInput
+    });
+
     const newMessage = {
       from: publicKey,
       to: recipient,
@@ -276,14 +272,64 @@ function App() {
       timestamp: Date.now()
     };
 
-    // Add to messages
-    setMessages(prev => ({
-      ...prev,
-      [recipient]: [...(prev[recipient] || []), newMessage]
-    }));
+    // Add to messages with better initialization
+    setMessages(prev => {
+      const recipientMessages = prev[recipient] || [];
+      console.log('Previous messages:', recipientMessages);
+      
+      const updated = {
+        ...prev,
+        [recipient]: [...recipientMessages, newMessage]
+      };
+      
+      console.log('Updated messages:', updated);
+      return updated;
+    });
 
     // Clear input
     setMessageInput('');
+  };
+
+  // Update the payment handling
+  const handlePayment = async (userPublicKey) => {
+    try {
+      setStatus('Please approve payment (0.001 SOL) to receive 100 $TRIBIFY...');
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: new PublicKey(userPublicKey),
+          toPubkey: new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
+          lamports: LAMPORTS_PER_SOL * 0.001
+        })
+      );
+
+      const { blockhash } = await connection.getLatestBlockhash('processed');
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = new PublicKey(userPublicKey);
+      const signed = await window.phantom.solana.signTransaction(transaction);
+      await connection.sendRawTransaction(signed.serialize());
+
+      // Payment successful
+      setHasPaid(true);
+      return true;
+    } catch (error) {
+      console.error('Payment failed:', error);
+      setStatus('Payment failed. Please try again.');
+      return false;
+    }
+  };
+
+  // Add disconnect handler
+  const handleDisconnect = async () => {
+    try {
+      await window.phantom.solana.disconnect();
+      setIsConnected(false);
+      setPublicKey(null);
+      setBalance(null);
+      setHasPaid(false);
+      setStatus('');
+    } catch (error) {
+      console.error('Disconnect error:', error);
+    }
   };
 
   return (
@@ -292,9 +338,53 @@ function App() {
         {isDark ? '◯' : '●'}
       </button>
 
-      <button onClick={handleConnection}>
-        {isConnected ? 'Connected' : 'Connect Wallet'}
-      </button>
+      <div className="connection-group">
+        <button onClick={handleConnection}>
+          {isConnected ? 'Connected' : 'Connect Wallet'}
+        </button>
+        {isConnected && (
+          <>
+            {publicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv' ? (
+              // Treasury refresh button
+              <button 
+                className="refresh-button"
+                onClick={() => {
+                  fetchTreasuryBalances();
+                  fetchTokenHolders();
+                  setStatus('Treasury balances updated');
+                }}
+              >
+                Refresh
+              </button>
+            ) : (
+              // Regular user refresh button
+              hasPaid && (
+                <button 
+                  className="refresh-button"
+                  onClick={async () => {
+                    try {
+                      const hasTokens = await checkTokenAccount(publicKey);
+                      if (hasTokens) {
+                        setStatus('Tokens received! Check your wallet.');
+                        fetchTokenHolders();
+                      } else {
+                        setStatus('Treasury is still processing your tokens. Click refresh to check again.');
+                      }
+                    } catch (error) {
+                      setStatus('Still processing your tokens. Click refresh to check again.');
+                    }
+                  }}
+                >
+                  Refresh
+                </button>
+              )
+            )}
+            <button className="disconnect-button" onClick={handleDisconnect}>
+              Disconnect
+            </button>
+          </>
+        )}
+      </div>
 
       {isConnected && (
         <>
@@ -410,7 +500,11 @@ function App() {
         </>
       )}
 
-      {status && <div className="status">{status}</div>}
+      {status && (
+        <div className="status">
+          {status}
+        </div>
+      )}
     </div>
   );
 }
