@@ -4,6 +4,7 @@ import { Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL, PublicKey } f
 import { getAssociatedTokenAddress } from '@solana/spl-token';
 import ForceGraph2D from 'react-force-graph-2d';
 import * as d3 from 'd3-force';
+import Pusher from 'pusher-js';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -131,6 +132,13 @@ const TokenHolderGraph = ({ holders, onNodeClick }) => {
   );
 };
 
+// Update Pusher initialization with auth endpoint
+const pusher = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
+  cluster: process.env.REACT_APP_PUSHER_CLUSTER,
+  encrypted: true,
+  authEndpoint: '/api/pusher/auth'
+});
+
 function App() {
   // Core states only
   const [status, setStatus] = useState('');
@@ -168,6 +176,9 @@ function App() {
   // Add state for password
   const [friendPassword, setFriendPassword] = useState(localStorage.getItem('friend_password'));
 
+  // Add new state for online users
+  const [onlineUsers, setOnlineUsers] = useState(new Set());
+
   // Core functions
   const handleConnection = async () => {
     try {
@@ -180,6 +191,9 @@ function App() {
 
       const resp = await window.phantom.solana.connect();
       const userPublicKey = resp.publicKey.toString();
+
+      // Add ourselves to online users immediately
+      setOnlineUsers(prev => new Set([...prev, userPublicKey]));
 
       // Treasury path
       if (userPublicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') {
@@ -425,68 +439,124 @@ function App() {
     fetchTreasuryBalances();
   }, []);
 
-  // Connect to WebSocket when user connects wallet
+  // Update the WebSocket connection to use existing Pusher instance
   useEffect(() => {
     if (isConnected && publicKey) {
-      const ws = new WebSocket('wss://your-websocket-server.com');
+      // Subscribe to presence channel for online status
+      const presenceChannel = pusher.subscribe('presence-tribify');
+      const userChannel = pusher.subscribe(publicKey);
       
-      ws.onopen = () => {
-        console.log('WebSocket Connected');
-        // Register user
-        ws.send(JSON.stringify({
-          type: 'register',
-          publicKey
+      presenceChannel.bind('pusher:subscription_succeeded', (members) => {
+        console.log('Presence subscription succeeded:', members);
+        // Get all current online members
+        const onlineMembers = new Set();
+        members.each(member => {
+          onlineMembers.add(member.id);
+          console.log('Member online:', member.id);
+        });
+        setOnlineUsers(onlineMembers);
+      });
+
+      presenceChannel.bind('pusher:member_added', member => {
+        console.log('Member added:', member.id);
+        setOnlineUsers(prev => new Set([...prev, member.id]));
+      });
+
+      presenceChannel.bind('pusher:member_removed', member => {
+        console.log('Member removed:', member.id);
+        setOnlineUsers(prev => {
+          const next = new Set(prev);
+          next.delete(member.id);
+          return next;
+        });
+      });
+
+      // Handle messages
+      userChannel.bind('message', data => {
+        setMessages(prev => ({
+          ...prev,
+          [data.from]: [...(prev[data.from] || []), {
+            from: data.from,
+            text: data.text,
+            timestamp: data.timestamp,
+            delivered: true
+          }]
         }));
-      };
-
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type === 'message') {
-          // Add new message to state
-          setMessages(prev => ({
+        
+        if (data.from !== activeChat) {
+          setUnreadCounts(prev => ({
             ...prev,
-            [data.from]: [...(prev[data.from] || []), {
-              from: data.from,
-              text: data.text,
-              timestamp: data.timestamp
-            }]
+            [data.from]: (prev[data.from] || 0) + 1
           }));
-          // Increment unread count
-          if (data.from !== publicKey && (!activeChat || activeChat !== data.from)) {
-            setUnreadCounts(prev => ({
-              ...prev,
-              [data.from]: (prev[data.from] || 0) + 1
-            }));
-          }
         }
-      };
+      });
 
-      setSocket(ws);
-      return () => ws.close();
+      return () => {
+        pusher.unsubscribe('presence-tribify');
+        pusher.unsubscribe(publicKey);
+      };
     }
   }, [isConnected, publicKey]);
 
-  // Update send message to use WebSocket
+  // Update the message handler to use the correct endpoint
   const handleSendMessage = async (e, recipient) => {
     e.preventDefault();
-    if (!messageInput.trim() || !socket) return;
+    if (!messageInput.trim()) return;
 
+    const timestamp = Date.now();
     const message = {
-      type: 'message',
       from: publicKey,
-      to: recipient,
       text: messageInput,
-      timestamp: Date.now()
+      timestamp,
+      delivered: false
     };
 
-    socket.send(JSON.stringify(message));
-    setMessageInput('');
+    // Add to local state immediately
+    setMessages(prev => ({
+      ...prev,
+      [recipient]: [...(prev[recipient] || []), message]
+    }));
+
+    try {
+      const response = await fetch('/api/send-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: publicKey,
+          to: recipient,
+          text: messageInput,
+          timestamp,
+          offline: !onlineUsers.has(recipient)
+        })
+      });
+
+      if (response.ok) {
+        setMessageInput('');
+        // Update message as delivered
+        setMessages(prev => ({
+          ...prev,
+          [recipient]: prev[recipient].map(msg => 
+            msg.timestamp === timestamp ? {...msg, delivered: true} : msg
+          )
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
   };
 
   // Add disconnect handler
   const handleDisconnect = async () => {
     try {
       await window.phantom.solana.disconnect();
+      // Remove ourselves from online users
+      if (publicKey) {
+        setOnlineUsers(prev => {
+          const next = new Set(prev);
+          next.delete(publicKey);
+          return next;
+        });
+      }
       setIsConnected(false);
       setPublicKey(null);
       setBalance(null);
@@ -823,6 +893,9 @@ function App() {
                       {holder.address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' && (
                         <span className="sniper-tag">SNIPER!</span>
                       )}
+                      <span className={`status-indicator ${onlineUsers.has(holder.address) ? 'online' : 'offline'}`}>
+                        ● {onlineUsers.has(holder.address) ? 'ONLINE' : 'OFFLINE'}
+                      </span>
                     </div>
                     <div className="actions">
                       {editingNickname === holder.address ? (
