@@ -179,14 +179,14 @@ function App() {
   const [tribifyResponses, setTribifyResponses] = useState([]);
   const [tribifyInput, setTribifyInput] = useState('');
 
-  // Update Pusher initialization with better error handling
+  // Update Pusher initialization with correct auth endpoint
   const pusher = React.useMemo(() => {
-    if (!publicKey) return null; // Don't create Pusher instance without publicKey
+    if (!publicKey) return null;
 
     const pusherClient = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
       cluster: 'eu',
-      forceTLS: true, // Force TLS
-      enabledTransports: ['ws', 'wss'], // Only use WebSocket
+      forceTLS: true,
+      enabledTransports: ['ws', 'wss'],
       auth: {
         headers: {
           'Content-Type': 'application/json',
@@ -198,17 +198,8 @@ function App() {
       }
     });
 
-    // Add connection event handlers
     pusherClient.connection.bind('connected', () => {
-      console.log('Pusher connected successfully with socket ID:', pusherClient.connection.socket_id);
-    });
-
-    pusherClient.connection.bind('error', error => {
-      console.error('Pusher connection error:', {
-        error,
-        socketId: pusherClient.connection.socket_id,
-        state: pusherClient.connection.state
-      });
+      console.log('Pusher connected with socket ID:', pusherClient.connection.socket_id);
     });
 
     return pusherClient;
