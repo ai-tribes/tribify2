@@ -751,4 +751,70 @@ button {
   text-align: center;
   opacity: 0.7;
   font-style: italic;
+}
+
+.nickname-controls {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.restore-button {
+  cursor: pointer;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid currentColor;
+  color: inherit;
+  font-size: 14px;
+  display: inline-block;
+}
+
+.restore-button:hover {
+  opacity: 0.8;
+}
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog-box {
+  background: var(--bg-color);
+  border: 1px solid currentColor;
+  padding: 20px;
+  width: 90%;
+  max-width: 400px;
+}
+
+.dialog-content {
+  margin-bottom: 20px;
+}
+
+.dialog-content h3 {
+  margin: 0 0 15px 0;
+  font-size: 20px;
+}
+
+.dialog-note {
+  font-size: 14px;
+  opacity: 0.7;
+  margin-top: 15px;
+}
+
+.dialog-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.dialog-buttons button {
+  margin: 0;
 } 

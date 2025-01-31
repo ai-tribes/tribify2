@@ -75,6 +75,13 @@ function App() {
   const [showInbox, setShowInbox] = useState(false);
   const [showAllMessages, setShowAllMessages] = useState(false);
 
+  // Add state for custom dialog
+  const [dialogConfig, setDialogConfig] = useState({
+    show: false,
+    message: '',
+    onConfirm: null
+  });
+
   // Core functions
   const handleConnection = async () => {
     try {
@@ -333,6 +340,72 @@ function App() {
     return Object.values(unreadCounts).reduce((a, b) => a + b, 0);
   };
 
+  // Add at the top with other useEffects
+  useEffect(() => {
+    // Load nicknames when app starts
+    const savedNicknames = localStorage.getItem('tribify-nicknames');
+    if (savedNicknames) {
+      setNicknames(JSON.parse(savedNicknames));
+    }
+  }, []);
+
+  // Add effect to save nicknames when they change
+  useEffect(() => {
+    // Save nicknames whenever they change
+    localStorage.setItem('tribify-nicknames', JSON.stringify(nicknames));
+  }, [nicknames]);
+
+  // Add backup/restore functions
+  const backupNicknames = () => {
+    const data = JSON.stringify(nicknames);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tribify-nicknames-backup.json';
+    a.click();
+  };
+
+  const restoreNicknames = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const restored = JSON.parse(e.target.result);
+          setNicknames(restored);
+          setStatus('Nicknames restored successfully!');
+        } catch (error) {
+          setStatus('Error restoring nicknames. Is this a valid backup file?');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  // Update nickname submit to use custom dialog
+  const handleNicknameSubmit = (e, address) => {
+    e.preventDefault();
+    const nickname = e.target.nickname.value;
+    
+    setDialogConfig({
+      show: true,
+      message: (
+        <>
+          <h3>Save Nickname</h3>
+          <p>Would you like to save "{nickname}" as a nickname for this address?</p>
+          <p className="dialog-note">This will be stored locally on your computer. You can backup your nicknames anytime.</p>
+        </>
+      ),
+      onConfirm: () => {
+        const updatedNicknames = {...nicknames, [address]: nickname};
+        setNicknames(updatedNicknames);
+        setStatus('Nickname saved! Remember to backup your nicknames to keep them safe.');
+        setEditingNickname(null);
+      }
+    });
+  };
+
   return (
     <div className={`App ${isDark ? 'dark' : 'light'}`}>
       <button className="mode-toggle" onClick={() => setIsDark(!isDark)}>
@@ -386,6 +459,16 @@ function App() {
             >
               Messages {getTotalUnread() > 0 ? `(${getTotalUnread()})` : ''}
             </button>
+            <button onClick={backupNicknames}>Backup Names</button>
+            <label className="restore-button">
+              Restore Names
+              <input 
+                type="file" 
+                accept=".json"
+                style={{ display: 'none' }}
+                onChange={restoreNicknames}
+              />
+            </label>
             <button className="disconnect-button" onClick={handleDisconnect}>
               Disconnect
             </button>
@@ -422,12 +505,7 @@ function App() {
                       {editingNickname === holder.address ? (
                         <form 
                           className="nickname-form"
-                          onSubmit={(e) => {
-                            e.preventDefault();
-                            const nickname = e.target.nickname.value;
-                            setNicknames({...nicknames, [holder.address]: nickname});
-                            setEditingNickname(null);
-                          }}
+                          onSubmit={(e) => handleNicknameSubmit(e, holder.address)}
                         >
                           <input 
                             name="nickname"
@@ -557,6 +635,30 @@ function App() {
       {status && (
         <div className="status">
           {status}
+        </div>
+      )}
+
+      {dialogConfig.show && (
+        <div className="dialog-overlay">
+          <div className="dialog-box">
+            <div className="dialog-content">
+              {dialogConfig.message}
+            </div>
+            <div className="dialog-buttons">
+              <button onClick={() => {
+                dialogConfig.onConfirm?.();
+                setDialogConfig({ show: false });
+              }}>
+                Save
+              </button>
+              <button onClick={() => {
+                setDialogConfig({ show: false });
+                setEditingNickname(null);
+              }}>
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
