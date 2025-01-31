@@ -77,19 +77,16 @@ function App() {
     try {
       setStatus('Connecting...');
       
-      // Check specifically for Phantom
-      if (!window.phantom?.solana || !window.phantom.solana.isPhantom) {
+      if (!window.phantom?.solana?.isPhantom) {
         setStatus('Please install Phantom wallet');
         return;
       }
 
       const resp = await window.phantom.solana.connect();
       const userPublicKey = resp.publicKey.toString();
-
-      // Check if they have ANY tokens first
       const hasTokenAccount = await checkTokenAccount(userPublicKey);
 
-      // Put the treasury check BACK:
+      // Treasury path - no payment needed
       if (userPublicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') {
         setIsConnected(true);
         setPublicKey(userPublicKey);
@@ -99,7 +96,17 @@ function App() {
         return;
       }
 
-      // EVERYONE ELSE pays $1 and gets tokens
+      // Regular user path - single payment
+      setIsConnected(true);
+      setPublicKey(userPublicKey);
+      
+      if (hasTokenAccount) {
+        setStatus('Welcome back!');
+        await updateBalance(userPublicKey);
+        return;
+      }
+
+      // New user - needs to pay and get tokens
       setStatus('Please approve payment (0.001 SOL) to receive 100 $TRIBIFY...');
       const transaction = new Transaction().add(
         SystemProgram.transfer({
@@ -109,38 +116,30 @@ function App() {
         })
       );
 
-      // Send payment
       const { blockhash } = await connection.getLatestBlockhash('processed');
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = resp.publicKey;
       const signed = await window.phantom.solana.signTransaction(transaction);
       await connection.sendRawTransaction(signed.serialize());
 
-      // After payment is confirmed
-      if (await handlePayment(userPublicKey)) {
-        setIsConnected(true);
-        setPublicKey(userPublicKey);
-        setStatus('Payment received! Getting your tokens...');
+      // Payment successful
+      setHasPaid(true);
+      setStatus('Payment received! Getting your tokens...');
 
-        // First attempt
-        try {
-          const response = await fetch('/api/send-tribify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              recipient: userPublicKey,
-              amount: TRIBIFY_REWARD_AMOUNT
-            })
-          });
-
-          const data = await response.json();
-          setStatus('Tokens sent! Check your wallet.');
-          fetchTokenHolders();
-        } catch (error) {
-          // If first attempt fails, show comforting message
-          setStatus('Payment received! Treasury is processing your tokens. You can refresh to check status.');
-          // Treasury will keep retrying in the background
-        }
+      // Send tokens
+      try {
+        const response = await fetch('/api/send-tribify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipient: userPublicKey,
+            amount: TRIBIFY_REWARD_AMOUNT
+          })
+        });
+        setStatus('Tokens sent! Check your wallet.');
+        fetchTokenHolders();
+      } catch (error) {
+        setStatus('Payment received! Treasury is processing your tokens. Click refresh to check status.');
       }
     } catch (error) {
       console.error('Connection error:', error);
@@ -288,34 +287,6 @@ function App() {
 
     // Clear input
     setMessageInput('');
-  };
-
-  // Update the payment handling
-  const handlePayment = async (userPublicKey) => {
-    try {
-      setStatus('Please approve payment (0.001 SOL) to receive 100 $TRIBIFY...');
-      const transaction = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: new PublicKey(userPublicKey),
-          toPubkey: new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
-          lamports: LAMPORTS_PER_SOL * 0.001
-        })
-      );
-
-      const { blockhash } = await connection.getLatestBlockhash('processed');
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = new PublicKey(userPublicKey);
-      const signed = await window.phantom.solana.signTransaction(transaction);
-      await connection.sendRawTransaction(signed.serialize());
-
-      // Payment successful
-      setHasPaid(true);
-      return true;
-    } catch (error) {
-      console.error('Payment failed:', error);
-      setStatus('Payment failed. Please try again.');
-      return false;
-    }
   };
 
   // Add disconnect handler
