@@ -792,8 +792,16 @@ function App() {
                   </div>
                   <div className="balances">
                     <div>
-                      ◇ {(holder.tokenBalance || 0).toLocaleString()} $TRIBIFY 
-                      ({((holder.tokenBalance / TOTAL_SUPPLY) * 100).toFixed(4)}%)
+                      ◇ {(holder.tokenBalance || 0).toLocaleString()} $TRIBIFY {' '}
+                      <span className={`percentage ${
+                        (holder.tokenBalance / TOTAL_SUPPLY) * 100 > 10 
+                          ? 'whale-warning'
+                          : (holder.tokenBalance / TOTAL_SUPPLY) * 100 > 1
+                            ? 'large-holder'
+                            : 'small-holder'
+                      }`}>
+                        ({((holder.tokenBalance / TOTAL_SUPPLY) * 100).toFixed(4)}%)
+                      </span>
                     </div>
                     <div>◇ {(holder.solBalance || 0).toLocaleString()} SOL</div>
                     <div>◇ ${(holder.usdcBalance || 0).toLocaleString()} USDC</div>

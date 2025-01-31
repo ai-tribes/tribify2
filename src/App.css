@@ -897,4 +897,23 @@ button {
 .holder-item.sniper-warning {
   border: 2px solid #ff0000;  /* Inside border */
   margin: -1px;  /* Compensate for border to maintain alignment */
+}
+
+.percentage {
+  display: inline-block;
+}
+
+.whale-warning {
+  color: #ff0000;
+  font-weight: bold;
+}
+
+.large-holder {
+  color: #ffa500;
+  font-weight: bold;
+}
+
+.small-holder {
+  color: #2ecc71;  /* Nice green color */
+  font-weight: bold;
 } 
