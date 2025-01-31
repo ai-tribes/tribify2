@@ -476,11 +476,15 @@ function App() {
 
   // Update presence channel subscription
   useEffect(() => {
-    if (!pusher || !isConnected || !publicKey) return;
+    if (!pusher || !isConnected || !publicKey) {
+      console.log('Skipping presence setup:', { pusher: !!pusher, isConnected, publicKey });
+      return;
+    }
 
     console.log('Setting up presence channel...', {
       connectionState: pusher.connection.state,
-      socketId: pusher.connection.socket_id
+      socketId: pusher.connection.socket_id,
+      myPublicKey: publicKey
     });
 
     const presenceChannel = pusher.subscribe('presence-tribify');
@@ -489,12 +493,17 @@ function App() {
       console.log('Presence subscription succeeded!', {
         count: members.count,
         myID: members.myID,
-        me: members.me
+        me: members.me,
+        allMembers: Array.from(members.members)
       });
       
       const onlineMembers = new Set();
       members.each(member => {
-        console.log('Member found:', member);
+        console.log('Member found:', {
+          id: member.id,
+          info: member.info,
+          isMe: member.id === publicKey
+        });
         onlineMembers.add(member.id);
       });
       
@@ -503,7 +512,10 @@ function App() {
 
     return () => {
       if (pusher && pusher.connection.state === 'connected') {
-        console.log('Cleaning up Pusher connection');
+        console.log('Cleaning up presence channel:', {
+          connectionState: pusher.connection.state,
+          channelName: 'presence-tribify'
+        });
         pusher.unsubscribe('presence-tribify');
       }
     };
