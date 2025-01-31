@@ -179,6 +179,13 @@ function App() {
   // Add new state for online users
   const [onlineUsers, setOnlineUsers] = useState(new Set());
 
+  // Add new state for tribify prompt
+  const [showTribifyPrompt, setShowTribifyPrompt] = useState(false);
+
+  // Add new state for tribify prompt responses
+  const [tribifyResponses, setTribifyResponses] = useState([]);
+  const [tribifyInput, setTribifyInput] = useState('');
+
   // Core functions
   const handleConnection = async () => {
     try {
@@ -442,28 +449,32 @@ function App() {
   // Update the WebSocket connection to use existing Pusher instance
   useEffect(() => {
     if (isConnected && publicKey) {
-      // Subscribe to presence channel for online status
+      console.log('Attempting to subscribe to presence channel...');
+      
       const presenceChannel = pusher.subscribe('presence-tribify');
       const userChannel = pusher.subscribe(publicKey);
       
-      presenceChannel.bind('pusher:subscription_succeeded', (members) => {
-        console.log('Presence subscription succeeded:', members);
-        // Get all current online members
+      presenceChannel.bind('pusher:subscription_succeeded', members => {
+        console.log('Presence subscription succeeded!', members);
         const onlineMembers = new Set();
         members.each(member => {
+          console.log('Found online member:', member.id);
           onlineMembers.add(member.id);
-          console.log('Member online:', member.id);
         });
         setOnlineUsers(onlineMembers);
       });
 
+      presenceChannel.bind('pusher:subscription_error', error => {
+        console.error('Presence subscription failed:', error);
+      });
+
       presenceChannel.bind('pusher:member_added', member => {
-        console.log('Member added:', member.id);
+        console.log('Member joined:', member.id);
         setOnlineUsers(prev => new Set([...prev, member.id]));
       });
 
       presenceChannel.bind('pusher:member_removed', member => {
-        console.log('Member removed:', member.id);
+        console.log('Member left:', member.id);
         setOnlineUsers(prev => {
           const next = new Set(prev);
           next.delete(member.id);
@@ -680,12 +691,58 @@ function App() {
     autoConnect();
   }, []);
 
+  // Add tribify prompt handler
+  const handleTribifyPrompt = async (e) => {
+    e.preventDefault();
+    if (!tribifyInput.trim()) return;
+
+    // Add user input to responses
+    setTribifyResponses(prev => [...prev, {
+      type: 'input',
+      text: tribifyInput
+    }]);
+
+    try {
+      // Add "thinking" message
+      setTribifyResponses(prev => [...prev, {
+        type: 'system',
+        text: '...'
+      }]);
+
+      // Call AI endpoint
+      const response = await fetch('/api/tribify/prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: tribifyInput })
+      });
+
+      const data = await response.json();
+
+      // Replace "thinking" with response
+      setTribifyResponses(prev => [
+        ...prev.slice(0, -1),
+        {
+          type: 'response',
+          text: data.response
+        }
+      ]);
+
+      setTribifyInput('');
+    } catch (error) {
+      console.error('Failed to get AI response:', error);
+      // Replace "thinking" with error
+      setTribifyResponses(prev => [
+        ...prev.slice(0, -1),
+        {
+          type: 'error',
+          text: 'Failed to get response. Please try again.'
+        }
+      ]);
+    }
+  };
+
   return (
     <div className={`App ${isDark ? 'dark' : 'light'}`}>
-      <button className="mode-toggle" onClick={() => setIsDark(!isDark)}>
-        {isDark ? '◯' : '●'}
-      </button>
-
       <div className="connection-group">
         <button onClick={handleConnection}>
           {isConnected ? 'Connected' : 'Connect Wallet'}
@@ -862,6 +919,12 @@ function App() {
                 onChange={restoreNicknames}
               />
             </label>
+            <button 
+              className="tribify-button"
+              onClick={() => setShowTribifyPrompt(true)}
+            >
+              /tribify.ai
+            </button>
             <button className="disconnect-button" onClick={handleDisconnect}>
               Disconnect
             </button>
@@ -884,7 +947,7 @@ function App() {
 
           <div className="main-layout">
             <div className="token-holders">
-              <h3>TRIBIFY Holders</h3>
+              <h3>$TRIBIFY Holders</h3>
               {tokenHolders.map((holder, i) => (
                 <div key={i} className="holder-item">
                   <div className="address-container">
@@ -1071,6 +1134,33 @@ function App() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Add tribify prompt box */}
+      {showTribifyPrompt && (
+        <div className="ai-terminal">
+          <div className="terminal-header">
+            <span>/tribify.ai</span>
+            <button onClick={() => setShowTribifyPrompt(false)}>×</button>
+          </div>
+          <div className="terminal-content">
+            {tribifyResponses.map((response, i) => (
+              <div key={i} className={`terminal-message ${response.type}`}>
+                {response.type === 'input' && '> '}
+                {response.text}
+              </div>
+            ))}
+          </div>
+          <form className="terminal-input" onSubmit={handleTribifyPrompt}>
+            <input 
+              type="text"
+              value={tribifyInput}
+              onChange={(e) => setTribifyInput(e.target.value)}
+              placeholder="Enter a prompt..."
+              autoFocus
+            />
+          </form>
         </div>
       )}
     </div>
