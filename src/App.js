@@ -132,6 +132,91 @@ const TokenHolderGraph = ({ holders, onNodeClick }) => {
   );
 };
 
+// Add new debug component
+const PusherDebugger = ({ pusher, publicKey, onlineUsers }) => {
+  const [debugState, setDebugState] = useState({
+    connectionState: 'disconnected',
+    socketId: null,
+    authAttempts: 0,
+    authErrors: [],
+    lastAuthError: null
+  });
+
+  // Monitor Pusher connection
+  useEffect(() => {
+    if (!pusher) return;
+
+    const updateState = () => {
+      setDebugState(prev => ({
+        ...prev,
+        connectionState: pusher.connection.state,
+        socketId: pusher.connection.socket_id
+      }));
+    };
+
+    // Track all connection events
+    pusher.connection.bind('connecting', updateState);
+    pusher.connection.bind('connected', updateState);
+    pusher.connection.bind('disconnected', updateState);
+    pusher.connection.bind('failed', updateState);
+    pusher.connection.bind('error', (err) => {
+      setDebugState(prev => ({
+        ...prev,
+        authErrors: [...prev.authErrors, err],
+        lastAuthError: err
+      }));
+    });
+
+    // Track auth attempts
+    pusher.connection.bind('auth_request_sent', () => {
+      setDebugState(prev => ({
+        ...prev,
+        authAttempts: prev.authAttempts + 1
+      }));
+    });
+
+    return () => {
+      pusher?.connection.unbind_all();
+    };
+  }, [pusher]);
+
+  return (
+    <div className="connection-status-panel">
+      <h3>Connection Status</h3>
+      <div className="debug-grid">
+        <div className="debug-item">
+          <div className="debug-label">State:</div>
+          <div className={`debug-value state-${debugState.connectionState}`}>
+            {debugState.connectionState}
+          </div>
+        </div>
+        <div className="debug-item">
+          <div className="debug-label">Socket ID:</div>
+          <div className="debug-value">{debugState.socketId || 'none'}</div>
+        </div>
+        <div className="debug-item">
+          <div className="debug-label">Auth Attempts:</div>
+          <div className="debug-value">{debugState.authAttempts}</div>
+        </div>
+        <div className="debug-item">
+          <div className="debug-label">My Public Key:</div>
+          <div className="debug-value">{publicKey || 'none'}</div>
+        </div>
+        <div className="debug-item">
+          <div className="debug-label">Online Users:</div>
+          <div className="debug-value">{onlineUsers.size}</div>
+        </div>
+        {debugState.lastAuthError && (
+          <div className="debug-item error">
+            <div className="debug-label">Last Error:</div>
+            <div className="debug-value">{debugState.lastAuthError.message}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 function App() {
   // Core states only
   const [status, setStatus] = useState('');
@@ -179,19 +264,38 @@ function App() {
   const [tribifyResponses, setTribifyResponses] = useState([]);
   const [tribifyInput, setTribifyInput] = useState('');
 
-  // Update Pusher initialization with correct auth endpoint
+  // Add state for connection debugging
+  const [debugState, setDebugState] = useState({
+    connectionState: 'disconnected',
+    socketId: null,
+    authAttempts: 0,
+    authErrors: [],
+    lastAuthError: null
+  });
+
+  // Update Pusher initialization with production settings
   const pusher = React.useMemo(() => {
-    if (!publicKey) return null;
+    if (!publicKey) {
+      console.log('No public key, skipping Pusher init');
+      return null;
+    }
+
+    console.log('Initializing Pusher with:', {
+      key: process.env.REACT_APP_PUSHER_KEY,
+      cluster: process.env.REACT_APP_PUSHER_CLUSTER,
+      authEndpoint: 'https://www.tribify.ai/api/pusher/auth',
+      publicKey
+    });
 
     const pusherClient = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
-      cluster: 'eu',
+      cluster: process.env.REACT_APP_PUSHER_CLUSTER,
       forceTLS: true,
       enabledTransports: ['ws', 'wss'],
-      authTransport: 'ajax',
-      authEndpoint: '/api/pusher/auth',
+      authEndpoint: 'https://www.tribify.ai/api/pusher/auth',
       auth: {
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         params: {
           publicKey: publicKey
@@ -199,12 +303,140 @@ function App() {
       }
     });
 
-    pusherClient.connection.bind('connected', () => {
-      console.log('Pusher connected with socket ID:', pusherClient.connection.socket_id);
+    // Add more detailed connection logging
+    pusherClient.connection.bind('connecting', () => {
+      console.log('Pusher connecting...', {
+        endpoint: 'https://www.tribify.ai/api/pusher/auth',
+        publicKey,
+        state: pusherClient.connection.state
+      });
+      setDebugState(prev => ({
+        ...prev,
+        connectionState: 'connecting'
+      }));
     });
+
+    pusherClient.connection.bind('connected', () => {
+      console.log('Pusher connected:', {
+        socketId: pusherClient.connection.socket_id,
+        state: pusherClient.connection.state
+      });
+      setDebugState(prev => ({
+        ...prev,
+        connectionState: 'connected',
+        socketId: pusherClient.connection.socket_id
+      }));
+    });
+
+    pusherClient.connection.bind('failed', () => {
+      console.error('Pusher connection failed:', {
+        state: pusherClient.connection.state,
+        error: pusherClient.connection.error
+      });
+      setDebugState(prev => ({
+        ...prev,
+        connectionState: 'failed',
+        lastAuthError: pusherClient.connection.error
+      }));
+    });
+
+    pusherClient.connection.bind('error', error => {
+      console.error('Pusher error:', {
+        error,
+        state: pusherClient.connection.state
+      });
+      setDebugState(prev => ({
+        ...prev,
+        lastAuthError: error
+      }));
+    });
+
+    // Force connect
+    pusherClient.connect();
 
     return pusherClient;
   }, [publicKey]);
+
+  // Add presence channel subscription with better logging
+  useEffect(() => {
+    if (!pusher || !publicKey) {
+      console.log('Skipping presence setup:', { 
+        hasPusher: !!pusher,
+        hasPublicKey: !!publicKey
+      });
+      return;
+    }
+
+    console.log('Setting up presence channel:', {
+      connectionState: pusher.connection.state,
+      socketId: pusher.connection.socket_id,
+      publicKey
+    });
+
+    const channel = pusher.subscribe('presence-tribify');
+
+    channel.bind('pusher:subscription_succeeded', members => {
+      console.log('Presence subscription succeeded:', {
+        count: members.count,
+        myId: members.myID,
+        members: Array.from(members.members)
+      });
+
+      const online = new Set();
+      members.each(member => {
+        console.log('Member online:', member);
+        online.add(member.id);
+      });
+      setOnlineUsers(online);
+    });
+
+    channel.bind('pusher:subscription_error', error => {
+      console.error('Presence subscription failed:', error);
+    });
+
+    return () => {
+      console.log('Cleaning up presence channel');
+      pusher.unsubscribe('presence-tribify');
+    };
+  }, [pusher, publicKey]);
+
+  // Update Pusher initialization to track debug state
+  useEffect(() => {
+    if (!pusher) return;
+
+    const updateState = () => {
+      setDebugState(prev => ({
+        ...prev,
+        connectionState: pusher.connection.state,
+        socketId: pusher.connection.socket_id
+      }));
+    };
+
+    // Track all connection events
+    pusher.connection.bind('connecting', updateState);
+    pusher.connection.bind('connected', updateState);
+    pusher.connection.bind('disconnected', updateState);
+    pusher.connection.bind('failed', updateState);
+    pusher.connection.bind('error', (err) => {
+      setDebugState(prev => ({
+        ...prev,
+        authErrors: [...prev.authErrors, err],
+        lastAuthError: err
+      }));
+    });
+
+    // Track auth attempts
+    pusher.connection.bind('auth_request_sent', () => {
+      setDebugState(prev => ({
+        ...prev,
+        authAttempts: prev.authAttempts + 1
+      }));
+    });
+
+    return () => {
+      pusher?.connection.unbind_all();
+    };
+  }, [pusher]);
 
   // Core functions
   const handleConnection = async () => {
@@ -466,52 +698,47 @@ function App() {
     fetchTreasuryBalances();
   }, []);
 
-  // Update presence channel subscription
+  // Ping server when we connect
   useEffect(() => {
-    if (!pusher || !isConnected || !publicKey) {
-      console.log('Skipping presence setup:', { pusher: !!pusher, isConnected, publicKey });
-      return;
-    }
+    if (!publicKey) return;
 
-    console.log('Setting up presence channel...', {
-      connectionState: pusher.connection.state,
-      socketId: pusher.connection.socket_id,
-      myPublicKey: publicKey
-    });
-
-    const presenceChannel = pusher.subscribe('presence-tribify');
-
-    presenceChannel.bind('pusher:subscription_succeeded', members => {
-      console.log('Presence subscription succeeded!', {
-        count: members.count,
-        myID: members.myID,
-        me: members.me,
-        allMembers: Array.from(members.members)
-      });
-      
-      const onlineMembers = new Set();
-      members.each(member => {
-        console.log('Member found:', {
-          id: member.id,
-          info: member.info,
-          isMe: member.id === publicKey
+    // Tell server we're online
+    const pingServer = async () => {
+      try {
+        const res = await fetch('/api/online-users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ publicKey })
         });
-        onlineMembers.add(member.id);
-      });
-      
-      setOnlineUsers(onlineMembers);
-    });
-
-    return () => {
-      if (pusher && pusher.connection.state === 'connected') {
-        console.log('Cleaning up presence channel:', {
-          connectionState: pusher.connection.state,
-          channelName: 'presence-tribify'
-        });
-        pusher.unsubscribe('presence-tribify');
+        const { onlineUsers } = await res.json();
+        setOnlineUsers(new Set(onlineUsers));
+      } catch (err) {
+        console.error('Failed to update online status:', err);
       }
     };
-  }, [pusher, isConnected, publicKey]);
+
+    // Ping immediately
+    pingServer();
+
+    // Then ping every 10 seconds
+    const interval = setInterval(pingServer, 10000);
+
+    // Poll for other online users every 5 seconds
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/online-users');
+        const { onlineUsers } = await res.json();
+        setOnlineUsers(new Set(onlineUsers));
+      } catch (err) {
+        console.error('Failed to fetch online users:', err);
+      }
+    }, 5000);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(pollInterval);
+    };
+  }, [publicKey]);
 
   // Update the message handler to use the correct endpoint
   const handleSendMessage = async (e, recipient) => {
@@ -1022,10 +1249,46 @@ function App() {
               ))}
             </div>
 
-            <TokenHolderGraph 
-              holders={tokenHolders}
-              onNodeClick={handleOpenChat}
-            />
+            <div>
+              <TokenHolderGraph 
+                holders={tokenHolders}
+                onNodeClick={handleOpenChat}
+              />
+
+              <div className="connection-status-panel">
+                <h3>Connection Status</h3>
+                <div className="debug-grid">
+                  <div className="debug-item">
+                    <div className="debug-label">State:</div>
+                    <div className={`debug-value state-${debugState.connectionState}`}>
+                      {debugState.connectionState}
+                    </div>
+                  </div>
+                  <div className="debug-item">
+                    <div className="debug-label">Socket ID:</div>
+                    <div className="debug-value">{debugState.socketId || 'none'}</div>
+                  </div>
+                  <div className="debug-item">
+                    <div className="debug-label">Auth Attempts:</div>
+                    <div className="debug-value">{debugState.authAttempts}</div>
+                  </div>
+                  <div className="debug-item">
+                    <div className="debug-label">My Public Key:</div>
+                    <div className="debug-value">{publicKey || 'none'}</div>
+                  </div>
+                  <div className="debug-item">
+                    <div className="debug-label">Online Users:</div>
+                    <div className="debug-value">{onlineUsers.size}</div>
+                  </div>
+                  {debugState.lastAuthError && (
+                    <div className="debug-item error">
+                      <div className="debug-label">Last Error:</div>
+                      <div className="debug-value">{debugState.lastAuthError.message}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
 
             {(activeChat || showInbox) && (
               <div className="chat-box">
