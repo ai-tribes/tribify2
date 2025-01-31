@@ -7,6 +7,8 @@
   padding: 40px;
   font-family: monospace;
   transition: all 0.3s ease;
+  text-align: center;
+  font-size: 16px;
 }
 
 /* Theme Styles */
@@ -110,9 +112,17 @@ button:hover {
 
 /* Wallet Info */
 .wallet-info {
-  margin: 15px 0;
-  font-size: 14px;
+  margin: 20px 0;
+  font-size: 18px;
   opacity: 0.8;
+  text-align: left;
+  width: 100%;
+  max-width: 800px;
+}
+
+.wallet-info div {
+  padding: 4px 0;
+  text-align: left;
 }
 
 .dark .wallet-info {
@@ -196,8 +206,9 @@ button:hover {
 
 /* Status Messages */
 .status {
-  font-size: 14px;
+  font-size: 18px;
   opacity: 0.7;
+  margin: 20px 0;
 }
 
 .App-header {
@@ -335,9 +346,7 @@ button:hover {
   border: 1px solid currentColor;
   padding: 15px;
   width: 100%;
-  max-width: 300px;
-  width: 100%;
-  max-width: 600px;
+  max-width: 800px;
   box-sizing: border-box;
 }
 
@@ -350,11 +359,20 @@ button:hover {
 }
 
 .holder-item {
-  padding: 8px 0;
+  padding: 16px 0;
   border-bottom: 1px dashed currentColor;
   opacity: 0.8;
   width: 100%;
   overflow: hidden;
+  font-size: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.holder-item > div:last-child {
+  text-align: left;
+  padding-left: 24px;
 }
 
 .holder-item:last-child {
@@ -447,17 +465,23 @@ button:hover {
 
 .address-container {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   width: 100%;
 }
 
 .nickname {
-  font-size: 12px;
-  opacity: 0.7;
+  font-size: 20px;
+  font-weight: 600;
+  opacity: 0.8;
   cursor: pointer;
   padding: 4px 8px;
   color: #2ecc71;
+  white-space: nowrap;
+  min-width: 120px;
+  text-align: right;
 }
 
 .online-indicator {
@@ -473,6 +497,7 @@ button:hover {
   display: flex;
   gap: 8px;
   padding: 4px 8px;
+  margin: 0;
 }
 
 .nickname-form input {
@@ -480,11 +505,61 @@ button:hover {
   background: transparent;
   border: 1px solid currentColor;
   color: inherit;
-  padding: 4px 8px;
+  padding: 8px 16px;
   font-family: inherit;
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .nickname-form button {
   padding: 4px 8px;
   min-width: unset;
+}
+
+button {
+  display: inline-block;
+  padding: 12px 24px;
+  margin: 10px;
+  border: 2px solid #333;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.dark button {
+  background: #333;
+  color: #fff;
+  border-color: #fff;
+}
+
+.balances {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 24px;
+}
+
+.balances > div {
+  text-align: left;
+}
+
+.treasury-info {
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid currentColor;
+  width: 100%;
+  max-width: 800px;
+  box-sizing: border-box;
+}
+
+.treasury-info h2 {
+  margin: 0 0 16px 0;
+  font-size: 24px;
+}
+
+.treasury-info div {
+  font-size: 18px;
+  margin: 8px 0;
+  text-align: left;
 } 

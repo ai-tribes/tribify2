@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import { Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
@@ -60,6 +60,13 @@ function App() {
   const [tokenHolders, setTokenHolders] = useState([]);
   const [isDark, setIsDark] = useState(true);  // Keep dark mode
   const [showDocs, setShowDocs] = useState(false);
+  const [nicknames, setNicknames] = useState({});
+  const [editingNickname, setEditingNickname] = useState(null);
+  const [treasuryBalances, setTreasuryBalances] = useState({
+    sol: 0,
+    usdc: 0,
+    tribify: 0
+  });
 
   // Core functions
   const handleConnection = async () => {
@@ -151,14 +158,32 @@ function App() {
   const fetchTokenHolders = async () => {
     try {
       const mintPubkey = new PublicKey(TRIBIFY_TOKEN_MINT);
+      const usdcMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // USDC mint
       const largestAccounts = await connection.getTokenLargestAccounts(mintPubkey);
       
       const holders = await Promise.all(
         largestAccounts.value.map(async (account) => {
           const accountInfo = await connection.getParsedAccountInfo(account.address);
+          const address = accountInfo.value.data.parsed.info.owner;
+          
+          // Get SOL balance
+          const solBalance = await connection.getBalance(new PublicKey(address));
+          
+          // Try to get USDC balance
+          let usdcBalance = 0;
+          try {
+            const usdcAta = await getAssociatedTokenAddress(usdcMint, new PublicKey(address));
+            const usdcAccount = await connection.getTokenAccountBalance(usdcAta);
+            usdcBalance = usdcAccount.value.uiAmount || 0;
+          } catch {
+            // No USDC account, leave as 0
+          }
+
           return {
-            address: accountInfo.value.data.parsed.info.owner,
-            tokenBalance: account.amount / Math.pow(10, 6)
+            address,
+            tokenBalance: (account.amount / Math.pow(10, 6)) || 0,
+            solBalance: (solBalance / LAMPORTS_PER_SOL) || 0,
+            usdcBalance: usdcBalance || 0
           };
         })
       );
@@ -195,6 +220,47 @@ function App() {
     }
   };
 
+  // Add function to fetch treasury balances
+  const fetchTreasuryBalances = async () => {
+    try {
+      const treasuryPubkey = new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv');
+      const usdcMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
+      const tribifyMint = new PublicKey(TRIBIFY_TOKEN_MINT);
+
+      // Get SOL balance
+      const solBalance = await connection.getBalance(treasuryPubkey);
+      
+      // Get USDC balance
+      let usdcBalance = 0;
+      try {
+        const usdcAta = await getAssociatedTokenAddress(usdcMint, treasuryPubkey);
+        const usdcAccount = await connection.getTokenAccountBalance(usdcAta);
+        usdcBalance = usdcAccount.value.uiAmount || 0;
+      } catch {}
+
+      // Get TRIBIFY balance
+      let tribifyBalance = 0;
+      try {
+        const tribifyAta = await getAssociatedTokenAddress(tribifyMint, treasuryPubkey);
+        const tribifyAccount = await connection.getTokenAccountBalance(tribifyAta);
+        tribifyBalance = tribifyAccount.value.uiAmount || 0;
+      } catch {}
+
+      setTreasuryBalances({
+        sol: solBalance / LAMPORTS_PER_SOL,
+        usdc: usdcBalance,
+        tribify: tribifyBalance
+      });
+    } catch (error) {
+      console.error('Failed to fetch treasury balances:', error);
+    }
+  };
+
+  // Call it in useEffect
+  useEffect(() => {
+    fetchTreasuryBalances();
+  }, []);
+
   return (
     <div className={`App ${isDark ? 'dark' : 'light'}`}>
       <button className="mode-toggle" onClick={() => setIsDark(!isDark)}>
@@ -208,16 +274,59 @@ function App() {
       {isConnected && (
         <>
           <div className="wallet-info">
-            <div>◈ {publicKey}</div>
-            <div>◇ {balance} SOL</div>
+            {publicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv' ? (
+              <>
+                <div>◈ {publicKey}</div>
+                <div>◇ {balance} SOL</div>
+                <div>◇ {treasuryBalances.tribify.toLocaleString()} $TRIBIFY</div>
+                <div>◇ ${treasuryBalances.usdc.toLocaleString()} USDC</div>
+              </>
+            ) : (
+              <>
+                <div>◈ {publicKey}</div>
+                <div>◇ {balance} SOL</div>
+              </>
+            )}
           </div>
 
           <div className="token-holders">
             <h3>TRIBIFY Holders</h3>
             {tokenHolders.map((holder, i) => (
               <div key={i} className="holder-item">
-                <div>◈ {holder.address}</div>
-                <div>◇ {holder.tokenBalance} $TRIBIFY</div>
+                <div className="address-container">
+                  <div>◈ {holder.address}</div>
+                  {editingNickname === holder.address ? (
+                    <form 
+                      className="nickname-form"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const nickname = e.target.nickname.value;
+                        setNicknames({...nicknames, [holder.address]: nickname});
+                        setEditingNickname(null);
+                      }}
+                    >
+                      <input 
+                        name="nickname"
+                        defaultValue={nicknames[holder.address] || ''}
+                        placeholder="Enter nickname"
+                        autoFocus
+                      />
+                      <button type="submit">✓</button>
+                    </form>
+                  ) : (
+                    <div 
+                      className="nickname"
+                      onClick={() => setEditingNickname(holder.address)}
+                    >
+                      {nicknames[holder.address] || '+ Add nickname'}
+                    </div>
+                  )}
+                </div>
+                <div className="balances">
+                  <div>◇ {(holder.tokenBalance || 0).toLocaleString()} $TRIBIFY</div>
+                  <div>◇ {(holder.solBalance || 0).toLocaleString()} SOL</div>
+                  <div>◇ ${(holder.usdcBalance || 0).toLocaleString()} USDC</div>
+                </div>
               </div>
             ))}
           </div>
