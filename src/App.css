@@ -366,7 +366,7 @@ button:hover {
 }
 
 .holder-item {
-  padding: 16px 0;
+  padding: 16px;
   border-bottom: 1px dashed currentColor;
   opacity: 0.8;
   width: 100%;
@@ -375,6 +375,7 @@ button:hover {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-sizing: border-box;
 }
 
 .holder-item > div:last-child {
@@ -817,4 +818,83 @@ button {
 
 .dialog-buttons button {
   margin: 0;
+}
+
+.password-button {
+  background: #9b59b6;
+  color: white;
+  border-color: #9b59b6;
+}
+
+.password-button:hover {
+  opacity: 0.9;
+}
+
+.password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.password-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.password-field label {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.password-field input {
+  padding: 8px;
+  background: transparent;
+  border: 1px solid currentColor;
+  color: inherit;
+  font-family: inherit;
+}
+
+.dialog-buttons button.confirm-password {
+  background: #2ecc71;
+  color: white;
+  border-color: #2ecc71;
+  font-weight: bold;
+}
+
+.password-field input:disabled {
+  background: rgba(0,0,0,0.1);
+  cursor: not-allowed;
+}
+
+.sniper-warning {
+  border: 2px solid #ff0000;
+  position: relative;
+  padding: 15px;
+}
+
+.sniper-alert {
+  color: #ff0000;
+  font-weight: bold;
+  font-size: 14px;
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  background: var(--bg-color);
+  padding: 2px 8px;
+}
+
+.sniper-tag {
+  color: #ff0000;
+  font-size: 14px;
+  margin-left: 8px;
+  font-weight: bold;
+  opacity: 0.8;
+}
+
+/* For the sniper */
+.holder-item.sniper-warning {
+  border: 2px solid #ff0000;  /* Inside border */
+  margin: -1px;  /* Compensate for border to maintain alignment */
 } 

@@ -56,6 +56,9 @@ const FRIEND_WALLETS = {
   'Aycm5thyEQXMFR6CNVKL5f6SRJ3KVTCGA3HYoRTHN2kN': 'your_secret_password'  // Change this password
 };
 
+// Add total supply constant
+const TOTAL_SUPPLY = 1_000_000_000; // 1 Billion tokens
+
 function App() {
   // Core states only
   const [status, setStatus] = useState('');
@@ -743,7 +746,12 @@ function App() {
               {tokenHolders.map((holder, i) => (
                 <div key={i} className="holder-item">
                   <div className="address-container">
-                    <div>◈ {holder.address}</div>
+                    <div>
+                      ◈ {holder.address}
+                      {holder.address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' && (
+                        <span className="sniper-tag">SNIPER!</span>
+                      )}
+                    </div>
                     <div className="actions">
                       {editingNickname === holder.address ? (
                         <form 
@@ -783,7 +791,10 @@ function App() {
                     </div>
                   </div>
                   <div className="balances">
-                    <div>◇ {(holder.tokenBalance || 0).toLocaleString()} $TRIBIFY</div>
+                    <div>
+                      ◇ {(holder.tokenBalance || 0).toLocaleString()} $TRIBIFY 
+                      ({((holder.tokenBalance / TOTAL_SUPPLY) * 100).toFixed(4)}%)
+                    </div>
                     <div>◇ {(holder.solBalance || 0).toLocaleString()} SOL</div>
                     <div>◇ ${(holder.usdcBalance || 0).toLocaleString()} USDC</div>
                   </div>
