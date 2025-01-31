@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
+import ForceGraph2D from 'react-force-graph-2d';
+import * as d3 from 'd3-force';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -58,6 +60,76 @@ const FRIEND_WALLETS = {
 
 // Add total supply constant
 const TOTAL_SUPPLY = 1_000_000_000; // 1 Billion tokens
+
+// Add new component for the graph
+const TokenHolderGraph = ({ holders, onNodeClick }) => {
+  const graphRef = useRef();
+  
+  // Find the biggest holder to focus on
+  const biggestHolder = holders.reduce((max, holder) => 
+    holder.tokenBalance > max.tokenBalance ? holder : max
+  , holders[0]);
+
+  const graphData = {
+    nodes: holders.map(holder => ({
+      id: holder.address,
+      val: Math.sqrt(holder.tokenBalance),
+      color: (holder.tokenBalance / TOTAL_SUPPLY) * 100 > 10 
+        ? '#ff0000' 
+        : (holder.tokenBalance / TOTAL_SUPPLY) * 100 > 1 
+          ? '#ffa500' 
+          : '#2ecc71',
+      label: `${((holder.tokenBalance / TOTAL_SUPPLY) * 100).toFixed(2)}%`,
+      x: holder.address === biggestHolder.address ? 0 : undefined,
+      y: holder.address === biggestHolder.address ? 0 : undefined
+    })),
+    links: holders.map((holder) => ({
+      source: holder.address,
+      target: biggestHolder.address,
+      value: holder.tokenBalance / TOTAL_SUPPLY
+    }))
+  };
+
+  const focusOnWhale = () => {
+    if (graphRef.current) {
+      graphRef.current.centerAt(0, 0, 1000);
+      graphRef.current.zoom(0.4);
+    }
+  };
+
+  useEffect(() => {
+    focusOnWhale();
+  }, []);
+
+  return (
+    <div className="graph-container">
+      <ForceGraph2D
+        ref={graphRef}
+        graphData={graphData}
+        nodeLabel={node => `${node.id.slice(0, 4)}...${node.id.slice(-4)} (${node.label})`}
+        nodeColor={node => node.color}
+        nodeRelSize={3}
+        linkWidth={link => link.value * 2}
+        linkColor={() => '#ffffff33'}
+        backgroundColor={'#00000000'}
+        width={800}
+        height={600}
+        onNodeClick={node => onNodeClick(node.id)}
+        d3Force={{
+          charge: d3.forceManyBody().strength(-2000),
+          link: d3.forceLink().distance(d => 
+            d.source.id === biggestHolder.address || d.target.id === biggestHolder.address ? 200 : 100
+          ),
+          x: d3.forceX(d => 
+            d.id === biggestHolder.address ? 200 : 600
+          ).strength(0.5),
+          y: d3.forceY(300).strength(0.1)
+        }}
+      />
+      <button onClick={focusOnWhale}>(reset)</button>
+    </div>
+  );
+};
 
 function App() {
   // Core states only
@@ -809,6 +881,11 @@ function App() {
                 </div>
               ))}
             </div>
+
+            <TokenHolderGraph 
+              holders={tokenHolders}
+              onNodeClick={handleOpenChat}
+            />
 
             {(activeChat || showInbox) && (
               <div className="chat-box">

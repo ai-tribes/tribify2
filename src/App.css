@@ -583,7 +583,8 @@ button {
   display: flex;
   gap: 20px;
   width: 100%;
-  max-width: 1500px;
+  max-width: 1800px;
+  align-items: flex-start;
 }
 
 .chat-box {
@@ -916,4 +917,31 @@ button {
 .small-holder {
   color: #2ecc71;  /* Nice green color */
   font-weight: bold;
+}
+
+.graph-container {
+  border: 1px solid currentColor;
+  margin: 20px 0;
+  width: 800px;
+  height: 600px;
+  overflow: hidden;
+  position: relative;
+}
+
+.graph-container button {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 10;
+  background: transparent;
+  border: none;
+  padding: 4px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.7;
+  min-width: unset;
+}
+
+.graph-container button:hover {
+  opacity: 1;
 } 
