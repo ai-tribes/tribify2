@@ -179,19 +179,40 @@ function App() {
   const [tribifyResponses, setTribifyResponses] = useState([]);
   const [tribifyInput, setTribifyInput] = useState('');
 
-  // Move Pusher initialization inside component
+  // Update Pusher initialization with better error handling
   const pusher = React.useMemo(() => {
-    return new Pusher(process.env.REACT_APP_PUSHER_KEY, {
+    if (!publicKey) return null; // Don't create Pusher instance without publicKey
+
+    const pusherClient = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
       cluster: 'eu',
-      encrypted: true,
-      authEndpoint: publicKey ? `/api/pusher/auth?publicKey=${publicKey}` : null,
+      forceTLS: true, // Force TLS
+      enabledTransports: ['ws', 'wss'], // Only use WebSocket
       auth: {
+        headers: {
+          'Content-Type': 'application/json',
+        },
         params: {
-          publicKey: publicKey || null
-        }
+          publicKey: publicKey
+        },
+        endpoint: `/api/pusher/auth?publicKey=${publicKey}`
       }
     });
-  }, [publicKey]); // Re-initialize when publicKey changes
+
+    // Add connection event handlers
+    pusherClient.connection.bind('connected', () => {
+      console.log('Pusher connected successfully with socket ID:', pusherClient.connection.socket_id);
+    });
+
+    pusherClient.connection.bind('error', error => {
+      console.error('Pusher connection error:', {
+        error,
+        socketId: pusherClient.connection.socket_id,
+        state: pusherClient.connection.state
+      });
+    });
+
+    return pusherClient;
+  }, [publicKey]);
 
   // Core functions
   const handleConnection = async () => {
@@ -453,50 +474,40 @@ function App() {
     fetchTreasuryBalances();
   }, []);
 
-  // Update the presence channel subscription
+  // Update presence channel subscription
   useEffect(() => {
-    if (isConnected && publicKey) {
-      console.log('Attempting to subscribe to presence channel...');
+    if (!pusher || !isConnected || !publicKey) return;
+
+    console.log('Setting up presence channel...', {
+      connectionState: pusher.connection.state,
+      socketId: pusher.connection.socket_id
+    });
+
+    const presenceChannel = pusher.subscribe('presence-tribify');
+
+    presenceChannel.bind('pusher:subscription_succeeded', members => {
+      console.log('Presence subscription succeeded!', {
+        count: members.count,
+        myID: members.myID,
+        me: members.me
+      });
       
-      // Use proper presence channel name
-      const presenceChannel = pusher.subscribe('presence-tribify');
+      const onlineMembers = new Set();
+      members.each(member => {
+        console.log('Member found:', member);
+        onlineMembers.add(member.id);
+      });
       
-      // Debug subscription status
-      presenceChannel.bind('pusher:subscription_succeeded', members => {
-        console.log('Presence subscription succeeded!', members);
-        const onlineMembers = new Set();
-        members.each(member => {
-          console.log('Found online member:', member.id, member.info);
-          onlineMembers.add(member.id);
-        });
-        setOnlineUsers(onlineMembers);
-      });
+      setOnlineUsers(onlineMembers);
+    });
 
-      // Debug subscription errors
-      presenceChannel.bind('pusher:subscription_error', error => {
-        console.error('Presence subscription failed:', error);
-      });
-
-      // Handle member join/leave with user info
-      presenceChannel.bind('pusher:member_added', member => {
-        console.log('Member joined:', member.id, member.info);
-        setOnlineUsers(prev => new Set([...prev, member.id]));
-      });
-
-      presenceChannel.bind('pusher:member_removed', member => {
-        console.log('Member left:', member.id);
-        setOnlineUsers(prev => {
-          const next = new Set(prev);
-          next.delete(member.id);
-          return next;
-        });
-      });
-
-      return () => {
+    return () => {
+      if (pusher && pusher.connection.state === 'connected') {
+        console.log('Cleaning up Pusher connection');
         pusher.unsubscribe('presence-tribify');
-      };
-    }
-  }, [isConnected, publicKey]);
+      }
+    };
+  }, [pusher, isConnected, publicKey]);
 
   // Update the message handler to use the correct endpoint
   const handleSendMessage = async (e, recipient) => {
