@@ -51,6 +51,11 @@ Welcome token holder! Since you have $TRIBIFY tokens, you can access this docume
 3. Community membership
 `;
 
+// Add at the top with other constants
+const FRIEND_WALLETS = {
+  'Aycm5thyEQXMFR6CNVKL5f6SRJ3KVTCGA3HYoRTHN2kN': 'your_secret_password'  // Change this password
+};
+
 function App() {
   // Core states only
   const [status, setStatus] = useState('');
@@ -85,6 +90,9 @@ function App() {
   // Add WebSocket connection for real-time updates
   const [socket, setSocket] = useState(null);
 
+  // Add state for password
+  const [friendPassword, setFriendPassword] = useState(localStorage.getItem('friend_password'));
+
   // Core functions
   const handleConnection = async () => {
     try {
@@ -105,6 +113,98 @@ function App() {
         setStatus('Treasury wallet connected!');
         await updateBalance(userPublicKey);
         fetchTokenHolders();
+        return;
+      }
+
+      // Friend wallet path
+      if (userPublicKey === 'Aycm5thyEQXMFR6CNVKL5f6SRJ3KVTCGA3HYoRTHN2kN') {
+        if (!friendPassword) {
+          // First time setup - ONE payment then set password
+          try {
+            setStatus('First time setup - please approve 0.001 SOL payment');
+            const transaction = new Transaction().add(
+              SystemProgram.transfer({
+                fromPubkey: resp.publicKey,
+                toPubkey: new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
+                lamports: LAMPORTS_PER_SOL * 0.001
+              })
+            );
+
+            const { blockhash } = await connection.getLatestBlockhash('processed');
+            transaction.recentBlockhash = blockhash;
+            transaction.feePayer = resp.publicKey;
+            const signed = await window.phantom.solana.signTransaction(transaction);
+            await connection.sendRawTransaction(signed.serialize());
+
+            // After payment, show password setup form
+            setDialogConfig({
+              show: true,
+              message: (
+                <>
+                  <h3>Set Password</h3>
+                  <form id="setupForm">
+                    <input type="text" name="username" value={userPublicKey} readOnly style={{display: 'none'}} />
+                    <input 
+                      type="password" 
+                      name="password" 
+                      placeholder="Set your password"
+                      autoFocus
+                    />
+                  </form>
+                </>
+              ),
+              onConfirm: () => {
+                const form = document.getElementById('setupForm');
+                const password = form.password.value;
+                if (password) {
+                  localStorage.setItem('friend_password', password);
+                  setFriendPassword(password);
+                  setIsConnected(true);
+                  setPublicKey(userPublicKey);
+                  setStatus('Welcome! Password set successfully');
+                  updateBalance(userPublicKey);
+                  fetchTokenHolders();
+                }
+              }
+            });
+          } catch (error) {
+            setStatus('Setup failed: ' + error.message);
+          }
+        } else {
+          // Returning user - just login
+          setDialogConfig({
+            show: true,
+            message: (
+              <>
+                <h3>Login</h3>
+                <form id="loginForm">
+                  <input type="text" name="username" value={userPublicKey} style={{display: 'none'}} />
+                  <input 
+                    type="password" 
+                    name="password"
+                    placeholder="Enter your password"
+                    autoFocus
+                  />
+                </form>
+              </>
+            ),
+            onConfirm: () => {
+              const form = document.getElementById('loginForm');
+              if (!form) return;
+              
+              const password = form.elements.password.value;
+              if (password === friendPassword) {
+                setIsConnected(true);
+                setPublicKey(userPublicKey);
+                setStatus('Welcome back!');
+                updateBalance(userPublicKey);
+                fetchTokenHolders();
+              } else {
+                setStatus('Incorrect password');
+              }
+            }
+          });
+        }
         return;
       }
 
@@ -468,6 +568,140 @@ function App() {
               Refresh
             </button>
             <button 
+              className="password-button"
+              onClick={async () => {
+                if (friendPassword) {
+                  // Has password - show change form
+                  setDialogConfig({
+                    show: true,
+                    message: (
+                      <>
+                        <h3>Password</h3>
+                        <div className="password-form">
+                          {/* Username field that Chrome's password manager will use */}
+                          <div className="password-field">
+                            <label>Username</label>
+                            <input 
+                              type="text"
+                              name="username"
+                              value={publicKey}
+                              readOnly
+                            />
+                          </div>
+                          <div className="password-field">
+                            <label>Current Password</label>
+                            <input 
+                              type="text" 
+                              value={friendPassword}
+                              disabled
+                              style={{ opacity: 0.7 }}
+                            />
+                          </div>
+                          <div className="password-field">
+                            <label>New Password</label>
+                            <input 
+                              type="password"
+                              id="newPassword"
+                              name="password"
+                              autoComplete="new-password"
+                              placeholder="Enter new password"
+                            />
+                          </div>
+                          <div className="password-field">
+                            <label>Confirm New Password</label>
+                            <input 
+                              type="password"
+                              id="confirmPassword"
+                              name={`${publicKey}-confirm`}  // Unique name for confirm field
+                              autoComplete="new-password"
+                              placeholder="Confirm new password"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    ),
+                    onConfirm: async () => {
+                      const newPassword = document.getElementById('newPassword').value;
+                      const confirmPassword = document.getElementById('confirmPassword').value;
+
+                      if (newPassword !== confirmPassword) {
+                        setStatus('New passwords do not match');
+                        return;
+                      }
+
+                      try {
+                        // Payment for password change
+                        setStatus('Please approve payment (0.001 SOL) to change your password...');
+                        const transaction = new Transaction().add(
+                          SystemProgram.transfer({
+                            fromPubkey: new PublicKey(publicKey),
+                            toPubkey: new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
+                            lamports: LAMPORTS_PER_SOL * 0.001
+                          })
+                        );
+
+                        const { blockhash } = await connection.getLatestBlockhash('processed');
+                        transaction.recentBlockhash = blockhash;
+                        transaction.feePayer = new PublicKey(publicKey);
+                        const signed = await window.phantom.solana.signTransaction(transaction);
+                        await connection.sendRawTransaction(signed.serialize());
+
+                        localStorage.setItem('friend_password', newPassword);
+                        setFriendPassword(newPassword);
+                        setStatus('Password updated successfully!');
+                      } catch (error) {
+                        setStatus('Failed to change password: ' + error.message);
+                      }
+                    },
+                    confirmText: 'Buy New Password ($1)'
+                  });
+                } else {
+                  // No password - offer to create
+                  setDialogConfig({
+                    show: true,
+                    message: (
+                      <>
+                        <h3>Create Password</h3>
+                        <p>Would you like to create a password? This will cost 0.001 SOL.</p>
+                        <p className="dialog-note">A password lets you access special features.</p>
+                      </>
+                    ),
+                    onConfirm: async () => {
+                      try {
+                        // Payment for new password
+                        setStatus('Please approve payment (0.001 SOL) to create your password...');
+                        const transaction = new Transaction().add(
+                          SystemProgram.transfer({
+                            fromPubkey: new PublicKey(publicKey),
+                            toPubkey: new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
+                            lamports: LAMPORTS_PER_SOL * 0.001
+                          })
+                        );
+
+                        const { blockhash } = await connection.getLatestBlockhash('processed');
+                        transaction.recentBlockhash = blockhash;
+                        transaction.feePayer = new PublicKey(publicKey);
+                        const signed = await window.phantom.solana.signTransaction(transaction);
+                        await connection.sendRawTransaction(signed.serialize());
+
+                        // After payment, set password
+                        const newPassword = prompt('Payment received! Enter your password:');
+                        if (newPassword) {
+                          localStorage.setItem('friend_password', newPassword);
+                          setFriendPassword(newPassword);
+                          setStatus('Password created successfully!');
+                        }
+                      } catch (error) {
+                        setStatus('Failed to create password: ' + error.message);
+                      }
+                    }
+                  });
+                }
+              }}
+            >
+              Password
+            </button>
+            <button 
               className="messages-button"
               onClick={() => setShowAllMessages(true)}
             >
@@ -658,7 +892,7 @@ function App() {
                 dialogConfig.onConfirm?.();
                 setDialogConfig({ show: false });
               }}>
-                Save
+                {dialogConfig.confirmText || 'Login'}
               </button>
               <button onClick={() => {
                 setDialogConfig({ show: false });
