@@ -280,7 +280,7 @@ function App() {
       return null;
     }
 
-    const authEndpoint = `${process.env.REACT_APP_API_URL}/pusher/auth`;
+    const authEndpoint = 'https://www.tribify.ai/api/pusher/auth';
 
     console.log('Initializing Pusher with:', {
       key: process.env.REACT_APP_PUSHER_KEY,
@@ -291,7 +291,7 @@ function App() {
 
     const pusherClient = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
       cluster: process.env.REACT_APP_PUSHER_CLUSTER,
-      forceTLS: false, // Allow non-TLS for localhost
+      forceTLS: true,
       enabledTransports: ['ws', 'wss'],
       authEndpoint,
       auth: {
@@ -299,7 +299,7 @@ function App() {
           'Content-Type': 'application/json',
         },
         params: {
-          publicKey: publicKey
+          publicKey
         }
       }
     });
