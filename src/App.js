@@ -298,18 +298,67 @@ function App() {
   const pusher = React.useMemo(() => {
     if (!publicKey) return null;
 
-    console.log('Initializing Pusher connection...');
+    console.log('Initializing Pusher connection...', {
+      appId: process.env.REACT_APP_PUSHER_APP_ID,
+      key: process.env.REACT_APP_PUSHER_KEY,
+      cluster: process.env.REACT_APP_PUSHER_CLUSTER
+    });
     
     const pusherClient = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
       cluster: process.env.REACT_APP_PUSHER_CLUSTER,
-      authEndpoint: '/api/pusher/auth',
+      authEndpoint: `${process.env.REACT_APP_API_URL}/pusher/auth`,
       auth: {
-        params: { publicKey }
+        params: { publicKey },
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      },
+      authorizer: (channel) => {
+        return {
+          authorize: async (socketId, callback) => {
+            try {
+              setDebugState(prev => ({
+                ...prev,
+                authAttempts: prev.authAttempts + 1
+              }));
+
+              const response = await fetch(`${process.env.REACT_APP_API_URL}/pusher/auth`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  socket_id: socketId,
+                  channel_name: channel.name,
+                  auth: { params: { publicKey } }
+                })
+              });
+
+              const data = await response.json();
+              callback(null, data);
+            } catch (error) {
+              console.error('Auth error:', error);
+              setDebugState(prev => ({
+                ...prev,
+                lastAuthError: error
+              }));
+              callback(error, null);
+            }
+          }
+        };
       }
     });
 
     // Subscribe to presence channel
     const channel = pusherClient.subscribe('presence-tribify');
+
+    // Add connection state handlers
+    pusherClient.connection.bind('state_change', ({ current, previous }) => {
+      console.log('Pusher state change:', { previous, current });
+      setDebugState(prev => ({
+        ...prev,
+        connectionState: current,
+        socketId: pusherClient.connection.socket_id
+      }));
+    });
 
     channel.bind('pusher:subscription_succeeded', (members) => {
       console.log('Presence subscription succeeded:', {
@@ -317,7 +366,6 @@ function App() {
         myID: members.myID
       });
       
-      // Update online users from current members
       const online = new Set();
       members.each(member => {
         online.add(member.id);
@@ -338,6 +386,14 @@ function App() {
         next.delete(member.id);
         return next;
       });
+    });
+
+    channel.bind('pusher:subscription_error', (error) => {
+      console.error('Subscription error:', error);
+      setDebugState(prev => ({
+        ...prev,
+        lastAuthError: error
+      }));
     });
 
     return pusherClient;
