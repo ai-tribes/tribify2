@@ -22,53 +22,46 @@ export default async function handler(req, res) {
 
   const { socket_id, channel_name, publicKey } = req.body;
 
-  console.log('Auth request received:', {
+  // Enhanced logging
+  console.log('Auth request:', {
     socket_id,
     channel_name,
     publicKey,
-    method: req.method,
-    headers: req.headers,
-    body: req.body
+    timestamp: new Date().toISOString()
   });
 
-  // Presence channels need user data
-  const presenceData = {
-    user_id: publicKey,
-    user_info: {
-      name: publicKey,
-      timestamp: Date.now()
-    }
-  };
-
   try {
+    // Validate presence channel
     if (!channel_name?.startsWith('presence-')) {
-      console.error('Invalid channel:', { channel_name, type: typeof channel_name });
-      return res.status(403).json({ error: 'Not a presence channel' });
+      throw new Error('Invalid channel type - must be presence channel');
     }
 
-    if (!socket_id) {
-      console.error('No socket ID provided');
-      return res.status(403).json({ error: 'No socket ID provided' });
+    // Validate required params
+    if (!socket_id || !publicKey) {
+      throw new Error('Missing required parameters');
     }
 
-    if (!publicKey) {
-      console.error('No public key provided');
-      return res.status(403).json({ error: 'No public key provided' });
-    }
+    // Create presence data
+    const presenceData = {
+      user_id: publicKey,
+      user_info: {
+        publicKey: publicKey,
+        connectedAt: Date.now()
+      }
+    };
 
-    console.log('Authorizing channel with data:', { presenceData });
+    // Generate auth response
     const auth = pusher.authorizeChannel(socket_id, channel_name, presenceData);
-    console.log('Auth successful:', auth);
     
-    res.json(auth);
-  } catch (error) {
-    console.error('Pusher auth error:', {
-      error,
-      stack: error.stack,
-      socketId: socket_id,
-      channelName: channel_name,
-      publicKey
+    console.log('Auth successful:', {
+      publicKey,
+      channel: channel_name,
+      timestamp: new Date().toISOString()
     });
+
+    res.status(200).json(auth);
+  } catch (error) {
+    console.error('Auth error:', error);
     res.status(500).json({ error: error.message });
   }
 } 

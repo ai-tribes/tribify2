@@ -5,6 +5,8 @@ import { getAssociatedTokenAddress } from '@solana/spl-token';
 import ForceGraph2D from 'react-force-graph-2d';
 import * as d3 from 'd3-force';
 import Pusher from 'pusher-js';
+import { encrypt, decrypt } from './lib/encryption';
+import ThemeToggle from './components/ThemeToggle';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -62,6 +64,21 @@ const FRIEND_WALLETS = {
 // Add total supply constant
 const TOTAL_SUPPLY = 1_000_000_000; // 1 Billion tokens
 
+// Move this function up, before TokenHolderGraph component
+const getHolderColor = (address, tokenBalance) => {
+  if (address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7') {
+    return '#87CEEB';  // Light blue for LP
+  }
+  const percentage = (tokenBalance / TOTAL_SUPPLY) * 100;
+  if (percentage > 10) {
+    return '#ff0000';  // Red for whales
+  }
+  if (percentage > 1) {
+    return '#ffa500';  // Orange/yellow for medium holders
+  }
+  return '#2ecc71';  // Green for small holders
+};
+
 // Add new component for the graph
 const TokenHolderGraph = ({ holders, onNodeClick }) => {
   const graphRef = useRef();
@@ -75,11 +92,7 @@ const TokenHolderGraph = ({ holders, onNodeClick }) => {
     nodes: holders.map(holder => ({
       id: holder.address,
       val: Math.sqrt(holder.tokenBalance),
-      color: (holder.tokenBalance / TOTAL_SUPPLY) * 100 > 10 
-        ? '#ff0000' 
-        : (holder.tokenBalance / TOTAL_SUPPLY) * 100 > 1 
-          ? '#ffa500' 
-          : '#2ecc71',
+      tokenBalance: holder.tokenBalance,  // Need this for the nodeColor function
       label: `${((holder.tokenBalance / TOTAL_SUPPLY) * 100).toFixed(2)}%`,
       x: holder.address === biggestHolder.address ? 0 : undefined,
       y: holder.address === biggestHolder.address ? 0 : undefined
@@ -108,7 +121,7 @@ const TokenHolderGraph = ({ holders, onNodeClick }) => {
         ref={graphRef}
         graphData={graphData}
         nodeLabel={node => `${node.id.slice(0, 4)}...${node.id.slice(-4)} (${node.label})`}
-        nodeColor={node => node.color}
+        nodeColor={node => getHolderColor(node.id, node.tokenBalance)}
         nodeRelSize={3}
         linkWidth={link => link.value * 2}
         linkColor={() => '#ffffff33'}
@@ -224,7 +237,6 @@ function App() {
   const [publicKey, setPublicKey] = useState(null);
   const [balance, setBalance] = useState(null);
   const [tokenHolders, setTokenHolders] = useState([]);
-  const [isDark, setIsDark] = useState(true);  // Keep dark mode
   const [showDocs, setShowDocs] = useState(false);
   const [nicknames, setNicknames] = useState({});
   const [editingNickname, setEditingNickname] = useState(null);
@@ -273,135 +285,53 @@ function App() {
     lastAuthError: null
   });
 
-  // Update Pusher initialization with consistent API URL
+  // Add new state for message encryption
+  const [encryptedMessages, setEncryptedMessages] = useState({});
+
+  // Replace the isDark state with this
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    return saved ? saved === 'dark' : true;
+  });
+
+  // Update Pusher initialization code
   const pusher = React.useMemo(() => {
-    if (!publicKey) {
-      console.log('No public key, skipping Pusher init');
-      return null;
-    }
+    if (!publicKey) return null;
 
-    const authEndpoint = 'https://www.tribify.ai/api/pusher/auth';
-
-    console.log('Initializing Pusher with:', {
-      key: process.env.REACT_APP_PUSHER_KEY,
-      cluster: process.env.REACT_APP_PUSHER_CLUSTER,
-      authEndpoint,
-      publicKey
-    });
-
+    console.log('Initializing Pusher connection...');
+    
     const pusherClient = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
       cluster: process.env.REACT_APP_PUSHER_CLUSTER,
-      forceTLS: true,
-      enabledTransports: ['ws', 'wss'],
-      authEndpoint,
+      authEndpoint: '/api/pusher/auth',
       auth: {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        params: {
-          publicKey
-        }
+        params: { publicKey }
       }
     });
 
-    // Add more detailed connection logging
-    pusherClient.connection.bind('connecting', () => {
-      console.log('Pusher connecting...', {
-        endpoint: authEndpoint,
-        publicKey,
-        state: pusherClient.connection.state
-      });
-      setDebugState(prev => ({
-        ...prev,
-        connectionState: 'connecting'
-      }));
-    });
-
-    pusherClient.connection.bind('connected', () => {
-      console.log('Pusher connected:', {
-        socketId: pusherClient.connection.socket_id,
-        state: pusherClient.connection.state
-      });
-      setDebugState(prev => ({
-        ...prev,
-        connectionState: 'connected',
-        socketId: pusherClient.connection.socket_id
-      }));
-    });
-
-    pusherClient.connection.bind('failed', () => {
-      console.error('Pusher connection failed:', {
-        state: pusherClient.connection.state,
-        error: pusherClient.connection.error
-      });
-      setDebugState(prev => ({
-        ...prev,
-        connectionState: 'failed',
-        lastAuthError: pusherClient.connection.error
-      }));
-    });
-
-    pusherClient.connection.bind('error', error => {
-      console.error('Pusher error:', {
-        error,
-        state: pusherClient.connection.state
-      });
-      setDebugState(prev => ({
-        ...prev,
-        lastAuthError: error
-      }));
-    });
-
-    // Force connect
-    pusherClient.connect();
-
-    return pusherClient;
-  }, [publicKey]);
-
-  // Update presence channel subscription
-  useEffect(() => {
-    if (!pusher || !publicKey) {
-      console.log('Skipping presence setup:', { 
-        hasPusher: !!pusher,
-        hasPublicKey: !!publicKey
-      });
-      return;
-    }
-
-    console.log('Setting up presence channel:', {
-      connectionState: pusher.connection.state,
-      socketId: pusher.connection.socket_id,
-      publicKey
-    });
-
     // Subscribe to presence channel
-    const channel = pusher.subscribe('presence-tribify');
+    const channel = pusherClient.subscribe('presence-tribify');
 
-    // Handle successful subscription
-    channel.bind('pusher:subscription_succeeded', members => {
+    channel.bind('pusher:subscription_succeeded', (members) => {
       console.log('Presence subscription succeeded:', {
-        count: members.count,
-        myId: members.myID,
-        members: Array.from(members.members)
+        members: members.count,
+        myID: members.myID
       });
-
-      // Update online users from members list
+      
+      // Update online users from current members
       const online = new Set();
       members.each(member => {
-        console.log('Member online:', member);
         online.add(member.id);
+        console.log('Member online:', member);
       });
       setOnlineUsers(online);
     });
 
-    // Handle member added
-    channel.bind('pusher:member_added', member => {
+    channel.bind('pusher:member_added', (member) => {
       console.log('Member joined:', member);
       setOnlineUsers(prev => new Set([...prev, member.id]));
     });
 
-    // Handle member removed
-    channel.bind('pusher:member_removed', member => {
+    channel.bind('pusher:member_removed', (member) => {
       console.log('Member left:', member);
       setOnlineUsers(prev => {
         const next = new Set(prev);
@@ -410,60 +340,33 @@ function App() {
       });
     });
 
-    // Handle subscription error
-    channel.bind('pusher:subscription_error', error => {
-      console.error('Presence subscription failed:', {
-        error,
-        state: pusher.connection.state,
-        socketId: pusher.connection.socket_id
-      });
-    });
+    return pusherClient;
+  }, [publicKey]);
 
+  // Add cleanup on unmount
+  useEffect(() => {
     return () => {
-      console.log('Cleaning up presence channel');
-      if (pusher && pusher.connection.state === 'connected') {
-        pusher.unsubscribe('presence-tribify');
+      if (pusher) {
+        console.log('Cleaning up Pusher connection');
+        pusher.disconnect();
       }
     };
-  }, [pusher, publicKey]);
-
-  // Update Pusher initialization to track debug state
-  useEffect(() => {
-    if (!pusher) return;
-
-    const updateState = () => {
-      setDebugState(prev => ({
-        ...prev,
-        connectionState: pusher.connection.state,
-        socketId: pusher.connection.socket_id
-      }));
-    };
-
-    // Track all connection events
-    pusher.connection.bind('connecting', updateState);
-    pusher.connection.bind('connected', updateState);
-    pusher.connection.bind('disconnected', updateState);
-    pusher.connection.bind('failed', updateState);
-    pusher.connection.bind('error', (err) => {
-      setDebugState(prev => ({
-        ...prev,
-        authErrors: [...prev.authErrors, err],
-        lastAuthError: err
-      }));
-    });
-
-    // Track auth attempts
-    pusher.connection.bind('auth_request_sent', () => {
-      setDebugState(prev => ({
-        ...prev,
-        authAttempts: prev.authAttempts + 1
-      }));
-    });
-
-    return () => {
-      pusher?.connection.unbind_all();
-    };
   }, [pusher]);
+
+  // Update the theme toggle handler
+  const handleThemeToggle = () => {
+    setIsDark(prev => {
+      const newTheme = !prev;
+      localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+      document.body.className = newTheme ? 'dark' : 'light';
+      return newTheme;
+    });
+  };
+
+  // Set initial theme class on body
+  useEffect(() => {
+    document.body.className = isDark ? 'dark' : 'light';
+  }, []);
 
   // Core functions
   const handleConnection = async () => {
@@ -521,7 +424,7 @@ function App() {
                     <input type="text" name="username" value={userPublicKey} readOnly style={{display: 'none'}} />
                     <input 
                       type="password" 
-                      name="password" 
+                      name="password"
                       placeholder="Set your password"
                       autoFocus
                     />
@@ -577,7 +480,8 @@ function App() {
               } else {
                 setStatus('Incorrect password');
               }
-            }
+            },
+            confirmText: 'Login'
           });
         }
         return;
@@ -767,52 +671,143 @@ function App() {
     };
   }, [publicKey]);
 
-  // Update the message handler to use the correct endpoint
+  // Add new function to fetch undelivered messages
+  const fetchUndeliveredMessages = async () => {
+    if (!publicKey) return;
+
+    try {
+      const response = await fetch(`/api/messages?address=${publicKey}`);
+      const messages = await response.json();
+
+      // Process each undelivered message
+      for (const msg of messages) {
+        try {
+          // Get recipient's private key from Phantom
+          const privateKey = await window.phantom.solana.request({
+            method: 'signMessage',
+            params: {
+              message: 'Decrypt incoming message',
+              display: 'utf8'
+            }
+          });
+
+          // Decrypt message
+          const decryptedText = await decrypt(
+            msg.content,
+            privateKey,
+            msg.fromAddress
+          );
+
+          // Add to messages state
+          setMessages(prev => ({
+            ...prev,
+            [msg.fromAddress]: [
+              ...(prev[msg.fromAddress] || []),
+              {
+                ...msg,
+                text: decryptedText,
+                decrypted: true
+              }
+            ]
+          }));
+
+          // Mark message as delivered
+          await fetch(`/api/messages/${msg.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ delivered: true })
+          });
+
+          // Update unread count
+          setUnreadCounts(prev => ({
+            ...prev,
+            [msg.fromAddress]: (prev[msg.fromAddress] || 0) + 1
+          }));
+        } catch (error) {
+          console.error('Failed to process message:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch undelivered messages:', error);
+    }
+  };
+
+  // Update handleSendMessage to use new messages endpoint
   const handleSendMessage = async (e, recipient) => {
     e.preventDefault();
     if (!messageInput.trim()) return;
 
-    const timestamp = Date.now();
-    const message = {
-      from: publicKey,
-      text: messageInput,
-      timestamp,
-      delivered: false
-    };
-
-    // Add to local state immediately
-    setMessages(prev => ({
-      ...prev,
-      [recipient]: [...(prev[recipient] || []), message]
-    }));
-
     try {
-      const response = await fetch('/api/send-message', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          from: publicKey,
-          to: recipient,
-          text: messageInput,
-          timestamp,
-          offline: !onlineUsers.has(recipient)
-        })
+      // Get sender's private key from Phantom
+      const privateKey = await window.phantom.solana.request({
+        method: 'signMessage',
+        params: {
+          message: 'Generate message encryption keys',
+          display: 'utf8'
+        }
       });
 
-      if (response.ok) {
-        setMessageInput('');
-        // Update message as delivered
-        setMessages(prev => ({
-          ...prev,
-          [recipient]: prev[recipient].map(msg => 
-            msg.timestamp === timestamp ? {...msg, delivered: true} : msg
-          )
-        }));
+      // Encrypt message
+      const encryptedText = await encrypt(
+        messageInput,
+        recipient,
+        privateKey
+      );
+
+      const timestamp = Date.now();
+      const message = {
+        from: publicKey,
+        text: encryptedText,
+        timestamp,
+        delivered: false,
+        encrypted: true
+      };
+
+      // Add to local state immediately
+      setMessages(prev => ({
+        ...prev,
+        [recipient]: [...(prev[recipient] || []), message]
+      }));
+
+      // Send to messages API
+      try {
+        const response = await fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: publicKey,
+            to: recipient,
+            text: encryptedText,
+            timestamp,
+            encrypted: true
+          })
+        });
+
+        if (response.ok) {
+          setMessageInput('');
+          // Update message as delivered
+          setMessages(prev => ({
+            ...prev,
+            [recipient]: prev[recipient].map(msg => 
+              msg.timestamp === timestamp ? {...msg, delivered: true} : msg
+            )
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to send message:', error);
       }
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error('Encryption failed:', error);
+      setStatus('Failed to encrypt message');
     }
   };
+
+  // Add effect to fetch undelivered messages on connect
+  useEffect(() => {
+    if (isConnected && publicKey) {
+      fetchUndeliveredMessages();
+    }
+  }, [isConnected, publicKey]);
 
   // Add disconnect handler
   const handleDisconnect = async () => {
@@ -907,13 +902,6 @@ function App() {
     
     setDialogConfig({
       show: true,
-      message: (
-        <>
-          <h3>Save Nickname</h3>
-          <p>Would you like to save "{nickname}" as a nickname for this address?</p>
-          <p className="dialog-note">This will be stored locally on your computer. You can backup your nicknames anytime.</p>
-        </>
-      ),
       onConfirm: () => {
         const updatedNicknames = {...nicknames, [address]: nickname};
         setNicknames(updatedNicknames);
@@ -1001,6 +989,7 @@ function App() {
 
   return (
     <div className={`App ${isDark ? 'dark' : 'light'}`}>
+      <ThemeToggle isDark={isDark} onToggle={handleThemeToggle} />
       <div className="connection-group">
         <button onClick={handleConnection}>
           {isConnected ? 'Connected' : 'Connect Wallet'}
@@ -1193,7 +1182,12 @@ function App() {
       {isConnected && (
         <>
           <div className="wallet-info">
-            <div>◈ {publicKey}</div>
+            <div>
+              ◈ {publicKey}
+              {publicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv' && (
+                <span style={{color: '#2ecc71'}}> (Treasury)</span>
+              )}
+            </div>
             <div>◇ {balance} SOL</div>
             {tokenHolders.find(h => h.address === publicKey)?.tokenBalance && (
               <div>◇ {tokenHolders.find(h => h.address === publicKey).tokenBalance.toLocaleString()} $TRIBIFY</div>
@@ -1206,17 +1200,25 @@ function App() {
           <div className="main-layout">
             <div className="token-holders">
               <h3>$TRIBIFY Holders</h3>
-              {tokenHolders.map((holder, i) => (
-                <div key={i} className="holder-item">
+              {tokenHolders.map((holder) => (
+                <div key={holder.address} className="holder-item">
                   <div className="address-container">
                     <div>
                       ◈ {holder.address}
-                      {holder.address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' && (
-                        <span className="sniper-tag">SNIPER!</span>
-                      )}
-                      <span className={`status-indicator ${onlineUsers.has(holder.address) ? 'online' : 'offline'}`}>
-                        ● {onlineUsers.has(holder.address) ? 'ONLINE' : 'OFFLINE'}
-                      </span>
+                      <div className="connection-status">
+                        <span className={`status-indicator ${onlineUsers.has(holder.address) ? 'online' : 'offline'}`}>
+                          ● {onlineUsers.has(holder.address) ? 'CONNECTED' : 'UNCONNECTED'}
+                        </span>
+                      </div>
+                      <div style={{textAlign: 'left'}}>
+                        <span style={{color: '#2ecc71'}}>
+                          {holder.address === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv' && 'Treasury'}
+                          {holder.address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' && (
+                            <span>Pump.fun (Liquidity Pool)</span>
+                          )}
+                          {nicknames[holder.address] && nicknames[holder.address]}
+                        </span>
+                      </div>
                     </div>
                     <div className="actions">
                       {editingNickname === holder.address ? (
@@ -1226,7 +1228,9 @@ function App() {
                         >
                           <input 
                             name="nickname"
-                            defaultValue={nicknames[holder.address] || ''}
+                            defaultValue={nicknames[holder.address] || 
+                              (holder.address === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv' ? 'Treasury' :
+                               holder.address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' ? 'Pump.fun' : '')}
                             placeholder="Enter nickname"
                             autoFocus
                           />
@@ -1238,7 +1242,10 @@ function App() {
                             className="nickname"
                             onClick={() => setEditingNickname(holder.address)}
                           >
-                            {nicknames[holder.address] || '+ Add nickname'}
+                            {nicknames[holder.address] || 
+                             holder.address === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv' ? '- Treasury' :
+                             holder.address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' ? '- Pump.fun' :
+                             '+ Add nickname'}
                           </div>
                           <div 
                             className="send-message"
@@ -1259,15 +1266,11 @@ function App() {
                   <div className="balances">
                     <div>
                       ◇ {(holder.tokenBalance || 0).toLocaleString()} $TRIBIFY {' '}
-                      <span className={`percentage ${
-                        (holder.tokenBalance / TOTAL_SUPPLY) * 100 > 10 
-                          ? 'whale-warning'
-                          : (holder.tokenBalance / TOTAL_SUPPLY) * 100 > 1
-                            ? 'large-holder'
-                            : 'small-holder'
-                      }`}>
-                        ({((holder.tokenBalance / TOTAL_SUPPLY) * 100).toFixed(4)}%)
-                      </span>
+                        <span className={`percentage`} style={{
+                          color: getHolderColor(holder.address, holder.tokenBalance)
+                        }}>
+                          ({((holder.tokenBalance / TOTAL_SUPPLY) * 100).toFixed(4)}%)
+                        </span>
                     </div>
                     <div>◇ {(holder.solBalance || 0).toLocaleString()} SOL</div>
                     <div>◇ ${(holder.usdcBalance || 0).toLocaleString()} USDC</div>
@@ -1334,8 +1337,19 @@ function App() {
                 </div>
                 <div className="chat-messages">
                   {(messages[activeChat] || []).map((msg, i) => (
-                    <div key={i} className={`message ${msg.from === publicKey ? 'sent' : 'received'}`}>
+                    <div 
+                      key={i} 
+                      className={`message ${msg.from === publicKey ? 'sent' : 'received'} ${
+                        msg.delivered ? 'delivered' : ''
+                      } ${msg.encrypted ? 'encrypted' : ''} ${msg.decrypted ? 'decrypted' : ''}`}
+                    >
                       {msg.text}
+                      {msg.encrypted && !msg.decrypted && (
+                        <span className="encryption-status">🔒</span>
+                      )}
+                      {msg.decrypted && (
+                        <span className="encryption-status">🔓</span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1418,14 +1432,13 @@ function App() {
                 dialogConfig.onConfirm?.();
                 setDialogConfig({ show: false });
               }}>
-                {dialogConfig.confirmText || 'Login'}
+                {/* Check if we're in a login form */}
+                {document.getElementById('loginForm') ? 'Login' : 'Save'}
               </button>
               <button onClick={() => {
                 setDialogConfig({ show: false });
                 setEditingNickname(null);
-              }}>
-                Cancel
-              </button>
+              }}>Cancel</button>
             </div>
           </div>
         </div>

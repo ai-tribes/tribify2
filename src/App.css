@@ -1,4 +1,27 @@
-/* Base Layout */
+/* Base styles */
+body {
+  margin: 0;
+  padding: 0;
+  transition: all 0.3s ease;
+}
+
+body.light {
+  background-color: #ffffff;
+  color: #1a1a1a;
+  --tooltip-bg: #ffffff;
+  --tooltip-color: #000000;
+  --bg-color: #fff;
+}
+
+body.dark {
+  background-color: #1a1a1a;
+  color: #ffffff;
+  --tooltip-bg: #000000;
+  --tooltip-color: #ffffff;
+  --bg-color: #000;
+}
+
+/* App container */
 .App {
   display: flex;
   flex-direction: column;
@@ -9,23 +32,31 @@
   transition: all 0.3s ease;
   text-align: center;
   font-size: 16px;
+  background: transparent;
 }
 
-/* Theme Styles */
-.dark {
-  background: #000;
-  color: #fff;
-  --tooltip-bg: #000000 !important;
-  --tooltip-color: #ffffff !important;
-  --bg-color: #000;
+/* Theme toggle */
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  cursor: pointer;
+  z-index: 1000;
+  opacity: 0.7;
+  transition: all 0.3s ease;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
 }
 
-.light {
-  background: #fff;
-  color: #000;
-  --tooltip-bg: #ffffff !important;
-  --tooltip-color: #000000 !important;
-  --bg-color: #fff;
+.theme-toggle:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.theme-toggle svg {
+  stroke: currentColor;
 }
 
 /* Connection Status */
@@ -53,24 +84,6 @@
   100% { opacity: 0.3; }
 }
 
-/* Theme Toggle */
-.mode-toggle {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  font-size: 18px;
-  opacity: 0.5;
-  background: transparent;
-  border: 1px solid currentColor;
-}
-
-.mode-toggle:hover {
-  opacity: 1;
-}
-
 /* Main Content */
 .content {
   display: flex;
@@ -79,8 +92,28 @@
   gap: 15px;
 }
 
-/* Buttons */
-button:not(.mode-toggle) {
+/* Standardized Button Styles */
+button,
+.button,
+.restore-button {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-family: monospace;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid currentColor;
+  color: inherit;
+  border-radius: 0;
+  min-width: 100px;
+  transition: all 0.2s ease;
+  opacity: 0.8;
+  margin: 0 4px;
+}
+
+/* Remove any specific button overrides */
+button:not(.theme-toggle),
+.button:not(.theme-toggle),
+.restore-button:not(.theme-toggle) {
   padding: 8px 16px;
   font-size: 14px;
   cursor: pointer;
@@ -89,25 +122,30 @@ button:not(.mode-toggle) {
   color: inherit;
   border-radius: 0;
   min-width: 100px;
-  transition: all 0.2s ease;
 }
 
-button:hover {
+/* Hover state for all buttons */
+button:hover,
+.button:hover,
+.restore-button:hover {
+  opacity: 1;
   transform: translateY(-1px);
-  opacity: 0.8;
 }
 
-.dark button {
-  border-color: #fff;
+/* Dark theme button styles */
+body.dark button,
+body.dark .button,
+body.dark .restore-button {
+  border-color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.light button {
-  border-color: #000;
-}
-
-.disconnect {
-  opacity: 0.7;
-  border-style: dashed;
+/* Light theme button styles */
+body.light button,
+body.light .button,
+body.light .restore-button {
+  border-color: rgba(0, 0, 0, 0.8);
+  color: rgba(0, 0, 0, 0.8);
 }
 
 /* Wallet Info */
@@ -525,23 +563,6 @@ button:hover {
   min-width: unset;
 }
 
-button {
-  display: inline-block;
-  padding: 12px 24px;
-  margin: 10px;
-  border: 2px solid #333;
-  border-radius: 4px;
-  background: #fff;
-  cursor: pointer;
-  font-size: 18px;
-}
-
-.dark button {
-  background: #333;
-  color: #fff;
-  border-color: #fff;
-}
-
 .balances {
   display: flex;
   flex-direction: column;
@@ -684,23 +705,21 @@ button {
   overflow-y: auto;
 }
 
+/* Connection group container */
 .connection-group {
   display: flex;
-  gap: 12px;
-  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
-.connection-group button {
-  margin: 0;  /* Remove default button margin */
-}
-
-.disconnect-button {
-  opacity: 0.7;
-  border-style: dashed;
-}
-
-.disconnect-button:hover {
-  opacity: 1;
+/* Remove any specific button styles */
+.tribify-button,
+.disconnect-button,
+.refresh-button,
+.password-button,
+.messages-button {
+  /* Remove any specific styles as they'll inherit from the standard button styles */
 }
 
 .inbox-status {
@@ -714,12 +733,6 @@ button {
 
 .inbox-status:hover {
   opacity: 1;
-}
-
-.messages-button {
-  background: #2ecc71;
-  color: white;
-  border-color: #2ecc71;
 }
 
 .messages-box {
@@ -781,20 +794,6 @@ button {
   display: flex;
   gap: 12px;
   margin: 20px 0;
-}
-
-.restore-button {
-  cursor: pointer;
-  padding: 8px 16px;
-  background: transparent;
-  border: 1px solid currentColor;
-  color: inherit;
-  font-size: 14px;
-  display: inline-block;
-}
-
-.restore-button:hover {
-  opacity: 0.8;
 }
 
 .dialog-overlay {
@@ -1088,67 +1087,94 @@ button {
   align-items: center;
 }
 
+/* Debug Panel */
 .connection-status-panel {
-  margin-top: 20px;
-  width: 800px;
-  background: rgba(0, 0, 0, 0.9);
-  border: 1px solid #2ecc71;
-  padding: 15px;
+  margin: 20px;
+  padding: 20px;
+  border-radius: 4px;
   font-family: monospace;
+  transition: all 0.3s ease;
+}
+
+body.dark .connection-status-panel {
+  background: rgba(40, 40, 40, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+body.light .connection-status-panel {
+  background: rgba(245, 245, 245, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #000;
 }
 
 .debug-grid {
   display: grid;
   gap: 12px;
-  grid-template-columns: 1fr;  /* Single column for better readability */
 }
 
 .debug-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 8px 16px;
-  background: rgba(255,255,255,0.1);
+  padding: 10px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+body.dark .debug-item {
+  background: rgba(50, 50, 50, 0.95);
+}
+
+body.light .debug-item {
+  background: rgba(255, 255, 255, 0.95);
 }
 
 .debug-label {
-  color: #95a5a6;
+  min-width: 120px;
+  font-size: 14px;
+}
+
+body.dark .debug-label {
+  color: #888;
+}
+
+body.light .debug-label {
+  color: #666;
 }
 
 .debug-value {
+  font-family: monospace;
+  font-size: 14px;
+}
+
+body.dark .debug-value {
   color: #2ecc71;
 }
 
-.debug-value.state-connecting {
-  color: #f1c40f;
-  animation: pulse 1s infinite;
+body.light .debug-value {
+  color: #2980b9;
 }
 
-.debug-value.state-connected {
-  color: #2ecc71;
+.state-disconnected {
+  color: #e74c3c !important;
 }
 
-.debug-value.state-failed,
-.debug-value.state-disconnected {
-  color: #e74c3c;
+.state-connected {
+  color: #2ecc71 !important;
 }
 
-.debug-item.error {
-  background: rgba(231, 76, 60, 0.2);
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
+.message .encryption-status {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 12px;
+  opacity: 0.7;
 }
 
-.debug-item.error .debug-value {
-  width: 100%;
-  word-break: break-word;
-  white-space: pre-wrap;
-  color: #e74c3c;
+.message.encrypted {
+  background: rgba(46, 204, 113, 0.1);
 }
 
-@keyframes pulse {
-  0% { opacity: 0.5; }
-  50% { opacity: 1; }
-  100% { opacity: 0.5; }
+.message.decrypted {
+  background: rgba(46, 204, 113, 0.2);
 } 
