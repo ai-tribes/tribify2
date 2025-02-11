@@ -6,7 +6,6 @@ import ForceGraph2D from 'react-force-graph-2d';
 import * as d3 from 'd3-force';
 import Pusher from 'pusher-js';
 import { encrypt, decrypt } from './lib/encryption';
-import ThemeToggle from './components/ThemeToggle';
 import Connected from './components/Connected';
 import Refresh from './components/Refresh';
 import Password from './components/Password';
@@ -14,7 +13,7 @@ import Messages from './components/Messages';
 import Backup from './components/Backup';
 import Restore from './components/Restore';
 import Disconnect from './components/Disconnect';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { clusterApiUrl } from '@solana/web3.js';
@@ -186,6 +185,7 @@ const TokenHolderGraph = ({ holders, onNodeClick, isCollapsed, setIsCollapsed })
 };
 
 function App() {
+  const navigate = useNavigate();
   // Add all state declarations at the top of App
   const [isLoading, setIsLoading] = useState(false);
   const [wallets, setWallets] = useState([]);
@@ -245,12 +245,6 @@ function App() {
 
   // Add new state for message encryption
   const [encryptedMessages, setEncryptedMessages] = useState({});
-
-  // Replace the isDark state with this
-  const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    return saved ? saved === 'dark' : true;
-  });
 
   // Move isCollapsed state from TokenHolderGraph to App
   const [isCollapsed, setIsCollapsed] = useState(true);
@@ -366,21 +360,6 @@ function App() {
 
     return pusherClient;
   }, [publicKey]);
-
-  // Update the theme toggle handler
-  const handleThemeToggle = () => {
-    setIsDark(prev => {
-      const newTheme = !prev;
-      localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-      document.body.className = newTheme ? 'dark' : 'light';
-      return newTheme;
-    });
-  };
-
-  // Set initial theme class on body
-  useEffect(() => {
-    document.body.className = isDark ? 'dark' : 'light';
-  }, []);
 
   // Core functions
   const handleConnection = async () => {
@@ -1022,9 +1001,7 @@ function App() {
   };
 
   return (
-    <div className={`App ${isDark ? 'dark' : 'light'}`}>
-      <ThemeToggle isDark={isDark} onToggle={handleThemeToggle} />
-      
+    <div className="App">
       {!isConnected ? (
         // Show only Connect button when disconnected
         <button 
@@ -1170,9 +1147,9 @@ function App() {
           <Messages onClick={() => setShowAllMessages(true)} />
           <Backup onClick={backupNicknames} />
           <Restore onClick={() => document.getElementById('restore-input').click()} />
-          <Link to="/wallet">
-            <button>Open Wallet</button>
-          </Link>
+          <button onClick={() => navigate('/wallet')}>
+            Wallet
+          </button>
           <button 
             className="tribify-button"
             onClick={() => setShowTribifyPrompt(true)}
@@ -1189,13 +1166,13 @@ function App() {
             className="graph-toggle-button"
             onClick={() => setIsCollapsed(!isCollapsed)}
           >
-            {isCollapsed ? 'Show Holder Graph' : 'Hide Graph'}
+            Graph
           </button>
           <button 
             className="holders-toggle-button"
             onClick={() => setShowHolders(!showHolders)}
           >
-            {showHolders ? 'Hide Holders List' : 'Show Holders List'}
+            Holders
           </button>
           <button 
             className="status-toggle-button"
