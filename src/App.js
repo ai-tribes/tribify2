@@ -94,10 +94,9 @@ const getHolderColor = (address, tokenBalance) => {
 };
 
 // Add TokenHolderGraph component definition before App
-const TokenHolderGraph = ({ holders, onNodeClick }) => {
+const TokenHolderGraph = ({ holders, onNodeClick, isCollapsed, setIsCollapsed }) => {
   const graphRef = useRef();
-  const [isCollapsed, setIsCollapsed] = useState(true);
-  const [localRandomized, setLocalRandomized] = useState(true); // Default to true
+  const [localRandomized, setLocalRandomized] = useState(true);
   
   // Find the biggest holder to focus on
   const biggestHolder = holders.reduce((max, holder) => 
@@ -137,16 +136,7 @@ const TokenHolderGraph = ({ holders, onNodeClick }) => {
   }, []);
 
   if (isCollapsed) {
-    return (
-      <div className="graph-container collapsed">
-        <button 
-          className="expand-button"
-          onClick={() => setIsCollapsed(false)}
-        >
-          Show Holder Graph
-        </button>
-      </div>
-    );
+    return null; // Don't render anything when collapsed
   }
 
   return (
@@ -261,6 +251,15 @@ function App() {
     const saved = localStorage.getItem('theme');
     return saved ? saved === 'dark' : true;
   });
+
+  // Move isCollapsed state from TokenHolderGraph to App
+  const [isCollapsed, setIsCollapsed] = useState(true);
+
+  // Add new state for holders list
+  const [showHolders, setShowHolders] = useState(true);
+
+  // Add new state near the top with other states
+  const [showStatus, setShowStatus] = useState(false);
 
   // Define WalletTable component inside App to access state and functions
   const WalletTable = ({ wallets, onCopy }) => {
@@ -1180,6 +1179,24 @@ function App() {
           >
             /tribify.ai
           </button>
+          <button 
+            className="graph-toggle-button"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+          >
+            {isCollapsed ? 'Show Holder Graph' : 'Hide Graph'}
+          </button>
+          <button 
+            className="holders-toggle-button"
+            onClick={() => setShowHolders(!showHolders)}
+          >
+            {showHolders ? 'Hide Holders List' : 'Show Holders List'}
+          </button>
+          <button 
+            className="status-toggle-button"
+            onClick={() => setShowStatus(!showStatus)}
+          >
+            Connection
+          </button>
           <Disconnect onClick={handleDisconnect} />
         </div>
       )}
@@ -1203,127 +1220,53 @@ function App() {
           </div>
 
           <div className="main-layout">
-            <div className="token-holders">
-              <h3>$TRIBIFY Holders</h3>
-              {tokenHolders.map((holder) => (
-                <div key={holder.address} className="holder-item">
-                  <div className="address-container">
-                    <div>
-                      ◈ {holder.address}
-                      <div className="connection-status">
-                        <span className={`status-indicator ${onlineUsers.has(holder.address) ? 'online' : 'offline'}`}>
-                          ● {onlineUsers.has(holder.address) ? 'CONNECTED' : 'UNCONNECTED'}
-                        </span>
+            {showHolders && (
+              <div className="token-holders">
+                <h3>$TRIBIFY Holders</h3>
+                <TokenHolderGraph 
+                  holders={tokenHolders}
+                  onNodeClick={handleOpenChat}
+                  isCollapsed={isCollapsed}
+                  setIsCollapsed={setIsCollapsed}
+                />
+                
+                {showStatus && (
+                  <div className="connection-status-panel">
+                    <h3>Connection Status</h3>
+                    <div className="debug-grid">
+                      <div className="debug-item">
+                        <div className="debug-label">State:</div>
+                        <div className={`debug-value state-${debugState.connectionState}`}>
+                          {debugState.connectionState}
+                        </div>
                       </div>
-                      <div style={{textAlign: 'left'}}>
-                        <span style={{color: '#2ecc71'}}>
-                          {holder.address === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv' && 'Treasury'}
-                          {holder.address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' && (
-                            <span>Pump.fun (Liquidity Pool)</span>
-                          )}
-                          {nicknames[holder.address] && nicknames[holder.address]}
-                        </span>
+                      <div className="debug-item">
+                        <div className="debug-label">Socket ID:</div>
+                        <div className="debug-value">{debugState.socketId || 'none'}</div>
                       </div>
-                    </div>
-                    <div className="actions">
-                      {editingNickname === holder.address ? (
-                        <form 
-                          className="nickname-form"
-                          onSubmit={(e) => handleNicknameSubmit(e, holder.address)}
-                        >
-                          <input 
-                            name="nickname"
-                            defaultValue={nicknames[holder.address] || 
-                              (holder.address === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv' ? 'Treasury' :
-                               holder.address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' ? 'Pump.fun' : '')}
-                            placeholder="Enter nickname"
-                            autoFocus
-                          />
-                          <button type="submit">✓</button>
-                        </form>
-                      ) : (
-                        <>
-                          <div 
-                            className="nickname"
-                            onClick={() => setEditingNickname(holder.address)}
-                          >
-                            {nicknames[holder.address] || 
-                             holder.address === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv' ? '- Treasury' :
-                             holder.address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' ? '- Pump.fun' :
-                             '+ Add nickname'}
-                          </div>
-                          <div 
-                            className="send-message"
-                            onClick={() => handleOpenChat(holder.address)}
-                          >
-                            + Send message
-                          </div>
-                          <div 
-                            className="inbox-status"
-                            onClick={() => handleInboxClick(holder.address)}
-                          >
-                            {unreadCounts[holder.address] || '0'} unread messages
-                          </div>
-                        </>
+                      <div className="debug-item">
+                        <div className="debug-label">Auth Attempts:</div>
+                        <div className="debug-value">{debugState.authAttempts}</div>
+                      </div>
+                      <div className="debug-item">
+                        <div className="debug-label">My Public Key:</div>
+                        <div className="debug-value">{publicKey || 'none'}</div>
+                      </div>
+                      <div className="debug-item">
+                        <div className="debug-label">Online Users:</div>
+                        <div className="debug-value">{onlineUsers.size}</div>
+                      </div>
+                      {debugState.lastAuthError && (
+                        <div className="debug-item error">
+                          <div className="debug-label">Last Error:</div>
+                          <div className="debug-value">{debugState.lastAuthError.message}</div>
+                        </div>
                       )}
                     </div>
                   </div>
-                  <div className="balances">
-                    <div>
-                      ◇ {(holder.tokenBalance || 0).toLocaleString()} $TRIBIFY {' '}
-                        <span className={`percentage`} style={{
-                          color: getHolderColor(holder.address, holder.tokenBalance)
-                        }}>
-                          ({((holder.tokenBalance / TOTAL_SUPPLY) * 100).toFixed(4)}%)
-                        </span>
-                    </div>
-                    <div>◇ {(holder.solBalance || 0).toLocaleString()} SOL</div>
-                    <div>◇ ${(holder.usdcBalance || 0).toLocaleString()} USDC</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div>
-              <TokenHolderGraph 
-                holders={tokenHolders}
-                onNodeClick={handleOpenChat}
-              />
-
-              <div className="connection-status-panel">
-                <h3>Connection Status</h3>
-                <div className="debug-grid">
-                  <div className="debug-item">
-                    <div className="debug-label">State:</div>
-                    <div className={`debug-value state-${debugState.connectionState}`}>
-                      {debugState.connectionState}
-                    </div>
-                  </div>
-                  <div className="debug-item">
-                    <div className="debug-label">Socket ID:</div>
-                    <div className="debug-value">{debugState.socketId || 'none'}</div>
-                  </div>
-                  <div className="debug-item">
-                    <div className="debug-label">Auth Attempts:</div>
-                    <div className="debug-value">{debugState.authAttempts}</div>
-                  </div>
-                  <div className="debug-item">
-                    <div className="debug-label">My Public Key:</div>
-                    <div className="debug-value">{publicKey || 'none'}</div>
-                  </div>
-                  <div className="debug-item">
-                    <div className="debug-label">Online Users:</div>
-                    <div className="debug-value">{onlineUsers.size}</div>
-                  </div>
-                  {debugState.lastAuthError && (
-                    <div className="debug-item error">
-                      <div className="debug-label">Last Error:</div>
-                      <div className="debug-value">{debugState.lastAuthError.message}</div>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
-            </div>
+            )}
 
             {(activeChat || showInbox) && (
               <div className="chat-box">
