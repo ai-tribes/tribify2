@@ -3,6 +3,7 @@ body {
   margin: 0;
   padding: 0;
   transition: all 0.3s ease;
+  background-color: #000000;  /* Set default background to pure black */
 }
 
 body.light {
@@ -32,7 +33,7 @@ body.dark {
   transition: all 0.3s ease;
   text-align: center;
   font-size: 16px;
-  background: transparent;
+  background: #000000;  /* Ensure App container is also pure black */
 }
 
 /* Connection Status */
@@ -132,6 +133,18 @@ body.light .restore-button {
   text-align: left;
   width: 100%;
   max-width: 800px;
+}
+
+.balance-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.balance-separator {
+  opacity: 0.5;
+  margin: 0 4px;
 }
 
 .wallet-info div {
@@ -686,14 +699,30 @@ body.light .restore-button {
   display: flex;
   gap: 8px;
   margin-bottom: 20px;
-  flex-wrap: wrap;
   align-items: center;
+  flex-wrap: nowrap;  /* Prevent wrapping to second row */
+  overflow-x: auto;   /* Allow horizontal scrolling if needed */
+  padding-bottom: 10px; /* Space for scrollbar */
+  width: 100%;
+}
+
+/* Make buttons shrink if needed */
+.connection-group button,
+.connection-group a button,
+.connection-group .button {
+  flex-shrink: 0;    /* Prevent buttons from shrinking */
+  min-width: 80px;   /* Slightly smaller minimum width */
+  padding: 8px 12px; /* Slightly smaller padding */
+  margin: 0 2px;     /* Smaller margins */
+}
+
+/* Keep AI button small */
+.tribify-button {
+  min-width: unset;
 }
 
 /* Remove any specific button styles */
-.tribify-button,
 .disconnect-button,
-.refresh-button,
 .password-button,
 .messages-button {
   /* Remove any specific styles as they'll inherit from the standard button styles */

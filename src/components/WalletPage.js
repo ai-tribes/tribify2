@@ -552,8 +552,12 @@ function WalletPage() {
               accept="application/json"
               style={{ display: 'none' }}
             />
-            <button onClick={fetchBalances} disabled={keypairs.length === 0 || isLoading}>
-              {isLoading ? 'Refreshing...' : '↻ Refresh Balances'}
+            <button 
+              className="refresh-button"
+              onClick={fetchBalances}
+              disabled={keypairs.length === 0 || isLoading}
+            >
+              Refresh
             </button>
             <button onClick={() => setIsBuyModalOpen(true)}>Configure Buy</button>
             <button className="buy-all">Trigger Buy Config</button>

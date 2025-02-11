@@ -120,6 +120,7 @@
 .wallet-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
   padding: 0 15px;
 }
@@ -180,10 +181,13 @@
 }
 
 .close-button {
-  margin-left: 20px; /* Add some space between other buttons and close */
+  margin-left: 20px;
   background: rgba(231, 76, 60, 0.2) !important;
   border-color: rgba(231, 76, 60, 0.3) !important;
-  flex-shrink: 0; /* Prevent button from shrinking */
+  flex-shrink: 0;
+  height: fit-content;
+  padding: 8px 16px;
+  line-height: normal;
 }
 
 .restore-button {
@@ -214,4 +218,20 @@
 .parent-wallet-info .address {
   font-size: 14px;
   color: #3498db;  /* Light blue color */
+}
+
+.refresh-button {
+  /* Remove all the special styling and just use the standard button styles */
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure all buttons in header have consistent height */
+.wallet-header button {
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 } 
