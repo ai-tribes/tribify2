@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as bip39 from 'bip39';
 import { derivePath } from 'ed25519-hd-key';
@@ -38,10 +38,13 @@ function WalletPage() {
   const [caValue, setCAValue] = useState('');
   const [selectedAmountType, setSelectedAmountType] = useState('SOL');
   const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState('');
 
   const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
   const HELIUS_RPC_URL = `https://rpc-devnet.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_API_KEY}`;
   const connection = new Connection(HELIUS_RPC_URL);
+
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     const loadStoredKeypairs = () => {
@@ -466,6 +469,43 @@ function WalletPage() {
     }
   }, [keypairs.length]);
 
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const keys = JSON.parse(text);
+      
+      // Validate and convert the keys to Keypairs
+      const restoredKeypairs = keys.map(key => {
+        try {
+          // Handle both string and array formats
+          const secretKey = typeof key === 'string' ? 
+            new Uint8Array(Buffer.from(key, 'hex')) :
+            new Uint8Array(key);
+          return Keypair.fromSecretKey(secretKey);
+        } catch (e) {
+          console.error('Invalid key format:', e);
+          return null;
+        }
+      }).filter(Boolean); // Remove any invalid keys
+
+      if (restoredKeypairs.length > 0) {
+        setKeypairs(restoredKeypairs);
+        setStatus(`Successfully restored ${restoredKeypairs.length} keys`);
+      } else {
+        setStatus('No valid keys found in file');
+      }
+    } catch (e) {
+      console.error('Error restoring keys:', e);
+      setStatus('Error restoring keys: Invalid file format');
+    }
+    
+    // Reset file input
+    event.target.value = '';
+  };
+
   return (
     <div className="wallet-fullscreen">
       {notification && (
@@ -482,6 +522,19 @@ function WalletPage() {
             <button onClick={downloadKeypairs} disabled={keypairs.length === 0}>
               Download Keys
             </button>
+            <button 
+              onClick={() => fileInputRef.current?.click()} 
+              className="restore-button"
+            >
+              Restore Keys
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept="application/json"
+              style={{ display: 'none' }}
+            />
             <button onClick={fetchBalances} disabled={keypairs.length === 0 || isLoading}>
               {isLoading ? 'Refreshing...' : '↻ Refresh Balances'}
             </button>

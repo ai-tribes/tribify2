@@ -172,4 +172,13 @@
   margin-left: auto !important; /* Forces button to far right */
   background: rgba(231, 76, 60, 0.2) !important;
   border-color: rgba(231, 76, 60, 0.3) !important;
+}
+
+.restore-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.restore-button:hover {
+  background: rgba(255, 255, 255, 0.1);
 } 
