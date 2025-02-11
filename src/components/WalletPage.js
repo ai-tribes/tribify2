@@ -16,6 +16,14 @@ function WalletPage() {
   const [copiedStates, setCopiedStates] = useState({});
   const [notification, setNotification] = useState(null);
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
+  const [buyConfig, setBuyConfig] = useState({
+    slippage: 1.0,
+    priorityFee: 0.000001,
+    walletCount: 1,
+    minAmount: 0.1,
+    maxAmount: 1.0,
+    denominatedInSol: true
+  });
 
   useEffect(() => {
     const loadStoredKeypairs = () => {
@@ -240,13 +248,86 @@ function WalletPage() {
                 <h3>Configure Buy Settings</h3>
                 <div className="buy-form">
                   <div className="form-field">
+                    <label>Number of Wallets (1-100)</label>
+                    <input 
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={buyConfig.walletCount}
+                      onChange={(e) => setBuyConfig({
+                        ...buyConfig,
+                        walletCount: Math.min(100, Math.max(1, parseInt(e.target.value) || 1))
+                      })}
+                    />
+                  </div>
+                  
+                  <div className="amount-range-fields">
+                    <div className="form-field">
+                      <label>Min Amount</label>
+                      <input 
+                        type="number"
+                        min="0"
+                        step="0.000001"
+                        value={buyConfig.minAmount}
+                        onChange={(e) => setBuyConfig({
+                          ...buyConfig,
+                          minAmount: Math.max(0, parseFloat(e.target.value) || 0)
+                        })}
+                      />
+                    </div>
+                    <div className="form-field">
+                      <label>Max Amount</label>
+                      <input 
+                        type="number"
+                        min="0"
+                        step="0.000001"
+                        value={buyConfig.maxAmount}
+                        onChange={(e) => setBuyConfig({
+                          ...buyConfig,
+                          maxAmount: Math.max(buyConfig.minAmount, parseFloat(e.target.value) || 0)
+                        })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-field">
+                    <label>Amount Type</label>
+                    <div className="radio-group">
+                      <label>
+                        <input 
+                          type="radio"
+                          checked={buyConfig.denominatedInSol}
+                          onChange={() => setBuyConfig({
+                            ...buyConfig,
+                            denominatedInSol: true
+                          })}
+                        /> SOL
+                      </label>
+                      <label>
+                        <input 
+                          type="radio"
+                          checked={!buyConfig.denominatedInSol}
+                          onChange={() => setBuyConfig({
+                            ...buyConfig,
+                            denominatedInSol: false
+                          })}
+                        /> TRIBIFY
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="form-field">
                     <label>Slippage (%)</label>
                     <input 
                       type="number" 
                       min="0.1"
                       max="100"
                       step="0.1"
-                      defaultValue="1.0"
+                      value={buyConfig.slippage}
+                      onChange={(e) => setBuyConfig({
+                        ...buyConfig,
+                        slippage: parseFloat(e.target.value)
+                      })}
                     />
                   </div>
                   <div className="form-field">
@@ -255,24 +336,38 @@ function WalletPage() {
                       type="number"
                       min="0"
                       step="0.000001"
-                      defaultValue="0.000001"
+                      value={buyConfig.priorityFee}
+                      onChange={(e) => setBuyConfig({
+                        ...buyConfig,
+                        priorityFee: parseFloat(e.target.value)
+                      })}
                     />
                   </div>
                 </div>
                 <div className="dialog-note">
-                  These settings will apply to all buy transactions
+                  Will buy random amounts between {buyConfig.minAmount} and {buyConfig.maxAmount} {buyConfig.denominatedInSol ? 'SOL' : 'TRIBIFY'} 
+                  for {buyConfig.walletCount} wallet{buyConfig.walletCount > 1 ? 's' : ''}
                 </div>
               </div>
               <div className="dialog-buttons">
                 <button onClick={() => setIsBuyModalOpen(false)}>Cancel</button>
                 <button 
-                  className="confirm-button"
+                  className="save-button"
                   onClick={() => {
                     // Save configuration logic here
                     setIsBuyModalOpen(false);
                   }}
                 >
                   Save Configuration
+                </button>
+                <button 
+                  className="buy-button"
+                  onClick={() => {
+                    // Buy execution logic here
+                    console.log('Executing buy with config:', buyConfig);
+                  }}
+                >
+                  Buy Now
                 </button>
               </div>
             </div>

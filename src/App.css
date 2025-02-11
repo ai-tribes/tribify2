@@ -875,12 +875,24 @@ body.light .restore-button {
 
 .dialog-buttons button {
   margin: 0;
+  min-width: 100px;
 }
 
-.dialog-buttons .confirm-button {
+.dialog-buttons .save-button {
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+
+.dialog-buttons .buy-button {
   background: #2ecc71;
   color: white;
   border-color: #2ecc71;
+  font-weight: bold;
+}
+
+.dialog-buttons button:hover {
+  opacity: 0.9;
 }
 
 .password-button {
@@ -1500,4 +1512,48 @@ body.light .debug-value {
   15% { opacity: 1; transform: translate(-50%, 0); }
   85% { opacity: 1; transform: translate(-50%, 0); }
   100% { opacity: 0; transform: translate(-50%, -20px); }
+}
+
+.form-field input[type="number"] {
+  padding: 8px;
+  background: transparent;
+  border: 1px solid currentColor;
+  color: inherit;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Remove spinner buttons from number inputs */
+.form-field input[type="number"]::-webkit-inner-spin-button,
+.form-field input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.form-field input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.amount-range-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.radio-group {
+  display: flex;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.radio-group input[type="radio"] {
+  margin: 0;
 }
