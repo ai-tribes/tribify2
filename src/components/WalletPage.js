@@ -4,7 +4,6 @@ import * as bip39 from 'bip39';
 import { derivePath } from 'ed25519-hd-key';
 import { Keypair } from '@solana/web3.js';
 import CryptoJS from 'crypto-js';
-import '../wallet.css';
 
 function WalletPage() {
   const navigate = useNavigate();
@@ -189,55 +188,30 @@ function WalletPage() {
           </div>
         </div>
 
-        <div className="keypair-grid">
-          <div className="private-keys">
-            <div className="column-header">
-              <h3>Private Keys</h3>
-              <span className="warning">Never share these!</span>
-            </div>
-            {keypairs.map((keypair, i) => (
-              <div key={i} className={`keypair-item ${copiedIndex === `priv-${i}` ? 'copied' : ''}`}>
-                <span className="keypair-index">{i + 1}</span>
-                <div className="keypair-details">
-                  <code onClick={() => copyToClipboard(Buffer.from(keypair.secretKey).toString('hex'), `priv-${i}`)}>
-                    {Buffer.from(keypair.secretKey).toString('hex')}
-                  </code>
-                </div>
-                <span className="keypair-status">Copied!</span>
-              </div>
-            ))}
+        <div className="wallet-list">
+          <div className="list-header">
+            <span>#</span>
+            <span>Private Key</span>
+            <span></span>
+            <span>Public Key</span>
+            <span>SOL</span>
+            <span>TRIBIFY</span>
           </div>
 
-          <div className="public-keys">
-            <div className="column-header">
-              <h3>Public Keys</h3>
-              <div className="sub-headers">
-                <span className="address-header">Address</span>
-                <span className="actions-header">Actions</span>
-                <span className="balances-header">Balances</span>
+          {keypairs.map((keypair, i) => (
+            <div key={i} className={`list-row ${copiedIndex === `key-${i}` ? 'copied' : ''}`}>
+              <span className="row-index">{i + 1}</span>
+              <div className="private-key" onClick={() => copyToClipboard(Buffer.from(keypair.secretKey).toString('hex'), `key-${i}`)}>
+                {Buffer.from(keypair.secretKey).toString('hex')}
               </div>
+              <span className="copy-status">Copied!</span>
+              <div className="public-key" onClick={() => copyToClipboard(keypair.publicKey.toString(), `key-${i}`)}>
+                {keypair.publicKey.toString()}
+              </div>
+              <span className="token-balance">0.00 SOL</span>
+              <span className="token-balance">0 TRIBIFY</span>
             </div>
-            {keypairs.map((keypair, i) => (
-              <div key={i} className={`keypair-item ${copiedIndex === `pub-${i}` ? 'copied' : ''}`}>
-                <span className="keypair-index">{i + 1}</span>
-                <div className="keypair-details">
-                  <code onClick={() => copyToClipboard(keypair.publicKey.toString(), `pub-${i}`)}>
-                    {keypair.publicKey.toString()}
-                  </code>
-                </div>
-                <span className="keypair-status">Copied!</span>
-                <div className="trade-buttons">
-                  <button className="buy-button">Buy</button>
-                  <button className="sell-button">Sell</button>
-                </div>
-                <div className="balance-info">
-                  <span>0.00 SOL</span>
-                  <span>0 TRIBIFY</span>
-                  <span>$0.00 USDC</span>
-                </div>
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
 
         {/* Buy Configuration Modal */}
