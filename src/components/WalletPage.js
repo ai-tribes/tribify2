@@ -402,6 +402,16 @@ function WalletPage() {
     );
   };
 
+  const calculateTotals = () => {
+    return keypairs.reduce((totals, keypair) => {
+      return {
+        sol: totals.sol + (keypair.solBalance || 0),
+        usdc: totals.usdc + (keypair.usdcBalance || 0),
+        tribify: totals.tribify + (keypair.tribifyBalance || 0)
+      };
+    }, { sol: 0, usdc: 0, tribify: 0 });
+  };
+
   return (
     <div className="wallet-fullscreen">
       {notification && (
@@ -434,6 +444,21 @@ function WalletPage() {
             <div className="col-sol">SOL</div>
             <div className="col-usdc">USDC</div>
             <div className="col-tribify">TRIBIFY</div>
+          </div>
+          
+          <div className="table-row totals-row">
+            <div className="col-index">0</div>
+            <div className="col-private">CUMULATIVE BALANCE</div>
+            <div className="col-public"></div>
+            <div className="col-sol total-value">
+              {calculateTotals().sol.toFixed(4)} SOL
+            </div>
+            <div className="col-usdc total-value">
+              ${calculateTotals().usdc.toFixed(2)}
+            </div>
+            <div className="col-tribify total-value">
+              {calculateTotals().tribify} TRIBIFY
+            </div>
           </div>
 
           {keypairs.map((keypair, i) => (

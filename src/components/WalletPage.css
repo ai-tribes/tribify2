@@ -47,4 +47,21 @@
   font-size: 14px;
 }
 
-/* Add other wallet-specific styles here */ 
+/* Add other wallet-specific styles here */
+
+/* Add styles for the totals row */
+.totals-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.totals-row .col-private {
+  font-family: inherit;  /* Reset from monospace */
+  cursor: default;
+}
+
+.total-value {
+  color: #3498db;  /* Blue color */
+  font-weight: bold;
+  text-align: right;
+  font-family: monospace;
+} 
