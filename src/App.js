@@ -1258,11 +1258,11 @@ function App() {
                 <span className="user-label">(Treasury)</span>
               )}
               <span className="balance-dot">•</span>
-              <span className="balance-item">{balance} SOL</span>
-              <span className="balance-dot">•</span>
               <span className="balance-item">
                 {tokenHolders.find(h => h.address === publicKey)?.tokenBalance.toLocaleString()} $TRIBIFY
               </span>
+              <span className="balance-dot">•</span>
+              <span className="balance-item">{balance} SOL</span>
               <span className="balance-dot">•</span>
               <span className="balance-item">
                 ${tokenHolders.find(h => h.address === publicKey)?.usdcBalance.toLocaleString()} USDC
@@ -1273,7 +1273,7 @@ function App() {
           <div className="main-layout">
             {showHolders && (
               <div className="token-holders">
-                <h3>$TRIBIFY Holders</h3>
+                <h3>Shareholders</h3>
                 <HoldersList 
                   holders={tokenHolders}
                   onNodeClick={handleOpenChat}
