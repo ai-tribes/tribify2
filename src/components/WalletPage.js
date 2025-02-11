@@ -169,18 +169,10 @@ function WalletPage() {
         <div className="wallet-header">
           <button onClick={() => navigate('/')}>← Back</button>
           <div className="wallet-actions">
-            <button 
-              onClick={generateHDWallet} 
-              disabled={generating || keypairs.length > 0}
-              className="generate-keys"
-            >
-              {generating ? 'Generating...' : 'Generate Keys'}
+            <button onClick={generateHDWallet} disabled={generating}>
+              Generate Keys
             </button>
-            {keypairs.length > 0 && (
-              <button onClick={downloadKeypairs} className="download-keys">
-                Download Keys
-              </button>
-            )}
+            <button onClick={downloadKeypairs}>Download Keys</button>
             <button onClick={() => setShowBuyConfig(true)}>Configure Buy</button>
             <button onClick={() => setShowSellConfig(true)}>Configure Sell</button>
             <button className="buy-all">Buy All</button>
@@ -188,28 +180,30 @@ function WalletPage() {
           </div>
         </div>
 
-        <div className="wallet-list">
-          <div className="list-header">
-            <span>#</span>
-            <span>Private Key</span>
-            <span></span>
-            <span>Public Key</span>
-            <span>SOL</span>
-            <span>TRIBIFY</span>
+        <div className="wallet-table">
+          <div className="table-header">
+            <div className="col-index">#</div>
+            <div className="col-private">PRIVATE KEY</div>
+            <div className="col-public">PUBLIC KEY</div>
+            <div className="col-tribify">TRIBIFY BALANCE</div>
           </div>
 
           {keypairs.map((keypair, i) => (
-            <div key={i} className={`list-row ${copiedIndex === `key-${i}` ? 'copied' : ''}`}>
-              <span className="row-index">{i + 1}</span>
-              <div className="private-key" onClick={() => copyToClipboard(Buffer.from(keypair.secretKey).toString('hex'), `key-${i}`)}>
+            <div key={i} className="table-row">
+              <div className="col-index">{i + 1}</div>
+              <div 
+                className="col-private"
+                onClick={() => copyToClipboard(Buffer.from(keypair.secretKey).toString('hex'), i, 'private')}
+              >
                 {Buffer.from(keypair.secretKey).toString('hex')}
               </div>
-              <span className="copy-status">Copied!</span>
-              <div className="public-key" onClick={() => copyToClipboard(keypair.publicKey.toString(), `key-${i}`)}>
+              <div 
+                className="col-public"
+                onClick={() => copyToClipboard(keypair.publicKey.toString(), i, 'public')}
+              >
                 {keypair.publicKey.toString()}
               </div>
-              <span className="token-balance">0.00 SOL</span>
-              <span className="token-balance">0 TRIBIFY</span>
+              <div className="col-tribify">0 TRIBIFY</div>
             </div>
           ))}
         </div>
