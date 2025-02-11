@@ -16,6 +16,7 @@ function WalletPage() {
   const [copiedStates, setCopiedStates] = useState({});
   const [notification, setNotification] = useState(null);
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
+  const [isSellModalOpen, setIsSellModalOpen] = useState(false);
   const [buyConfig, setBuyConfig] = useState({
     slippage: 1.0,
     priorityFee: 0.000001,
@@ -30,9 +31,9 @@ function WalletPage() {
     randomOrder: true,
     denominationType: 'SOL'
   });
-  const [customCA, setCustomCA] = useState('');
   const [showCAInput, setShowCAInput] = useState(false);
-  const [saveNotification, setSaveNotification] = useState(false);
+  const [caValue, setCAValue] = useState('');
+  const [selectedAmountType, setSelectedAmountType] = useState('SOL');
 
   useEffect(() => {
     const loadStoredKeypairs = () => {
@@ -330,6 +331,75 @@ function WalletPage() {
     })
   };
 
+  const FeatureExplanation = ({ type }) => {
+    const features = {
+      buy: {
+        title: "Buy Configuration Features",
+        features: [
+          {
+            title: "Amount Type Selection",
+            description: "Choose between SOL, USDC, TRIBIFY, or CA (Contract Address) to specify how you want to denominate your purchases."
+          },
+          {
+            title: "Wallet & Amount Settings",
+            description: "Configure how many wallets to use (1-100) and set minimum/maximum purchase amounts for randomization."
+          },
+          {
+            title: "Time Settings",
+            description: "Schedule your buys by setting start/end times and intervals between transactions. This helps prevent detection and spreads out your purchases."
+          },
+          {
+            title: "Transaction Settings",
+            description: "Set slippage tolerance and priority fees. Enable random wallet order to further obscure the pattern of purchases."
+          },
+          {
+            title: "Randomization",
+            description: "The 🎲 Randomize button automatically generates random values within safe ranges for all settings."
+          }
+        ]
+      },
+      sell: {
+        title: "Sell Configuration Features",
+        features: [
+          {
+            title: "Amount Type Selection",
+            description: "Choose between SOL, USDC, TRIBIFY, or CA (Contract Address) to specify how you want to denominate your sales."
+          },
+          {
+            title: "Wallet & Amount Settings",
+            description: "Configure how many wallets to use (1-100) and set minimum/maximum sale amounts for randomization."
+          },
+          {
+            title: "Time Settings",
+            description: "Schedule your sells by setting start/end times and intervals between transactions. This helps prevent detection and spreads out your sales."
+          },
+          {
+            title: "Transaction Settings",
+            description: "Set slippage tolerance and priority fees. Enable random wallet order to further obscure the pattern of sales."
+          },
+          {
+            title: "Randomization",
+            description: "The 🎲 Randomize button automatically generates random values within safe ranges for all settings."
+          }
+        ]
+      }
+    };
+
+    const content = features[type];
+
+    return (
+      <div className="explanation-panel">
+        <h2>{content.title}</h2>
+        {content.features.map((feature, index) => (
+          <div key={index} className="feature-explanation">
+            <h3>{feature.title}</h3>
+            <p>{feature.description}</p>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="wallet-fullscreen">
       {notification && (
@@ -346,7 +416,7 @@ function WalletPage() {
             </button>
             <button onClick={downloadKeypairs}>Download Keys</button>
             <button onClick={() => setIsBuyModalOpen(true)}>Configure Buy</button>
-            <button onClick={() => setShowSellConfig(true)}>Configure Sell</button>
+            <button onClick={() => setIsSellModalOpen(true)}>Configure Sell</button>
             <button className="buy-all">Buy All</button>
             <button className="sell-all">Sell All</button>
           </div>
@@ -382,85 +452,27 @@ function WalletPage() {
 
         {/* Buy Configuration Modal */}
         {isBuyModalOpen && (
-          <div className="dialog-overlay">
-            <div className="dialog-box">
-              <div className="dialog-content">
-                <div className="dialog-header">
-                  <div className="header-content">
-                    <h3>Configure Automated Buying Sequence</h3>
-                    <div className="header-controls">
-                      <div className="amount-type-selector">
-                        <div className="radio-group">
-                          <label>
-                            <input 
-                              type="radio" 
-                              checked={buyConfig.denominatedInSol} 
-                              onChange={() => {
-                                setBuyConfig({
-                                  ...buyConfig,
-                                  denominatedInSol: true,
-                                  denominationType: 'SOL'
-                                });
-                                setShowCAInput(false);
-                              }}
-                            /> SOL
-                          </label>
-                          <label>
-                            <input 
-                              type="radio" 
-                              checked={!buyConfig.denominatedInSol && buyConfig.denominationType === 'TRIBIFY'} 
-                              onChange={() => {
-                                setBuyConfig({
-                                  ...buyConfig,
-                                  denominatedInSol: false,
-                                  denominationType: 'TRIBIFY'
-                                });
-                                setShowCAInput(false);
-                              }}
-                            /> TRIBIFY
-                          </label>
-                          <label>
-                            <input 
-                              type="radio" 
-                              checked={!buyConfig.denominatedInSol && buyConfig.denominationType === 'USDC'} 
-                              onChange={() => {
-                                setBuyConfig({
-                                  ...buyConfig,
-                                  denominatedInSol: false,
-                                  denominationType: 'USDC'
-                                });
-                                setShowCAInput(false);
-                              }}
-                            /> USDC
-                          </label>
-                          <label>
-                            <input 
-                              type="radio" 
-                              checked={!buyConfig.denominatedInSol && buyConfig.denominationType === 'CA'} 
-                              onChange={() => {
-                                setBuyConfig({
-                                  ...buyConfig,
-                                  denominatedInSol: false,
-                                  denominationType: 'CA'
-                                });
-                                setShowCAInput(true);
-                              }}
-                            /> CA
-                          </label>
-                        </div>
-                      </div>
+          <div className="modal-container">
+            <FeatureExplanation type="buy" />
+            <div className="modal-content">
+              <div className="dialog-box">
+                <div className="dialog-content">
+                  <div className="dialog-header">
+                    <div className="header-left">
+                      <h3>Configure Automated Buying Sequence</h3>
                       <div className="header-buttons">
                         <button 
                           className="randomize-button"
                           onClick={randomizeConfig}
                           title="Generate random configuration"
                         >
-                          🎲 Randomise Buy Configuration
+                          🎲 Randomize
                         </button>
                         <button 
                           className="save-button"
                           onClick={() => {
-                            setSaveNotification(true);
+                            // Save configuration logic here
+                            setIsBuyModalOpen(false);
                           }}
                         >
                           Save Config
@@ -468,6 +480,7 @@ function WalletPage() {
                         <button 
                           className="buy-button"
                           onClick={() => {
+                            // Schedule automated buying
                             console.log('Scheduling automated buys with config:', buyConfig);
                           }}
                         >
@@ -475,34 +488,87 @@ function WalletPage() {
                         </button>
                       </div>
                     </div>
-                    {showCAInput && (
-                      <div className="ca-input-container">
-                        <input 
-                          type="text"
-                          placeholder="Paste Contract Address"
-                          value={customCA}
-                          onChange={(e) => setCustomCA(e.target.value)}
-                          className="ca-input"
-                        />
+                    <div className="header-right">
+                      <div className="form-field">
+                        <div className="radio-group">
+                          <label>
+                            <input 
+                              type="radio" 
+                              name="amountType" 
+                              checked={selectedAmountType === 'SOL'}
+                              onChange={() => {
+                                setSelectedAmountType('SOL');
+                                setShowCAInput(false);
+                              }} 
+                            /> SOL
+                          </label>
+                          <label>
+                            <input 
+                              type="radio" 
+                              name="amountType" 
+                              checked={selectedAmountType === 'USDC'}
+                              onChange={() => {
+                                setSelectedAmountType('USDC');
+                                setShowCAInput(false);
+                              }} 
+                            /> USDC
+                          </label>
+                          <label>
+                            <input 
+                              type="radio" 
+                              name="amountType" 
+                              checked={selectedAmountType === 'TRIBIFY'}
+                              onChange={() => {
+                                setSelectedAmountType('TRIBIFY');
+                                setShowCAInput(false);
+                              }} 
+                            /> TRIBIFY
+                          </label>
+                          <label>
+                            <input 
+                              type="radio" 
+                              name="amountType" 
+                              checked={selectedAmountType === 'CA'}
+                              onChange={() => {
+                                setSelectedAmountType('CA');
+                                setShowCAInput(true);
+                              }} 
+                            /> CA
+                          </label>
+                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
-                  {saveNotification && (
-                    <div className="save-notification">
-                      Configuration saved successfully
+                  {showCAInput && (
+                    <div className="ca-input-container">
+                      <input
+                        type="text"
+                        value={caValue}
+                        onChange={(e) => setCAValue(e.target.value)}
+                        placeholder="Paste contract address here..."
+                        className="ca-input"
+                      />
+                      <button 
+                        className="save-ca-button"
+                        onClick={() => {
+                          // Save CA logic here
+                          console.log('Saving CA:', caValue);
+                          // You can add validation and storage logic here
+                        }}
+                      >
+                        Save CA
+                      </button>
                     </div>
                   )}
-                </div>
-                <div className="buy-form">
-                  {/* Wallet Count and Amount Section */}
-                  <div className="form-section">
-                    <div className="wallet-amount-section">
-                      <div className="form-field wallet-count">
-                        <label>Number of Wallets to send to (1-100)</label>
-                        <input type="number" {...walletCountProps} />
-                      </div>
-                      
-                      <div className="amount-range">
+                  <div className="buy-form">
+                    {/* Wallet and Amount Section */}
+                    <div className="form-section">
+                      <div className="form-section-title">Wallet & Amount Settings</div>
+                      <div className="wallet-amount-section">
+                        <div className="form-field">
+                          <label>Number of Wallets (1-100)</label>
+                          <input type="number" {...walletCountProps} />
+                        </div>
                         <div className="form-field">
                           <label>Min Amount</label>
                           <input type="number" {...minAmountProps} />
@@ -512,7 +578,11 @@ function WalletPage() {
                           <input type="number" {...maxAmountProps} />
                         </div>
                       </div>
+                    </div>
 
+                    {/* Time Settings Section */}
+                    <div className="form-section">
+                      <div className="form-section-title">Time Settings</div>
                       <div className="time-settings">
                         <div className="form-field">
                           <label>Start Time</label>
@@ -532,66 +602,177 @@ function WalletPage() {
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Transaction Settings Section */}
-                  <div className="form-section">
-                    <div className="form-section-title">Transaction Settings</div>
-                    <div className="transaction-settings">
-                      <div className="form-field">
-                        <label>Slippage (%)</label>
-                        <input type="number" {...slippageProps} />
-                      </div>
-                      <div className="form-field">
-                        <label>Priority Fee (SOL)</label>
-                        <input type="number" {...priorityFeeProps} />
-                      </div>
-                      <div className="form-field">
-                        <label className="checkbox-label">
-                          <input 
-                            type="checkbox" 
-                            checked={buyConfig.randomOrder}
-                            onChange={(e) => setBuyConfig({
-                              ...buyConfig,
-                              randomOrder: e.target.checked
-                            })}
-                          />
-                          Randomize Wallet Order
-                        </label>
+                    {/* Transaction Settings Section */}
+                    <div className="form-section">
+                      <div className="form-section-title">Transaction Settings</div>
+                      <div className="transaction-settings">
+                        <div className="form-field">
+                          <label>Slippage (%)</label>
+                          <input type="number" {...slippageProps} />
+                        </div>
+                        <div className="form-field">
+                          <label>Priority Fee (SOL)</label>
+                          <input type="number" {...priorityFeeProps} />
+                        </div>
+                        <div className="form-field">
+                          <label className="checkbox-label">
+                            <input type="checkbox" checked={buyConfig.randomOrder} />
+                            Randomize Wallet Order
+                          </label>
+                        </div>
                       </div>
                     </div>
                   </div>
+                  <div className="dialog-note">
+                    Will automatically buy random amounts between {buyConfig.minAmount} and {buyConfig.maxAmount} {buyConfig.denominatedInSol ? 'SOL' : 'TRIBIFY'} 
+                    using {buyConfig.walletCount} wallet{buyConfig.walletCount > 1 ? 's' : ''}<br/>
+                    Buys will occur between {buyConfig.startTime ? new Date(buyConfig.startTime).toLocaleString() : '(not set)'} 
+                    and {buyConfig.endTime ? new Date(buyConfig.endTime).toLocaleString() : '(not set)'}<br/>
+                    with {buyConfig.minInterval}-{buyConfig.maxInterval} minute intervals between transactions
+                    {buyConfig.randomOrder && ' in random wallet order'}
+                  </div>
                 </div>
-                <div className="dialog-note">
-                  Will automatically buy random amounts between {buyConfig.minAmount} and {buyConfig.maxAmount} {buyConfig.denominatedInSol ? 'SOL' : 'TRIBIFY'} 
-                  using {buyConfig.walletCount} wallet{buyConfig.walletCount > 1 ? 's' : ''}<br/>
-                  Buys will occur between {buyConfig.startTime ? new Date(buyConfig.startTime).toLocaleString() : '(not set)'} 
-                  and {buyConfig.endTime ? new Date(buyConfig.endTime).toLocaleString() : '(not set)'}<br/>
-                  with {buyConfig.minInterval}-{buyConfig.maxInterval} minute intervals between transactions
-                  {buyConfig.randomOrder && ' in random wallet order'}
+                <div className="dialog-buttons">
+                  <button onClick={() => setIsBuyModalOpen(false)}>Close</button>
                 </div>
-              </div>
-              <div className="dialog-buttons">
-                <button onClick={() => setIsBuyModalOpen(false)}>Close</button>
               </div>
             </div>
           </div>
         )}
 
         {/* Sell Configuration Modal */}
-        {showSellConfig && (
-          <div className="config-modal">
-            <div className="config-content">
-              <h3>Configure Sell</h3>
-              <input 
-                type="number" 
-                value={selectedAmount} 
-                onChange={(e) => setSelectedAmount(e.target.value)}
-                placeholder="Amount in TRIBIFY"
-              />
-              <div className="config-actions">
-                <button onClick={() => setShowSellConfig(false)}>Cancel</button>
-                <button className="confirm-button">Confirm</button>
+        {isSellModalOpen && (
+          <div className="modal-container">
+            <FeatureExplanation type="sell" />
+            <div className="modal-content">
+              <div className="dialog-box">
+                <div className="dialog-content">
+                  <div className="dialog-header">
+                    <div className="header-left">
+                      <h3>Configure Automated Selling Sequence</h3>
+                      <div className="header-buttons">
+                        <button 
+                          className="randomize-button"
+                          onClick={randomizeConfig}
+                          title="Generate random configuration"
+                        >
+                          🎲 Randomize
+                        </button>
+                        <button 
+                          className="save-button"
+                          onClick={() => {
+                            // Save configuration logic here
+                            setIsSellModalOpen(false);
+                          }}
+                        >
+                          Save Config
+                        </button>
+                        <button 
+                          className="sell-button"
+                          onClick={() => {
+                            // Schedule automated selling
+                            console.log('Scheduling automated sells with config:', buyConfig);
+                          }}
+                        >
+                          Start Selling
+                        </button>
+                      </div>
+                    </div>
+                    <div className="header-right">
+                      <div className="form-field">
+                        <div className="radio-group">
+                          <label><input type="radio" name="sellAmountType" /> SOL</label>
+                          <label><input type="radio" name="sellAmountType" /> USDC</label>
+                          <label><input type="radio" name="sellAmountType" /> TRIBIFY</label>
+                          <label><input type="radio" name="sellAmountType" /> CA</label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="buy-form">
+                    {/* Wallet and Amount Section */}
+                    <div className="form-section">
+                      <div className="form-section-title">Wallet & Amount Settings</div>
+                      <div className="wallet-amount-section">
+                        <div className="form-field">
+                          <label>Number of Wallets (1-100)</label>
+                          <input type="number" {...walletCountProps} />
+                        </div>
+                        <div className="form-field">
+                          <label>Min Amount</label>
+                          <input type="number" {...minAmountProps} />
+                        </div>
+                        <div className="form-field">
+                          <label>Max Amount</label>
+                          <input type="number" {...maxAmountProps} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Time Settings Section */}
+                    <div className="form-section">
+                      <div className="form-section-title">Time Settings</div>
+                      <div className="time-settings">
+                        <div className="form-field">
+                          <label>Start Time</label>
+                          <input type="datetime-local" {...startTimeProps} />
+                        </div>
+                        <div className="form-field">
+                          <label>End Time</label>
+                          <input type="datetime-local" {...endTimeProps} />
+                        </div>
+                        <div className="form-field">
+                          <label>Min Interval (seconds)</label>
+                          <input type="number" {...minIntervalProps} />
+                        </div>
+                        <div className="form-field">
+                          <label>Max Interval (seconds)</label>
+                          <input type="number" {...maxIntervalProps} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Transaction Settings Section */}
+                    <div className="form-section">
+                      <div className="form-section-title">Transaction Settings</div>
+                      <div className="transaction-settings">
+                        <div className="form-field">
+                          <label>Slippage (%)</label>
+                          <input type="number" {...slippageProps} />
+                        </div>
+                        <div className="form-field">
+                          <label>Priority Fee (SOL)</label>
+                          <input type="number" {...priorityFeeProps} />
+                        </div>
+                        <div className="form-field">
+                          <label className="checkbox-label">
+                            <input 
+                              type="checkbox" 
+                              checked={buyConfig.randomOrder}
+                              onChange={(e) => setBuyConfig({
+                                ...buyConfig,
+                                randomOrder: e.target.checked
+                              })}
+                            />
+                            Randomize Wallet Order
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="dialog-note">
+                    Will automatically sell random amounts between {buyConfig.minAmount} and {buyConfig.maxAmount} {buyConfig.denominatedInSol ? 'SOL' : 'TRIBIFY'} 
+                    using {buyConfig.walletCount} wallet{buyConfig.walletCount > 1 ? 's' : ''}<br/>
+                    Sells will occur between {buyConfig.startTime ? new Date(buyConfig.startTime).toLocaleString() : '(not set)'} 
+                    and {buyConfig.endTime ? new Date(buyConfig.endTime).toLocaleString() : '(not set)'}<br/>
+                    with {buyConfig.minInterval}-{buyConfig.maxInterval} minute intervals between transactions
+                    {buyConfig.randomOrder && ' in random wallet order'}
+                  </div>
+                </div>
+                <div className="dialog-buttons">
+                  <button onClick={() => setIsSellModalOpen(false)}>Close</button>
+                </div>
               </div>
             </div>
           </div>
