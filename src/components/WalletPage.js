@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as bip39 from 'bip39';
 import { derivePath } from 'ed25519-hd-key';
 import { Keypair } from '@solana/web3.js';
+import CryptoJS from 'crypto-js';
 import '../wallet.css';
 
 function WalletPage() {
@@ -14,7 +15,81 @@ function WalletPage() {
   const [generating, setGenerating] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
 
+  useEffect(() => {
+    const loadStoredKeypairs = () => {
+      try {
+        if (!window.phantom?.solana?.publicKey) return;
+        
+        const encryptedData = localStorage.getItem('tribify_keypairs');
+        if (!encryptedData) {
+          console.log('No stored keypairs found');
+          return;
+        }
+
+        console.log('Found encrypted data length:', encryptedData.length);
+        console.log('First 50 chars of encrypted data:', encryptedData.substring(0, 50));
+
+        const walletAddress = window.phantom.solana.publicKey.toString();
+        console.log('Decrypting with wallet:', walletAddress);
+
+        // Decrypt the data
+        const decrypted = CryptoJS.AES.decrypt(encryptedData, walletAddress).toString(CryptoJS.enc.Utf8);
+        
+        const storedData = JSON.parse(decrypted);
+        console.log('Successfully decrypted keypairs:', storedData.length);
+        
+        const loadedKeypairs = storedData.map(pair => 
+          Keypair.fromSecretKey(new Uint8Array(pair.secretKey))
+        );
+        
+        setKeypairs(loadedKeypairs);
+        console.log('Loaded keypairs:', loadedKeypairs.length);
+      } catch (error) {
+        console.error('Failed to load stored keypairs:', error);
+      }
+    };
+
+    loadStoredKeypairs();
+  }, []);
+
+  useEffect(() => {
+    const storeKeypairs = () => {
+      try {
+        if (!window.phantom?.solana?.publicKey || keypairs.length === 0) return;
+
+        const walletAddress = window.phantom.solana.publicKey.toString();
+        console.log('Encrypting with wallet:', walletAddress);
+
+        const storableData = keypairs.map(kp => ({
+          publicKey: kp.publicKey.toString(),
+          secretKey: Array.from(kp.secretKey)
+        }));
+
+        // Encrypt the data
+        const encrypted = CryptoJS.AES.encrypt(
+          JSON.stringify(storableData),
+          walletAddress
+        ).toString();
+
+        console.log('Encrypted data length:', encrypted.length);
+        console.log('First 50 chars of encrypted data:', encrypted.substring(0, 50));
+
+        localStorage.setItem('tribify_keypairs', encrypted);
+        console.log('Stored encrypted keypairs:', keypairs.length);
+      } catch (error) {
+        console.error('Failed to store keypairs:', error);
+      }
+    };
+
+    storeKeypairs();
+  }, [keypairs]);
+
   const generateHDWallet = async () => {
+    if (keypairs.length > 0) {
+      alert('Keypairs already exist! Using existing keys to prevent loss of funds.');
+      return;
+    }
+
     try {
       setGenerating(true);
       console.log('Starting key generation...');
