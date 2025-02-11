@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
 import { Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
@@ -15,6 +15,9 @@ import Backup from './components/Backup';
 import Restore from './components/Restore';
 import Disconnect from './components/Disconnect';
 import { Link } from 'react-router-dom';
+import { Keypair } from '@solana/web3.js';
+import bs58 from 'bs58';
+import { clusterApiUrl } from '@solana/web3.js';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -72,6 +75,9 @@ const FRIEND_WALLETS = {
 // Add total supply constant
 const TOTAL_SUPPLY = 1_000_000_000; // 1 Billion tokens
 
+// Add USDC mint constant at the top with other constants
+const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+
 // Move this function up, before TokenHolderGraph component
 const getHolderColor = (address, tokenBalance) => {
   if (address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7') {
@@ -87,19 +93,24 @@ const getHolderColor = (address, tokenBalance) => {
   return '#2ecc71';  // Green for small holders
 };
 
-// Update the TokenHolderGraph component
+// Add TokenHolderGraph component definition before App
 const TokenHolderGraph = ({ holders, onNodeClick }) => {
   const graphRef = useRef();
-  // Initialize isCollapsed as true to hide by default
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [localRandomized, setLocalRandomized] = useState(true); // Default to true
   
   // Find the biggest holder to focus on
   const biggestHolder = holders.reduce((max, holder) => 
     holder.tokenBalance > max.tokenBalance ? holder : max
   , holders[0]);
 
+  // Randomize or sort the data based on the toggle
+  const processedHolders = localRandomized 
+    ? [...holders].sort(() => Math.random() - 0.5)
+    : holders;
+
   const graphData = {
-    nodes: holders.map(holder => ({
+    nodes: processedHolders.map(holder => ({
       id: holder.address,
       val: Math.sqrt(holder.tokenBalance),
       color: (holder.tokenBalance / TOTAL_SUPPLY) * 100 > 10 
@@ -111,25 +122,19 @@ const TokenHolderGraph = ({ holders, onNodeClick }) => {
       x: holder.address === biggestHolder.address ? 0 : undefined,
       y: holder.address === biggestHolder.address ? 0 : undefined
     })),
-    links: holders.map((holder) => ({
+    links: processedHolders.map((holder) => ({
       source: holder.address,
       target: biggestHolder.address,
       value: holder.tokenBalance / TOTAL_SUPPLY
     }))
   };
 
-  const focusOnWhale = () => {
+  const focusOnWhale = useCallback(() => {
     if (graphRef.current) {
       graphRef.current.centerAt(0, 0, 1000);
-      graphRef.current.zoom(0.4);
+      graphRef.current.zoom(1.5, 2000);
     }
-  };
-
-  useEffect(() => {
-    if (!isCollapsed) {
-      focusOnWhale();
-    }
-  }, [isCollapsed]);
+  }, []);
 
   if (isCollapsed) {
     return (
@@ -148,6 +153,14 @@ const TokenHolderGraph = ({ holders, onNodeClick }) => {
     <div className="graph-container">
       <div className="graph-controls">
         <button onClick={focusOnWhale}>Reset View</button>
+        <label className="randomize-toggle">
+          <input
+            type="checkbox"
+            checked={localRandomized}
+            onChange={(e) => setLocalRandomized(e.target.checked)}
+          />
+          Randomize Order
+        </label>
         <button 
           className="collapse-button"
           onClick={() => setIsCollapsed(true)}
@@ -182,98 +195,16 @@ const TokenHolderGraph = ({ holders, onNodeClick }) => {
   );
 };
 
-// Add new debug component
-const PusherDebugger = ({ pusher, publicKey, onlineUsers }) => {
-  const [debugState, setDebugState] = useState({
-    connectionState: 'disconnected',
-    socketId: null,
-    authAttempts: 0,
-    authErrors: [],
-    lastAuthError: null
-  });
-
-  // Monitor Pusher connection
-  useEffect(() => {
-    if (!pusher) return;
-
-    const updateState = () => {
-      setDebugState(prev => ({
-        ...prev,
-        connectionState: pusher.connection.state,
-        socketId: pusher.connection.socket_id
-      }));
-    };
-
-    // Track all connection events
-    pusher.connection.bind('connecting', updateState);
-    pusher.connection.bind('connected', updateState);
-    pusher.connection.bind('disconnected', updateState);
-    pusher.connection.bind('failed', updateState);
-    pusher.connection.bind('error', (err) => {
-      setDebugState(prev => ({
-        ...prev,
-        authErrors: [...prev.authErrors, err],
-        lastAuthError: err
-      }));
-    });
-
-    // Track auth attempts
-    pusher.connection.bind('auth_request_sent', () => {
-      setDebugState(prev => ({
-        ...prev,
-        authAttempts: prev.authAttempts + 1
-      }));
-    });
-
-    return () => {
-      pusher?.connection.unbind_all();
-    };
-  }, [pusher]);
-
-  return (
-    <div className="connection-status-panel">
-      <h3>Connection Status</h3>
-      <div className="debug-grid">
-        <div className="debug-item">
-          <div className="debug-label">State:</div>
-          <div className={`debug-value state-${debugState.connectionState}`}>
-            {debugState.connectionState}
-          </div>
-        </div>
-        <div className="debug-item">
-          <div className="debug-label">Socket ID:</div>
-          <div className="debug-value">{debugState.socketId || 'none'}</div>
-        </div>
-        <div className="debug-item">
-          <div className="debug-label">Auth Attempts:</div>
-          <div className="debug-value">{debugState.authAttempts}</div>
-        </div>
-        <div className="debug-item">
-          <div className="debug-label">My Public Key:</div>
-          <div className="debug-value">{publicKey || 'none'}</div>
-        </div>
-        <div className="debug-item">
-          <div className="debug-label">Online Users:</div>
-          <div className="debug-value">{onlineUsers.size}</div>
-        </div>
-        {debugState.lastAuthError && (
-          <div className="debug-item error">
-            <div className="debug-label">Last Error:</div>
-            <div className="debug-value">{debugState.lastAuthError.message}</div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
 function App() {
-  // Core states only
+  // Add all state declarations at the top of App
+  const [isLoading, setIsLoading] = useState(false);
+  const [wallets, setWallets] = useState([]);
+  const [publicKey, setPublicKey] = useState(null);
+  const [tokenHolders, setTokenHolders] = useState([]);
+  const [isRandomized, setIsRandomized] = useState(true);
   const [status, setStatus] = useState('');
   const [isConnected, setIsConnected] = useState(false);
-  const [publicKey, setPublicKey] = useState(null);
   const [balance, setBalance] = useState(null);
-  const [tokenHolders, setTokenHolders] = useState([]);
   const [showDocs, setShowDocs] = useState(false);
   const [nicknames, setNicknames] = useState({});
   const [editingNickname, setEditingNickname] = useState(null);
@@ -330,6 +261,85 @@ function App() {
     const saved = localStorage.getItem('theme');
     return saved ? saved === 'dark' : true;
   });
+
+  // Define WalletTable component inside App to access state and functions
+  const WalletTable = ({ wallets, onCopy }) => {
+    if (isLoading) {
+      return (
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <div className="loading-text">Fetching wallet balances...</div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="wallet-container">
+        <div className="wallet-controls">
+          <button 
+            className="refresh-button"
+            onClick={refreshWallets}
+            disabled={wallets.length === 0}
+          >
+            ↻ Refresh Balances
+          </button>
+        </div>
+        <div className="wallet-table">
+          <div className="table-header">
+            <span>#</span>
+            <span>Private Key</span>
+            <span>Public Key</span>
+            <span>SOL</span>
+            <span>USDC</span>
+            <span>TRIBIFY</span>
+          </div>
+          {wallets.map((wallet, index) => (
+            <div key={index} className="table-row">
+              <span className="col-index">{index + 1}</span>
+              <span 
+                className="col-private" 
+                onClick={() => onCopy(wallet.privateKey, 'private')}
+              >
+                {wallet.privateKey}
+              </span>
+              <span 
+                className="col-public" 
+                onClick={() => onCopy(wallet.publicKey, 'public')}
+              >
+                {wallet.publicKey}
+              </span>
+              <span className="col-sol">
+                {(wallet.solBalance || 0).toFixed(4)} SOL
+              </span>
+              <span className="col-usdc">
+                ${(wallet.usdcBalance || 0).toFixed(2)}
+              </span>
+              <span className="col-tribify">
+                {wallet.tribifyBalance || 0} TRIBIFY
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Define refresh function
+  const refreshWallets = async () => {
+    if (wallets.length === 0) return;
+    
+    setIsLoading(true);
+    try {
+      const updatedWallets = await fetchBalances(wallets);
+      setWallets(updatedWallets);
+      setStatus('Balances refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing balances:', error);
+      setStatus('Error refreshing balances: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Update Pusher initialization code
   const pusher = React.useMemo(() => {
@@ -516,7 +526,7 @@ function App() {
     try {
       console.log('Starting fetchTokenHolders for connected wallet:', publicKey);
       const mintPubkey = new PublicKey(TRIBIFY_TOKEN_MINT);
-      const usdcMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
+      const usdcMint = new PublicKey(USDC_MINT);
       
       // Get all token accounts for TRIBIFY
       console.log('Getting token accounts for mint:', TRIBIFY_TOKEN_MINT);
@@ -560,7 +570,13 @@ function App() {
       );
 
       console.log('Final processed holders:', holders);
-      setTokenHolders(holders.filter(h => h.tokenBalance > 0));
+      
+      // Randomize the order of holders before setting state
+      const randomizedHolders = holders
+        .filter(h => h.tokenBalance > 0)
+        .sort(() => Math.random() - 0.5);
+        
+      setTokenHolders(randomizedHolders);
     } catch (error) {
       console.error('Failed to fetch holders:', error);
       console.error('Error details:', error.message);
@@ -597,7 +613,7 @@ function App() {
   const fetchTreasuryBalances = async () => {
     try {
       const treasuryPubkey = new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv');
-      const usdcMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
+      const usdcMint = new PublicKey(USDC_MINT);
       const tribifyMint = new PublicKey(TRIBIFY_TOKEN_MINT);
 
       // Get SOL balance
@@ -948,6 +964,62 @@ function App() {
         }
       ]);
     }
+  };
+
+  // Move generateWallets inside App component
+  const generateWallets = async (count) => {
+    const wallets = [];
+    for (let i = 0; i < count; i++) {
+      const keypair = Keypair.generate();
+      const wallet = {
+        privateKey: bs58.encode(keypair.secretKey),
+        publicKey: keypair.publicKey.toBase58(),
+        solBalance: 0,
+        usdcBalance: 0,
+        tribifyBalance: 0
+      };
+      wallets.push(wallet);
+    }
+
+    // Fetch balances for all wallets
+    const updatedWallets = await fetchBalances(wallets);
+    setWallets(updatedWallets);
+  };
+
+  // Move fetchBalances inside App component
+  const fetchBalances = async (wallets) => {
+    const connection = new Connection(clusterApiUrl('mainnet-beta'));
+    const usdcMint = new PublicKey(USDC_MINT);
+
+    return Promise.all(wallets.map(async (wallet) => {
+      try {
+        // Fetch SOL balance
+        const solBalance = await connection.getBalance(new PublicKey(wallet.publicKey));
+        
+        // Fetch USDC balance
+        let usdcBalance = 0;
+        try {
+          const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+            new PublicKey(wallet.publicKey),
+            { mint: usdcMint }
+          );
+          if (tokenAccounts.value.length > 0) {
+            usdcBalance = tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount;
+          }
+        } catch (e) {
+          console.error('Error fetching USDC balance:', e);
+        }
+
+        return {
+          ...wallet,
+          solBalance: solBalance / LAMPORTS_PER_SOL,
+          usdcBalance: usdcBalance
+        };
+      } catch (e) {
+        console.error('Error fetching balances:', e);
+        return wallet;
+      }
+    }));
   };
 
   return (

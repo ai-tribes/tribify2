@@ -799,6 +799,31 @@ body.light .restore-button {
   font-style: italic;
 }
 
+.table-header,
+.table-row {
+  display: grid;
+  grid-template-columns: 50px minmax(150px, 0.5fr) minmax(300px, 1fr) 120px 120px 120px;
+  align-items: center;
+  padding: 8px 15px;
+  gap: 16px;
+}
+
+.col-sol,
+.col-usdc,
+.col-tribify {
+  text-align: right;
+  font-size: 12px;
+  color: #888;
+  white-space: nowrap;
+}
+
+/* Add hover effect for balance columns */
+.table-row:hover .col-sol,
+.table-row:hover .col-usdc,
+.table-row:hover .col-tribify {
+  color: #2ecc71;
+}
+
 .nickname-controls {
   display: flex;
   gap: 12px;
@@ -1526,7 +1551,7 @@ body.light .debug-value {
 .table-header,
 .table-row {
   display: grid;
-  grid-template-columns: 50px minmax(150px, 0.5fr) minmax(300px, 1fr) 150px;
+  grid-template-columns: 50px minmax(150px, 0.5fr) minmax(300px, 1fr) 120px 120px 120px;
   align-items: center;
   padding: 8px 15px;
   gap: 16px;
@@ -1561,6 +1586,7 @@ body.light .debug-value {
 }
 
 .col-sol,
+.col-usdc,
 .col-tribify {
   text-align: right;
   font-size: 12px;
@@ -1592,6 +1618,13 @@ body.light .debug-value {
 .sell-button {
   color: #e74c3c;
   border-color: #e74c3c;
+}
+
+/* Add hover effect for balance columns */
+.table-row:hover .col-sol,
+.table-row:hover .col-usdc,
+.table-row:hover .col-tribify {
+  color: #2ecc71;
 }
 
 /* Copy indicator */
@@ -1838,4 +1871,66 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 
 .save-ca-button:hover {
   background: rgba(46, 204, 113, 0.1);
+}
+
+.randomize-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.randomize-toggle:hover {
+  opacity: 1;
+}
+
+.randomize-toggle input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.wallet-container {
+  width: 100%;
+  margin-top: 20px;
+}
+
+.wallet-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+  padding: 0 15px;
+}
+
+.refresh-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid currentColor;
+  color: inherit;
+  opacity: 0.8;
+  transition: all 0.2s ease;
+}
+
+.refresh-button:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.refresh-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Add rotation animation for refresh icon */
+.refresh-button:not(:disabled):active {
+  transform: rotate(180deg);
 }
