@@ -27,8 +27,12 @@ function WalletPage() {
     endTime: null,
     minInterval: 5,
     maxInterval: 30,
-    randomOrder: true
+    randomOrder: true,
+    denominationType: 'SOL'
   });
+  const [customCA, setCustomCA] = useState('');
+  const [showCAInput, setShowCAInput] = useState(false);
+  const [saveNotification, setSaveNotification] = useState(false);
 
   useEffect(() => {
     const loadStoredKeypairs = () => {
@@ -224,8 +228,10 @@ function WalletPage() {
       endTime: formattedEndTime,
       minInterval: Math.floor(Math.random() * 28) + 2, // 2-30 seconds
       maxInterval: Math.floor(Math.random() * 30) + 30, // 30-60 seconds
-      randomOrder: Math.random() > 0.5 // 50% chance of random order
+      randomOrder: Math.random() > 0.5, // 50% chance of random order
+      denominationType: 'SOL'
     });
+    setShowCAInput(false);
   };
 
   const walletCountProps = {
@@ -380,81 +386,150 @@ function WalletPage() {
             <div className="dialog-box">
               <div className="dialog-content">
                 <div className="dialog-header">
-                  <h3>Configure Automated Buying</h3>
-                  <div className="header-buttons">
-                    <button 
-                      className="randomize-button"
-                      onClick={randomizeConfig}
-                      title="Generate random configuration"
-                    >
-                      🎲 Randomize
-                    </button>
-                    <button 
-                      className="save-button"
-                      onClick={() => {
-                        // Save configuration logic here
-                        setIsBuyModalOpen(false);
-                      }}
-                    >
-                      Save Config
-                    </button>
-                    <button 
-                      className="buy-button"
-                      onClick={() => {
-                        // Schedule automated buying
-                        console.log('Scheduling automated buys with config:', buyConfig);
-                      }}
-                    >
-                      Start Buying
-                    </button>
-                  </div>
-                </div>
-                <div className="buy-form">
-                  {/* Wallet and Amount Section */}
-                  <div className="form-section">
-                    <div className="form-section-title">Wallet & Amount Settings</div>
-                    <div className="wallet-amount-section">
-                      <div className="form-field">
-                        <label>Number of Wallets (1-100)</label>
-                        <input type="number" {...walletCountProps} />
-                      </div>
-                      <div className="form-field">
-                        <label>Amount Type</label>
+                  <div className="header-content">
+                    <h3>Configure Automated Buying Sequence</h3>
+                    <div className="header-controls">
+                      <div className="amount-type-selector">
                         <div className="radio-group">
-                          <label><input type="radio" /> SOL</label>
-                          <label><input type="radio" /> TRIBIFY</label>
+                          <label>
+                            <input 
+                              type="radio" 
+                              checked={buyConfig.denominatedInSol} 
+                              onChange={() => {
+                                setBuyConfig({
+                                  ...buyConfig,
+                                  denominatedInSol: true,
+                                  denominationType: 'SOL'
+                                });
+                                setShowCAInput(false);
+                              }}
+                            /> SOL
+                          </label>
+                          <label>
+                            <input 
+                              type="radio" 
+                              checked={!buyConfig.denominatedInSol && buyConfig.denominationType === 'TRIBIFY'} 
+                              onChange={() => {
+                                setBuyConfig({
+                                  ...buyConfig,
+                                  denominatedInSol: false,
+                                  denominationType: 'TRIBIFY'
+                                });
+                                setShowCAInput(false);
+                              }}
+                            /> TRIBIFY
+                          </label>
+                          <label>
+                            <input 
+                              type="radio" 
+                              checked={!buyConfig.denominatedInSol && buyConfig.denominationType === 'USDC'} 
+                              onChange={() => {
+                                setBuyConfig({
+                                  ...buyConfig,
+                                  denominatedInSol: false,
+                                  denominationType: 'USDC'
+                                });
+                                setShowCAInput(false);
+                              }}
+                            /> USDC
+                          </label>
+                          <label>
+                            <input 
+                              type="radio" 
+                              checked={!buyConfig.denominatedInSol && buyConfig.denominationType === 'CA'} 
+                              onChange={() => {
+                                setBuyConfig({
+                                  ...buyConfig,
+                                  denominatedInSol: false,
+                                  denominationType: 'CA'
+                                });
+                                setShowCAInput(true);
+                              }}
+                            /> CA
+                          </label>
                         </div>
                       </div>
-                      <div className="form-field">
-                        <label>Min Amount</label>
-                        <input type="number" {...minAmountProps} />
-                      </div>
-                      <div className="form-field">
-                        <label>Max Amount</label>
-                        <input type="number" {...maxAmountProps} />
+                      <div className="header-buttons">
+                        <button 
+                          className="randomize-button"
+                          onClick={randomizeConfig}
+                          title="Generate random configuration"
+                        >
+                          🎲 Randomise Buy Configuration
+                        </button>
+                        <button 
+                          className="save-button"
+                          onClick={() => {
+                            setSaveNotification(true);
+                          }}
+                        >
+                          Save Config
+                        </button>
+                        <button 
+                          className="buy-button"
+                          onClick={() => {
+                            console.log('Scheduling automated buys with config:', buyConfig);
+                          }}
+                        >
+                          Start Buying
+                        </button>
                       </div>
                     </div>
+                    {showCAInput && (
+                      <div className="ca-input-container">
+                        <input 
+                          type="text"
+                          placeholder="Paste Contract Address"
+                          value={customCA}
+                          onChange={(e) => setCustomCA(e.target.value)}
+                          className="ca-input"
+                        />
+                      </div>
+                    )}
                   </div>
-
-                  {/* Time Settings Section */}
+                  {saveNotification && (
+                    <div className="save-notification">
+                      Configuration saved successfully
+                    </div>
+                  )}
+                </div>
+                <div className="buy-form">
+                  {/* Wallet Count and Amount Section */}
                   <div className="form-section">
-                    <div className="form-section-title">Time Settings</div>
-                    <div className="time-settings">
-                      <div className="form-field">
-                        <label>Start Time</label>
-                        <input type="datetime-local" {...startTimeProps} />
+                    <div className="wallet-amount-section">
+                      <div className="form-field wallet-count">
+                        <label>Number of Wallets to send to (1-100)</label>
+                        <input type="number" {...walletCountProps} />
                       </div>
-                      <div className="form-field">
-                        <label>End Time</label>
-                        <input type="datetime-local" {...endTimeProps} />
+                      
+                      <div className="amount-range">
+                        <div className="form-field">
+                          <label>Min Amount</label>
+                          <input type="number" {...minAmountProps} />
+                        </div>
+                        <div className="form-field">
+                          <label>Max Amount</label>
+                          <input type="number" {...maxAmountProps} />
+                        </div>
                       </div>
-                      <div className="form-field">
-                        <label>Min Interval (seconds)</label>
-                        <input type="number" {...minIntervalProps} />
-                      </div>
-                      <div className="form-field">
-                        <label>Max Interval (seconds)</label>
-                        <input type="number" {...maxIntervalProps} />
+
+                      <div className="time-settings">
+                        <div className="form-field">
+                          <label>Start Time</label>
+                          <input type="datetime-local" {...startTimeProps} />
+                        </div>
+                        <div className="form-field">
+                          <label>End Time</label>
+                          <input type="datetime-local" {...endTimeProps} />
+                        </div>
+                        <div className="form-field">
+                          <label>Min Interval (seconds)</label>
+                          <input type="number" {...minIntervalProps} />
+                        </div>
+                        <div className="form-field">
+                          <label>Max Interval (seconds)</label>
+                          <input type="number" {...maxIntervalProps} />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -473,7 +548,14 @@ function WalletPage() {
                       </div>
                       <div className="form-field">
                         <label className="checkbox-label">
-                          <input type="checkbox" checked={buyConfig.randomOrder} />
+                          <input 
+                            type="checkbox" 
+                            checked={buyConfig.randomOrder}
+                            onChange={(e) => setBuyConfig({
+                              ...buyConfig,
+                              randomOrder: e.target.checked
+                            })}
+                          />
                           Randomize Wallet Order
                         </label>
                       </div>

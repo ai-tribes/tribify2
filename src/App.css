@@ -839,9 +839,58 @@ body.light .restore-button {
 }
 
 .dialog-header {
-  padding-bottom: 12px;
-  margin-bottom: 12px;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
   border-bottom: 1px solid currentColor;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.header-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.amount-type-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.amount-type-selector label {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.amount-type-selector .radio-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.amount-type-selector .radio-group label {
+  opacity: 1;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.ca-input-container {
+  margin-top: 8px;
+}
+
+.ca-input {
+  width: 300px;
+  padding: 4px 8px;
+  font-size: 13px;
 }
 
 .dialog-buttons {
@@ -900,7 +949,7 @@ body.light .restore-button {
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 20px;
   border-radius: 4px;
-  height: fit-content;
+  margin-bottom: 16px;
 }
 
 .form-section-title {
@@ -911,19 +960,29 @@ body.light .restore-button {
   letter-spacing: 0.5px;
 }
 
-.wallet-amount-section,
-.time-settings,
-.transaction-settings {
+.wallet-amount-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wallet-count {
+  width: 100%;
+}
+
+.amount-range {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 16px;
+}
+
+.time-settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 
 .form-field {
-  margin-bottom: 12px;
-}
-
-.form-field:last-child {
   margin-bottom: 0;
 }
 
@@ -944,12 +1003,12 @@ input[type="number"] {
 }
 
 .dialog-note {
-  grid-column: 1 / -1;
   font-size: 14px;
   padding: 16px;
   margin-top: 12px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 4px;
+  opacity: 0.8;
 }
 
 .dialog-buttons button {
@@ -1698,4 +1757,10 @@ input[type="datetime-local"]::-webkit-datetime-edit-hour-field,
 input[type="datetime-local"]::-webkit-datetime-edit-minute-field,
 input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   color: white;
+}
+
+.transaction-settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
