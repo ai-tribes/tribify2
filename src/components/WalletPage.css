@@ -109,6 +109,8 @@
 }
 
 .wallet-header {
+  display: flex;
+  justify-content: space-between;
   margin-bottom: 20px;
   padding: 0 15px;
 }
@@ -119,7 +121,7 @@
   align-items: center;
   flex-wrap: nowrap;
   overflow-x: auto;
-  padding-bottom: 10px; /* For scroll bar space if needed */
+  padding-bottom: 10px;
 }
 
 .wallet-actions {
@@ -169,9 +171,10 @@
 }
 
 .close-button {
-  margin-left: auto !important; /* Forces button to far right */
+  margin-left: 20px; /* Add some space between other buttons and close */
   background: rgba(231, 76, 60, 0.2) !important;
   border-color: rgba(231, 76, 60, 0.3) !important;
+  flex-shrink: 0; /* Prevent button from shrinking */
 }
 
 .restore-button {

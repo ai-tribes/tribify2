@@ -542,8 +542,8 @@ function WalletPage() {
             <button className="buy-all">Trigger Buy Config</button>
             <button onClick={() => setIsSellModalOpen(true)}>Configure Sell</button>
             <button className="sell-all">Trigger Sell Config</button>
-            <button onClick={() => navigate(-1)} className="close-button">Close</button>
           </div>
+          <button onClick={() => navigate(-1)} className="close-button">Close Wallet</button>
         </div>
 
         <div className="wallet-table">
