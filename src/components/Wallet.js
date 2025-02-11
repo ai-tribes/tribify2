@@ -8,6 +8,7 @@ const Wallet = () => {
   const [showWallet, setShowWallet] = useState(false);
   const [keyPairs, setKeyPairs] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState(null);
 
   // Load and decrypt keypairs from localStorage on mount
   useEffect(() => {
@@ -105,6 +106,16 @@ const Wallet = () => {
     }
   };
 
+  const copyToClipboard = async (text, index) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 1000); // Reset after 1 second
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
   return (
     <>
       <button 
@@ -143,22 +154,34 @@ const Wallet = () => {
             <div className="keypair-container">
               {keyPairs.length > 0 ? (
                 <div className="keypair-grid">
-                  {console.log('Rendering keypairs:', keyPairs)}
-                  {keyPairs.map((pair, index) => (
-                    <div key={index} className="keypair-item">
-                      <div className="keypair-index">#{pair.index}</div>
-                      <div className="keypair-details">
-                        <div className="public-key">
-                          <label>Public:</label>
-                          <code>{pair.publicKey}</code>
+                  <div className="keypair-column private-keys">
+                    <h4>Private Keys</h4>
+                    {keyPairs.map((pair, index) => (
+                      <div key={index} className={`keypair-item ${copiedIndex === `private-${index}` ? 'copied' : ''}`}>
+                        <div className="keypair-index">#{pair.index}</div>
+                        <div className="keypair-details">
+                          <code onClick={() => copyToClipboard(pair.privateKey, `private-${index}`)}>
+                            {pair.privateKey}
+                          </code>
                         </div>
-                        <div className="private-key">
-                          <label>Private:</label>
-                          <code>{pair.privateKey}</code>
-                        </div>
+                        <div className="keypair-status">Copied!</div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                  <div className="keypair-column public-keys">
+                    <h4>Public Keys</h4>
+                    {keyPairs.map((pair, index) => (
+                      <div key={index} className={`keypair-item ${copiedIndex === `public-${index}` ? 'copied' : ''}`}>
+                        <div className="keypair-index">#{pair.index}</div>
+                        <div className="keypair-details">
+                          <code onClick={() => copyToClipboard(pair.publicKey, `public-${index}`)}>
+                            {pair.publicKey}
+                          </code>
+                        </div>
+                        <div className="keypair-status">Copied!</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div className="no-keys-message">
