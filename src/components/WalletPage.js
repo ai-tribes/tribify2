@@ -476,7 +476,6 @@ function WalletPage() {
       <div className="wallet-content">
         <div className="wallet-header">
           <div className="wallet-controls">
-            <button onClick={() => navigate(-1)} className="back-button">← Back</button>
             <button onClick={generateHDWallet} disabled={generating}>
               {generating ? 'Generating...' : 'Generate Keys'}
             </button>
@@ -490,6 +489,7 @@ function WalletPage() {
             <button className="buy-all">Trigger Buy Config</button>
             <button onClick={() => setIsSellModalOpen(true)}>Configure Sell</button>
             <button className="sell-all">Trigger Sell Config</button>
+            <button onClick={() => navigate(-1)} className="close-button">Close</button>
           </div>
         </div>
 

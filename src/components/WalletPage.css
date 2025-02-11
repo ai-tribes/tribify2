@@ -166,4 +166,10 @@
 .sell-all {
   background: rgba(231, 76, 60, 0.2) !important;
   border-color: rgba(231, 76, 60, 0.3) !important;
+}
+
+.close-button {
+  margin-left: auto !important; /* Forces button to far right */
+  background: rgba(231, 76, 60, 0.2) !important;
+  border-color: rgba(231, 76, 60, 0.3) !important;
 } 
