@@ -39,6 +39,7 @@ function WalletPage() {
   const [selectedAmountType, setSelectedAmountType] = useState('SOL');
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState('');
+  const [contractAddress, setContractAddress] = useState('');
 
   const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
   const HELIUS_RPC_URL = `https://rpc-devnet.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_API_KEY}`;
@@ -554,6 +555,7 @@ function WalletPage() {
             <div className="col-sol">SOL</div>
             <div className="col-usdc">USDC</div>
             <div className="col-tribify">TRIBIFY</div>
+            <div className="col-ca">CA</div>
           </div>
           
           <div className="table-row totals-row">
@@ -568,6 +570,9 @@ function WalletPage() {
             </div>
             <div className="col-tribify total-value">
               {calculateTotals().tribify} TRIBIFY
+            </div>
+            <div className="col-ca">
+              {contractAddress || '-'}
             </div>
           </div>
 
@@ -594,6 +599,9 @@ function WalletPage() {
               </div>
               <div className="col-tribify">
                 {keypair.tribifyBalance || 0} TRIBIFY
+              </div>
+              <div className="col-ca">
+                {contractAddress || '-'}
               </div>
             </div>
           ))}

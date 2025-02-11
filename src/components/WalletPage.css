@@ -4,7 +4,7 @@
 
 .table-header {
   display: grid;
-  grid-template-columns: 50px 300px 300px 120px 120px 120px;
+  grid-template-columns: 50px 300px 300px 120px 120px 120px 120px;
   align-items: center;
   padding: 8px 15px;
   gap: 16px;
@@ -21,7 +21,7 @@
 
 .table-row {
   display: grid;
-  grid-template-columns: 50px 300px 300px 120px 120px 120px;
+  grid-template-columns: 50px 300px 300px 120px 120px 120px 120px;
   align-items: center;
   padding: 8px 15px;
   gap: 16px;
@@ -45,6 +45,15 @@
   text-align: right;
   font-family: monospace;
   font-size: 14px;
+}
+
+.col-ca {
+  text-align: right;
+  font-family: monospace;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Add other wallet-specific styles here */
