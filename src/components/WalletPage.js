@@ -40,6 +40,7 @@ function WalletPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState('');
   const [contractAddress, setContractAddress] = useState('');
+  const [parentWalletAddress, setParentWalletAddress] = useState('');
 
   const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
   const HELIUS_RPC_URL = `https://rpc-devnet.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_API_KEY}`;
@@ -470,6 +471,21 @@ function WalletPage() {
     }
   }, [keypairs.length]);
 
+  useEffect(() => {
+    const getParentWallet = async () => {
+      try {
+        if (window.phantom?.solana) {
+          const response = await window.phantom.solana.connect();
+          setParentWalletAddress(response.publicKey.toString());
+        }
+      } catch (error) {
+        console.error('Error getting parent wallet:', error);
+      }
+    };
+    
+    getParentWallet();
+  }, []);
+
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -545,6 +561,11 @@ function WalletPage() {
             <button className="sell-all">Trigger Sell Config</button>
           </div>
           <button onClick={() => navigate(-1)} className="close-button">Close Wallet</button>
+        </div>
+
+        <div className="parent-wallet-info">
+          <span className="label">Parent Wallet:</span>
+          <span className="address">{parentWalletAddress || 'Not Connected'}</span>
         </div>
 
         <div className="wallet-table">

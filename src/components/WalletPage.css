@@ -193,4 +193,25 @@
 
 .restore-button:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+
+.parent-wallet-info {
+  margin: 20px 15px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  font-family: monospace;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.parent-wallet-info .label {
+  color: #888;
+  font-size: 14px;
+}
+
+.parent-wallet-info .address {
+  font-size: 14px;
+  color: #3498db;  /* Light blue color */
 } 
