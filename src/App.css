@@ -835,6 +835,32 @@ body.light .restore-button {
   font-size: 20px;
 }
 
+.buy-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-field label {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.form-field input {
+  padding: 8px;
+  background: transparent;
+  border: 1px solid currentColor;
+  color: inherit;
+  font-family: inherit;
+}
+
 .dialog-note {
   font-size: 14px;
   opacity: 0.7;
@@ -849,6 +875,12 @@ body.light .restore-button {
 
 .dialog-buttons button {
   margin: 0;
+}
+
+.dialog-buttons .confirm-button {
+  background: #2ecc71;
+  color: white;
+  border-color: #2ecc71;
 }
 
 .password-button {

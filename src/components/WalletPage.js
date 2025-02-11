@@ -15,6 +15,7 @@ function WalletPage() {
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [copiedStates, setCopiedStates] = useState({});
   const [notification, setNotification] = useState(null);
+  const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
 
   useEffect(() => {
     const loadStoredKeypairs = () => {
@@ -196,7 +197,7 @@ function WalletPage() {
               Generate Keys
             </button>
             <button onClick={downloadKeypairs}>Download Keys</button>
-            <button onClick={() => setShowBuyConfig(true)}>Configure Buy</button>
+            <button onClick={() => setIsBuyModalOpen(true)}>Configure Buy</button>
             <button onClick={() => setShowSellConfig(true)}>Configure Sell</button>
             <button className="buy-all">Buy All</button>
             <button className="sell-all">Sell All</button>
@@ -232,19 +233,47 @@ function WalletPage() {
         </div>
 
         {/* Buy Configuration Modal */}
-        {showBuyConfig && (
-          <div className="config-modal">
-            <div className="config-content">
-              <h3>Configure Buy</h3>
-              <input 
-                type="number" 
-                value={selectedAmount} 
-                onChange={(e) => setSelectedAmount(e.target.value)}
-                placeholder="Amount in SOL"
-              />
-              <div className="config-actions">
-                <button onClick={() => setShowBuyConfig(false)}>Cancel</button>
-                <button className="confirm-button">Confirm</button>
+        {isBuyModalOpen && (
+          <div className="dialog-overlay">
+            <div className="dialog-box">
+              <div className="dialog-content">
+                <h3>Configure Buy Settings</h3>
+                <div className="buy-form">
+                  <div className="form-field">
+                    <label>Slippage (%)</label>
+                    <input 
+                      type="number" 
+                      min="0.1"
+                      max="100"
+                      step="0.1"
+                      defaultValue="1.0"
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label>Priority Fee (SOL)</label>
+                    <input 
+                      type="number"
+                      min="0"
+                      step="0.000001"
+                      defaultValue="0.000001"
+                    />
+                  </div>
+                </div>
+                <div className="dialog-note">
+                  These settings will apply to all buy transactions
+                </div>
+              </div>
+              <div className="dialog-buttons">
+                <button onClick={() => setIsBuyModalOpen(false)}>Cancel</button>
+                <button 
+                  className="confirm-button"
+                  onClick={() => {
+                    // Save configuration logic here
+                    setIsBuyModalOpen(false);
+                  }}
+                >
+                  Save Configuration
+                </button>
               </div>
             </div>
           </div>
