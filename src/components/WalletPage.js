@@ -4,6 +4,8 @@ import * as bip39 from 'bip39';
 import { derivePath } from 'ed25519-hd-key';
 import { Keypair } from '@solana/web3.js';
 import CryptoJS from 'crypto-js';
+import bs58 from 'bs58';
+import './WalletPage.css';
 
 function WalletPage() {
   const navigate = useNavigate();
@@ -412,9 +414,11 @@ function WalletPage() {
           <button onClick={() => navigate('/')}>← Back</button>
           <div className="wallet-actions">
             <button onClick={generateHDWallet} disabled={generating}>
-              Generate Keys
+              {generating ? 'Generating...' : 'Generate Keys'}
             </button>
-            <button onClick={downloadKeypairs}>Download Keys</button>
+            <button onClick={downloadKeypairs} disabled={keypairs.length === 0}>
+              Download Keys
+            </button>
             <button onClick={() => setIsBuyModalOpen(true)}>Configure Buy</button>
             <button onClick={() => setIsSellModalOpen(true)}>Configure Sell</button>
             <button className="buy-all">Buy All</button>
@@ -427,7 +431,9 @@ function WalletPage() {
             <div className="col-index">#</div>
             <div className="col-private">PRIVATE KEY</div>
             <div className="col-public">PUBLIC KEY</div>
-            <div className="col-tribify">TRIBIFY BALANCE</div>
+            <div className="col-sol">SOL</div>
+            <div className="col-usdc">USDC</div>
+            <div className="col-tribify">TRIBIFY</div>
           </div>
 
           {keypairs.map((keypair, i) => (
@@ -445,7 +451,15 @@ function WalletPage() {
               >
                 {keypair.publicKey.toString()}
               </div>
-              <div className="col-tribify">0 TRIBIFY</div>
+              <div className="col-sol">
+                {(keypair.solBalance || 0).toFixed(4)} SOL
+              </div>
+              <div className="col-usdc">
+                ${(keypair.usdcBalance || 0).toFixed(2)}
+              </div>
+              <div className="col-tribify">
+                {keypair.tribifyBalance || 0} TRIBIFY
+              </div>
             </div>
           ))}
         </div>
