@@ -1177,7 +1177,13 @@ function App() {
             className="tribify-button"
             onClick={() => setShowTribifyPrompt(true)}
           >
-            /tribify.ai
+            AI
+          </button>
+          <button 
+            className="docs-button"
+            onClick={() => setShowDocs(!showDocs)}
+          >
+            Docs
           </button>
           <button 
             className="graph-toggle-button"
@@ -1313,21 +1319,6 @@ function App() {
               </div>
             )}
           </div>
-
-          {!showDocs ? (
-            <button onClick={() => setShowDocs(true)} className="docs-link">
-              View Documentation
-            </button>
-          ) : (
-            <div className="docs-content">
-              <button onClick={() => setShowDocs(false)}>← Back</button>
-              <div className="markdown-content">
-                {DOCS_CONTENT.split('\n').map((line, i) => (
-                  <p key={i}>{line}</p>
-                ))}
-              </div>
-            </div>
-          )}
 
           {showAllMessages && (
             <div className="messages-box">
