@@ -45,24 +45,38 @@ app.post('/api/pusher/auth', async (req, res) => {
   const { socket_id, channel_name } = req.body;
   const { publicKey } = req.body.auth?.params || {};
 
+  console.log('Auth request:', { socket_id, channel_name, publicKey });
+
   try {
     // Get current token holders
     const holders = await getTokenHolders();
     const isHolder = holders.some(h => h.address === publicKey && h.tokenBalance > 0);
 
-    // Only allow token holders to join presence channel
-    if (isHolder) {
-      const auth = pusher.authorizeChannel(socket_id, channel_name, {
+    if (!isHolder) {
+      console.error('Auth rejected - not a token holder:', publicKey);
+      return res.status(403).json({ error: 'Only token holders can join this channel' });
+    }
+
+    // For presence channels, we MUST return user data
+    if (channel_name.startsWith('presence-')) {
+      const presenceData = {
         user_id: publicKey,
         user_info: {
           address: publicKey,
-          tokenHolder: true
+          tokenBalance: holders.find(h => h.address === publicKey)?.tokenBalance,
+          timestamp: Date.now()
         }
-      });
-      res.status(200).json(auth);
-    } else {
-      res.status(403).json({ error: 'Only token holders can join this channel' });
+      };
+
+      console.log('Authorizing presence channel:', presenceData);
+      const auth = pusher.authorizeChannel(socket_id, channel_name, presenceData);
+      return res.status(200).json(auth);
     }
+
+    // For private channels
+    const auth = pusher.authorizeChannel(socket_id, channel_name);
+    return res.status(200).json(auth);
+
   } catch (error) {
     console.error('Pusher auth error:', error);
     res.status(500).json({ error: error.message });
