@@ -1,0 +1,259 @@
+.wallet-fullscreen {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 1000;
+  overflow: auto;
+  color: #fff;
+}
+
+.wallet-content {
+  background: #111;
+  min-height: 100vh;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.wallet-header {
+  position: sticky;
+  top: 0;
+  background: #111;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #2ecc71;
+  z-index: 10;
+}
+
+.wallet-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.keypair-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 300px 1fr;  /* private | public keys */
+  gap: 1px;
+  margin-top: 20px;
+  background: #111;
+}
+
+.private-keys, .public-keys {
+  background: #000;
+  padding: 0;
+  overflow: auto;
+}
+
+.public-keys {
+  padding-left: 20px;
+  border-left: 1px solid #2ecc71;  /* Visual separator */
+}
+
+.public-keys .keypair-item {
+  display: grid;
+  grid-template-columns: 25px auto 120px 300px;  /* index, pubkey, buy/sell buttons, balances */
+  gap: 8px;
+  padding: 4px 8px;
+  background: #0a0a0a;
+  height: 32px;
+  align-items: center;
+}
+
+.private-keys .keypair-item {
+  display: grid;
+  grid-template-columns: 25px auto 60px;  /* index | key | status */
+  gap: 8px;
+  padding: 4px 8px;
+  background: #0a0a0a;
+  height: 32px;
+  align-items: center;
+}
+
+.keypair-index {
+  color: #888;
+  font-size: 12px;
+}
+
+.keypair-details code {
+  background: #000;
+  color: #fff;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: ltr;
+}
+
+.trade-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.buy-button,
+.sell-button {
+  min-width: unset !important;
+  padding: 2px 8px !important;
+  font-size: 12px !important;
+}
+
+.buy-button {
+  background: #2ecc71 !important;
+  color: #000 !important;
+  border: none !important;
+  opacity: 0.8;
+}
+
+.sell-button {
+  background: #e74c3c !important;
+  color: white !important;
+  border: none !important;
+  opacity: 0.8;
+}
+
+.balance-info {
+  display: flex;
+  gap: 10px;
+  font-size: 11px;
+  opacity: 1;
+  white-space: nowrap;
+  justify-content: flex-end;
+  margin-left: auto;
+  color: #fff;
+}
+
+.balance-info span {
+  padding: 2px 4px;
+  background: rgba(46, 204, 113, 0.2);
+  border-radius: 2px;
+  color: #2ecc71;
+}
+
+.config-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1100;
+}
+
+.config-content {
+  background: #111;
+  padding: 20px;
+  border: 1px solid #2ecc71;
+  min-width: 300px;
+}
+
+.config-content h3 {
+  margin: 0 0 20px 0;
+  color: #2ecc71;
+}
+
+.config-content input {
+  width: 100%;
+  padding: 8px;
+  background: #000;
+  border: 1px solid #2ecc71;
+  color: #fff;
+  margin-bottom: 20px;
+}
+
+.config-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.confirm-button {
+  background: #2ecc71 !important;
+  color: #000 !important;
+}
+
+.generate-keys {
+  background: #2ecc71 !important;
+  color: #000 !important;
+  font-weight: bold;
+  min-width: 120px !important;
+}
+
+.generate-keys:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.column-header {
+  padding: 15px;
+  border-bottom: 1px solid #2ecc71;
+  margin-bottom: 10px;
+}
+
+.column-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #2ecc71;
+}
+
+.warning {
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
+}
+
+.sub-headers {
+  display: grid;
+  grid-template-columns: auto 120px 300px;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #888;
+}
+
+.address-header {
+  padding-left: 33px;  /* 25px for index + 8px gap */
+}
+
+.actions-header {
+  text-align: center;
+}
+
+.balances-header {
+  text-align: right;
+}
+
+.keypair-status {
+  color: #2ecc71;
+  font-size: 12px;
+  opacity: 0;
+}
+
+.keypair-item.copied .keypair-status {
+  opacity: 1;
+}
+
+.download-keys {
+  background: #e67e22 !important; /* Orange to distinguish from other buttons */
+  color: #000 !important;
+  font-weight: bold;
+  min-width: 120px !important;
+  border: none !important;
+}
+
+.download-keys:hover {
+  opacity: 0.9;
+}
+
+.download-keys:active {
+  transform: translateY(1px);
+}
+
+/* ... other wallet styles ... */

@@ -24,7 +24,7 @@
     "react-force-graph-2d": "^1.27.0",
     "react-force-graph-3d": "^1.26.0",
     "react-markdown": "^9.0.3",
-    "react-router-dom": "^7.1.4",
+    "react-router-dom": "^6.3.0",
     "react-scripts": "5.0.1",
     "text-encoding": "^0.7.0",
     "three": "^0.173.0",
@@ -34,9 +34,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "npx craco start",
-    "build": "npx craco build",
-    "test": "npx craco test",
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test",
     "eject": "react-scripts eject",
     "dev": "react-scripts start",
     "server": "node server.js"
@@ -70,6 +70,7 @@
     "path-browserify": "^1.0.1",
     "prisma": "^6.3.1",
     "process": "^0.11.10",
+    "react-app-rewired": "^2.2.1",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
     "url": "^0.11.4"

@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const port = 3001;  // Different from React's 3000
+const port = process.env.BACKEND_PORT || 3001;  // Backend specific
 const Pusher = require('pusher');
 const { getTokenHolders } = require('./src/lib/solana');
 

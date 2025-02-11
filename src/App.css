@@ -1251,20 +1251,37 @@ body.light .debug-value {
 }
 
 .keypair-grid {
+  flex: 1;
   display: grid;
-  grid-template-columns: minmax(300px, 1fr) minmax(500px, 1fr);  /* Tighter column for private keys */
+  grid-template-columns: 300px max-content 200px 400px;  /* private | public | actions | balances */
   gap: 1px;
-  overflow: auto;
+  margin-top: 20px;
 }
 
-.keypair-item {
+.public-keys {
+  padding-left: 20px;
+  border-left: 1px solid #2ecc71;  /* Visual separator */
+}
+
+.public-keys .keypair-item {
   display: grid;
-  grid-template-columns: 25px 1fr 50px;  /* Slightly wider status column */
+  grid-template-columns: 25px auto 100px 100px 400px;  /* index, pubkey, buy button, sell button, balances */
   gap: 8px;
   padding: 4px 8px;
   background: #0a0a0a;
   height: 24px;
   align-items: center;
+}
+
+/* Keep balances right-aligned */
+.balance-info {
+  display: flex;
+  gap: 10px;
+  font-size: 11px;
+  opacity: 0.8;
+  white-space: nowrap;
+  justify-content: flex-end;
+  margin-left: auto;
 }
 
 .keypair-index {

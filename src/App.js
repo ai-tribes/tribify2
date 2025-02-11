@@ -13,8 +13,8 @@ import Password from './components/Password';
 import Messages from './components/Messages';
 import Backup from './components/Backup';
 import Restore from './components/Restore';
-import Wallet from './components/Wallet';
 import Disconnect from './components/Disconnect';
+import { Link } from 'react-router-dom';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -1099,7 +1099,9 @@ function App() {
           <Messages onClick={() => setShowAllMessages(true)} />
           <Backup onClick={backupNicknames} />
           <Restore onClick={() => document.getElementById('restore-input').click()} />
-          <Wallet />
+          <Link to="/wallet">
+            <button>Open Wallet</button>
+          </Link>
           <button 
             className="tribify-button"
             onClick={() => setShowTribifyPrompt(true)}
