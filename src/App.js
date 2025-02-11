@@ -7,6 +7,14 @@ import * as d3 from 'd3-force';
 import Pusher from 'pusher-js';
 import { encrypt, decrypt } from './lib/encryption';
 import ThemeToggle from './components/ThemeToggle';
+import Connected from './components/Connected';
+import Refresh from './components/Refresh';
+import Password from './components/Password';
+import Messages from './components/Messages';
+import Backup from './components/Backup';
+import Restore from './components/Restore';
+import Wallet from './components/Wallet';
+import Disconnect from './components/Disconnect';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -79,9 +87,11 @@ const getHolderColor = (address, tokenBalance) => {
   return '#2ecc71';  // Green for small holders
 };
 
-// Add new component for the graph
+// Update the TokenHolderGraph component
 const TokenHolderGraph = ({ holders, onNodeClick }) => {
   const graphRef = useRef();
+  // Initialize isCollapsed as true to hide by default
+  const [isCollapsed, setIsCollapsed] = useState(true);
   
   // Find the biggest holder to focus on
   const biggestHolder = holders.reduce((max, holder) => 
@@ -92,7 +102,11 @@ const TokenHolderGraph = ({ holders, onNodeClick }) => {
     nodes: holders.map(holder => ({
       id: holder.address,
       val: Math.sqrt(holder.tokenBalance),
-      tokenBalance: holder.tokenBalance,  // Need this for the nodeColor function
+      color: (holder.tokenBalance / TOTAL_SUPPLY) * 100 > 10 
+        ? '#ff0000' 
+        : (holder.tokenBalance / TOTAL_SUPPLY) * 100 > 1 
+          ? '#ffa500' 
+          : '#2ecc71',
       label: `${((holder.tokenBalance / TOTAL_SUPPLY) * 100).toFixed(2)}%`,
       x: holder.address === biggestHolder.address ? 0 : undefined,
       y: holder.address === biggestHolder.address ? 0 : undefined
@@ -112,16 +126,40 @@ const TokenHolderGraph = ({ holders, onNodeClick }) => {
   };
 
   useEffect(() => {
-    focusOnWhale();
-  }, []);
+    if (!isCollapsed) {
+      focusOnWhale();
+    }
+  }, [isCollapsed]);
+
+  if (isCollapsed) {
+    return (
+      <div className="graph-container collapsed">
+        <button 
+          className="expand-button"
+          onClick={() => setIsCollapsed(false)}
+        >
+          Show Holder Graph
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="graph-container">
+      <div className="graph-controls">
+        <button onClick={focusOnWhale}>Reset View</button>
+        <button 
+          className="collapse-button"
+          onClick={() => setIsCollapsed(true)}
+        >
+          Hide Graph
+        </button>
+      </div>
       <ForceGraph2D
         ref={graphRef}
         graphData={graphData}
         nodeLabel={node => `${node.id.slice(0, 4)}...${node.id.slice(-4)} (${node.label})`}
-        nodeColor={node => getHolderColor(node.id, node.tokenBalance)}
+        nodeColor={node => node.color}
         nodeRelSize={3}
         linkWidth={link => link.value * 2}
         linkColor={() => '#ffffff33'}
@@ -140,7 +178,6 @@ const TokenHolderGraph = ({ holders, onNodeClick }) => {
           y: d3.forceY(300).strength(0.1)
         }}
       />
-      <button onClick={focusOnWhale}>(reset)</button>
     </div>
   );
 };
@@ -298,116 +335,28 @@ function App() {
   const pusher = React.useMemo(() => {
     if (!publicKey) return null;
 
-    console.log('Initializing Pusher connection...', {
-      appId: process.env.REACT_APP_PUSHER_APP_ID,
-      key: process.env.REACT_APP_PUSHER_KEY,
-      cluster: process.env.REACT_APP_PUSHER_CLUSTER
-    });
-    
     const pusherClient = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
       cluster: process.env.REACT_APP_PUSHER_CLUSTER,
-      authEndpoint: `${process.env.REACT_APP_API_URL}/pusher/auth`,
+      authEndpoint: process.env.NODE_ENV === 'production'
+        ? 'https://tribify-richardboase-ai-tribes.vercel.app/api/pusher/auth'  // Production
+        : 'http://localhost:3001/api/pusher/auth',  // Development
       auth: {
-        params: { publicKey },
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      },
-      authorizer: (channel) => {
-        return {
-          authorize: async (socketId, callback) => {
-            try {
-              setDebugState(prev => ({
-                ...prev,
-                authAttempts: prev.authAttempts + 1
-              }));
-
-              const response = await fetch(`${process.env.REACT_APP_API_URL}/pusher/auth`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  socket_id: socketId,
-                  channel_name: channel.name,
-                  auth: { params: { publicKey } }
-                })
-              });
-
-              const data = await response.json();
-              callback(null, data);
-            } catch (error) {
-              console.error('Auth error:', error);
-              setDebugState(prev => ({
-                ...prev,
-                lastAuthError: error
-              }));
-              callback(error, null);
-            }
-          }
-        };
+        headers: { 'Content-Type': 'application/json' },
+        params: { publicKey }
       }
     });
 
-    // Subscribe to presence channel
     const channel = pusherClient.subscribe('presence-tribify');
-
-    // Add connection state handlers
-    pusherClient.connection.bind('state_change', ({ current, previous }) => {
-      console.log('Pusher state change:', { previous, current });
-      setDebugState(prev => ({
-        ...prev,
-        connectionState: current,
-        socketId: pusherClient.connection.socket_id
-      }));
-    });
-
+    
     channel.bind('pusher:subscription_succeeded', (members) => {
-      console.log('Presence subscription succeeded:', {
-        members: members.count,
-        myID: members.myID
-      });
-      
+      console.log('Subscription succeeded:', members);
       const online = new Set();
-      members.each(member => {
-        online.add(member.id);
-        console.log('Member online:', member);
-      });
+      members.each(member => online.add(member.id));
       setOnlineUsers(online);
-    });
-
-    channel.bind('pusher:member_added', (member) => {
-      console.log('Member joined:', member);
-      setOnlineUsers(prev => new Set([...prev, member.id]));
-    });
-
-    channel.bind('pusher:member_removed', (member) => {
-      console.log('Member left:', member);
-      setOnlineUsers(prev => {
-        const next = new Set(prev);
-        next.delete(member.id);
-        return next;
-      });
-    });
-
-    channel.bind('pusher:subscription_error', (error) => {
-      console.error('Subscription error:', error);
-      setDebugState(prev => ({
-        ...prev,
-        lastAuthError: error
-      }));
     });
 
     return pusherClient;
   }, [publicKey]);
-
-  // Add cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (pusher) {
-        console.log('Cleaning up Pusher connection');
-        pusher.disconnect();
-      }
-    };
-  }, [pusher]);
 
   // Update the theme toggle handler
   const handleThemeToggle = () => {
@@ -480,7 +429,7 @@ function App() {
                     <input type="text" name="username" value={userPublicKey} readOnly style={{display: 'none'}} />
                     <input 
                       type="password" 
-                      name="password"
+                      name="password" 
                       placeholder="Set your password"
                       autoFocus
                     />
@@ -685,48 +634,6 @@ function App() {
     fetchTreasuryBalances();
   }, []);
 
-  // Ping server when we connect
-  useEffect(() => {
-    if (!publicKey) return;
-
-    // Tell server we're online
-    const pingServer = async () => {
-      try {
-        const res = await fetch('/api/online-users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ publicKey })
-        });
-        const { onlineUsers } = await res.json();
-        setOnlineUsers(new Set(onlineUsers));
-      } catch (err) {
-        console.error('Failed to update online status:', err);
-      }
-    };
-
-    // Ping immediately
-    pingServer();
-
-    // Then ping every 10 seconds
-    const interval = setInterval(pingServer, 10000);
-
-    // Poll for other online users every 5 seconds
-    const pollInterval = setInterval(async () => {
-      try {
-        const res = await fetch('/api/online-users');
-        const { onlineUsers } = await res.json();
-        setOnlineUsers(new Set(onlineUsers));
-      } catch (err) {
-        console.error('Failed to fetch online users:', err);
-      }
-    }, 5000);
-
-    return () => {
-      clearInterval(interval);
-      clearInterval(pollInterval);
-    };
-  }, [publicKey]);
-
   // Add new function to fetch undelivered messages
   const fetchUndeliveredMessages = async () => {
     if (!publicKey) return;
@@ -810,47 +717,47 @@ function App() {
         privateKey
       );
 
-      const timestamp = Date.now();
-      const message = {
-        from: publicKey,
+    const timestamp = Date.now();
+    const message = {
+      from: publicKey,
         text: encryptedText,
-        timestamp,
+      timestamp,
         delivered: false,
         encrypted: true
-      };
+    };
 
-      // Add to local state immediately
-      setMessages(prev => ({
-        ...prev,
-        [recipient]: [...(prev[recipient] || []), message]
-      }));
+    // Add to local state immediately
+    setMessages(prev => ({
+      ...prev,
+      [recipient]: [...(prev[recipient] || []), message]
+    }));
 
       // Send to messages API
-      try {
+    try {
         const response = await fetch('/api/messages', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            from: publicKey,
-            to: recipient,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: publicKey,
+          to: recipient,
             text: encryptedText,
-            timestamp,
+          timestamp,
             encrypted: true
-          })
-        });
+        })
+      });
 
-        if (response.ok) {
-          setMessageInput('');
-          // Update message as delivered
-          setMessages(prev => ({
-            ...prev,
-            [recipient]: prev[recipient].map(msg => 
-              msg.timestamp === timestamp ? {...msg, delivered: true} : msg
-            )
-          }));
-        }
-      } catch (error) {
-        console.error('Failed to send message:', error);
+      if (response.ok) {
+        setMessageInput('');
+        // Update message as delivered
+        setMessages(prev => ({
+          ...prev,
+          [recipient]: prev[recipient].map(msg => 
+            msg.timestamp === timestamp ? {...msg, delivered: true} : msg
+          )
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error);
       }
     } catch (error) {
       console.error('Encryption failed:', error);
@@ -1046,194 +953,162 @@ function App() {
   return (
     <div className={`App ${isDark ? 'dark' : 'light'}`}>
       <ThemeToggle isDark={isDark} onToggle={handleThemeToggle} />
-      <div className="connection-group">
-        <button onClick={handleConnection}>
-          {isConnected ? 'Connected' : 'Connect Wallet'}
+      
+      {!isConnected ? (
+        // Show only Connect button when disconnected
+        <button 
+          onClick={handleConnection}
+          className="button"
+          style={{ margin: '0 5px' }}
+        >
+          Connect
         </button>
-        {isConnected && (
-          <>
-            <button 
-              className="refresh-button"
-              onClick={async () => {
-                if (publicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') {
-                  fetchTreasuryBalances();
-                  fetchTokenHolders();
-                  setStatus('Treasury balances updated');
-                } else {
+      ) : (
+        // Show all buttons when connected
+        <div className="connection-group">
+          <Connected onClick={() => console.log('Already connected')} />
+          <Refresh onClick={fetchTokenHolders} />
+          <Password onClick={() => {
+            if (friendPassword) {
+              // Has password - show change form
+              setDialogConfig({
+                show: true,
+                message: (
+                  <>
+                    <h3>Password</h3>
+                    <div className="password-form">
+                      <div className="password-field">
+                        <label>Username</label>
+                        <input 
+                          type="text"
+                          name="username"
+                          value={publicKey}
+                          readOnly
+                        />
+                      </div>
+                      <div className="password-field">
+                        <label>Current Password</label>
+                        <input 
+                          type="text" 
+                          value={friendPassword}
+                          disabled
+                          style={{ opacity: 0.7 }}
+                        />
+                      </div>
+                      <div className="password-field">
+                        <label>New Password</label>
+                        <input 
+                          type="password"
+                          id="newPassword"
+                          name="password"
+                          autoComplete="new-password"
+                          placeholder="Enter new password"
+                        />
+                      </div>
+                      <div className="password-field">
+                        <label>Confirm New Password</label>
+                        <input 
+                          type="password"
+                          id="confirmPassword"
+                          name={`${publicKey}-confirm`}
+                          autoComplete="new-password"
+                          placeholder="Confirm new password"
+                        />
+                      </div>
+                    </div>
+                  </>
+                ),
+                onConfirm: async () => {
+                  const newPassword = document.getElementById('newPassword').value;
+                  const confirmPassword = document.getElementById('confirmPassword').value;
+
+                  if (newPassword !== confirmPassword) {
+                    setStatus('New passwords do not match');
+                    return;
+                  }
+
                   try {
-                    await updateBalance(publicKey);
-                    await fetchTokenHolders();
-                    setStatus('Balances updated');
+                    // Payment for password change
+                    setStatus('Please approve payment (0.001 SOL) to change your password...');
+                    const transaction = new Transaction().add(
+                      SystemProgram.transfer({
+                        fromPubkey: new PublicKey(publicKey),
+                        toPubkey: new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
+                        lamports: LAMPORTS_PER_SOL * 0.001
+                      })
+                    );
+
+                    const { blockhash } = await connection.getLatestBlockhash('processed');
+                    transaction.recentBlockhash = blockhash;
+                    transaction.feePayer = new PublicKey(publicKey);
+                    const signed = await window.phantom.solana.signTransaction(transaction);
+                    await connection.sendRawTransaction(signed.serialize());
+
+                    localStorage.setItem('friend_password', newPassword);
+                    setFriendPassword(newPassword);
+                    setStatus('Password updated successfully!');
                   } catch (error) {
-                    setStatus('Error updating balances');
+                    setStatus('Failed to change password: ' + error.message);
+                  }
+                },
+                confirmText: 'Buy New Password ($1)'
+              });
+            } else {
+              // No password - offer to create
+              setDialogConfig({
+                show: true,
+                message: (
+                  <>
+                    <h3>Create Password</h3>
+                    <p>Would you like to create a password? This will cost 0.001 SOL.</p>
+                    <p className="dialog-note">A password lets you access special features.</p>
+                  </>
+                ),
+                onConfirm: async () => {
+                  try {
+                    // Payment for new password
+                    setStatus('Please approve payment (0.001 SOL) to create your password...');
+                    const transaction = new Transaction().add(
+                      SystemProgram.transfer({
+                        fromPubkey: new PublicKey(publicKey),
+                        toPubkey: new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
+                        lamports: LAMPORTS_PER_SOL * 0.001
+                      })
+                    );
+
+                    const { blockhash } = await connection.getLatestBlockhash('processed');
+                    transaction.recentBlockhash = blockhash;
+                    transaction.feePayer = new PublicKey(publicKey);
+                    const signed = await window.phantom.solana.signTransaction(transaction);
+                    await connection.sendRawTransaction(signed.serialize());
+
+                    // After payment, set password
+                    const newPassword = prompt('Payment received! Enter your password:');
+                    if (newPassword) {
+                      localStorage.setItem('friend_password', newPassword);
+                      setFriendPassword(newPassword);
+                      setStatus('Password created successfully!');
+                    }
+                  } catch (error) {
+                    setStatus('Failed to create password: ' + error.message);
                   }
                 }
-              }}
-            >
-              Refresh
-            </button>
-            <button 
-              className="password-button"
-              onClick={async () => {
-                if (friendPassword) {
-                  // Has password - show change form
-                  setDialogConfig({
-                    show: true,
-                    message: (
-                      <>
-                        <h3>Password</h3>
-                        <div className="password-form">
-                          {/* Username field that Chrome's password manager will use */}
-                          <div className="password-field">
-                            <label>Username</label>
-                            <input 
-                              type="text"
-                              name="username"
-                              value={publicKey}
-                              readOnly
-                            />
-                          </div>
-                          <div className="password-field">
-                            <label>Current Password</label>
-                            <input 
-                              type="text" 
-                              value={friendPassword}
-                              disabled
-                              style={{ opacity: 0.7 }}
-                            />
-                          </div>
-                          <div className="password-field">
-                            <label>New Password</label>
-                            <input 
-                              type="password"
-                              id="newPassword"
-                              name="password"
-                              autoComplete="new-password"
-                              placeholder="Enter new password"
-                            />
-                          </div>
-                          <div className="password-field">
-                            <label>Confirm New Password</label>
-                            <input 
-                              type="password"
-                              id="confirmPassword"
-                              name={`${publicKey}-confirm`}  // Unique name for confirm field
-                              autoComplete="new-password"
-                              placeholder="Confirm new password"
-                            />
-                          </div>
-                        </div>
-                      </>
-                    ),
-                    onConfirm: async () => {
-                      const newPassword = document.getElementById('newPassword').value;
-                      const confirmPassword = document.getElementById('confirmPassword').value;
-
-                      if (newPassword !== confirmPassword) {
-                        setStatus('New passwords do not match');
-                        return;
-                      }
-
-                      try {
-                        // Payment for password change
-                        setStatus('Please approve payment (0.001 SOL) to change your password...');
-                        const transaction = new Transaction().add(
-                          SystemProgram.transfer({
-                            fromPubkey: new PublicKey(publicKey),
-                            toPubkey: new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
-                            lamports: LAMPORTS_PER_SOL * 0.001
-                          })
-                        );
-
-                        const { blockhash } = await connection.getLatestBlockhash('processed');
-                        transaction.recentBlockhash = blockhash;
-                        transaction.feePayer = new PublicKey(publicKey);
-                        const signed = await window.phantom.solana.signTransaction(transaction);
-                        await connection.sendRawTransaction(signed.serialize());
-
-                        localStorage.setItem('friend_password', newPassword);
-                        setFriendPassword(newPassword);
-                        setStatus('Password updated successfully!');
-                      } catch (error) {
-                        setStatus('Failed to change password: ' + error.message);
-                      }
-                    },
-                    confirmText: 'Buy New Password ($1)'
-                  });
-                } else {
-                  // No password - offer to create
-                  setDialogConfig({
-                    show: true,
-                    message: (
-                      <>
-                        <h3>Create Password</h3>
-                        <p>Would you like to create a password? This will cost 0.001 SOL.</p>
-                        <p className="dialog-note">A password lets you access special features.</p>
-                      </>
-                    ),
-                    onConfirm: async () => {
-                      try {
-                        // Payment for new password
-                        setStatus('Please approve payment (0.001 SOL) to create your password...');
-                        const transaction = new Transaction().add(
-                          SystemProgram.transfer({
-                            fromPubkey: new PublicKey(publicKey),
-                            toPubkey: new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
-                            lamports: LAMPORTS_PER_SOL * 0.001
-                          })
-                        );
-
-                        const { blockhash } = await connection.getLatestBlockhash('processed');
-                        transaction.recentBlockhash = blockhash;
-                        transaction.feePayer = new PublicKey(publicKey);
-                        const signed = await window.phantom.solana.signTransaction(transaction);
-                        await connection.sendRawTransaction(signed.serialize());
-
-                        // After payment, set password
-                        const newPassword = prompt('Payment received! Enter your password:');
-                        if (newPassword) {
-                          localStorage.setItem('friend_password', newPassword);
-                          setFriendPassword(newPassword);
-                          setStatus('Password created successfully!');
-                        }
-                      } catch (error) {
-                        setStatus('Failed to create password: ' + error.message);
-                      }
-                    }
-                  });
-                }
-              }}
-            >
-              Password
-            </button>
-            <button 
-              className="messages-button"
-              onClick={() => setShowAllMessages(true)}
-            >
-              Messages {getTotalUnread() > 0 ? `(${getTotalUnread()})` : ''}
-            </button>
-            <button onClick={backupNicknames}>Backup</button>
-            <label className="restore-button">
-              Restore
-              <input 
-                type="file" 
-                accept=".json"
-                style={{ display: 'none' }}
-                onChange={restoreNicknames}
-              />
-            </label>
-            <button 
-              className="tribify-button"
-              onClick={() => setShowTribifyPrompt(true)}
-            >
-              /tribify.ai
-            </button>
-            <button className="disconnect-button" onClick={handleDisconnect}>
-              Disconnect
-            </button>
-          </>
-        )}
-      </div>
+              });
+            }
+          }} />
+          <Messages onClick={() => setShowAllMessages(true)} />
+          <Backup onClick={backupNicknames} />
+          <Restore onClick={() => document.getElementById('restore-input').click()} />
+          <Wallet />
+          <button 
+            className="tribify-button"
+            onClick={() => setShowTribifyPrompt(true)}
+          >
+            /tribify.ai
+          </button>
+          <Disconnect onClick={handleDisconnect} />
+        </div>
+      )}
 
       {isConnected && (
         <>

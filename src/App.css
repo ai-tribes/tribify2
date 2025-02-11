@@ -48,6 +48,9 @@ body.dark {
   border: none;
   padding: 0;
   margin: 0;
+  color: inherit;
+  font-size: 12px;
+  text-transform: uppercase;
 }
 
 .theme-toggle:hover {
@@ -711,6 +714,12 @@ body.light .restore-button {
   gap: 8px;
   margin-bottom: 20px;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Push disconnect button to the right */
+.connection-group > *:nth-last-child(1) {
+  margin-left: auto;
 }
 
 /* Remove any specific button styles */
@@ -947,24 +956,57 @@ body.light .restore-button {
   height: 600px;
   overflow: hidden;
   position: relative;
+  transition: all 0.3s ease;
 }
 
-.graph-container button {
+.graph-container.collapsed {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.graph-controls {
   position: absolute;
-  left: 10px;
   top: 10px;
+  left: 10px;
   z-index: 10;
+  display: flex;
+  gap: 8px;
+}
+
+.graph-controls button {
   background: transparent;
-  border: none;
+  border: 1px solid currentColor;
   padding: 4px 8px;
   font-size: 14px;
   cursor: pointer;
   opacity: 0.7;
   min-width: unset;
+  transition: opacity 0.2s ease;
 }
 
-.graph-container button:hover {
+.graph-controls button:hover {
   opacity: 1;
+}
+
+.expand-button {
+  background: transparent;
+  border: 1px solid currentColor;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.expand-button:hover {
+  opacity: 1;
+}
+
+.collapse-button {
+  color: #e74c3c;
+  border-color: #e74c3c;
 }
 
 .status-indicator {
@@ -1182,14 +1224,16 @@ body.light .debug-value {
 .wallet-modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.95);
+  background: rgba(0, 0, 0, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  cursor: pointer;
 }
 
 .wallet-content {
+  cursor: default;
   background: #111;
   width: 100%;
   max-width: 1200px;

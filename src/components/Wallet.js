@@ -5,7 +5,7 @@ import { derivePath } from 'ed25519-hd-key';
 import CryptoJS from 'crypto-js';
 
 const Wallet = () => {
-  const [showWallet, setShowWallet] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [keyPairs, setKeyPairs] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
@@ -116,18 +116,19 @@ const Wallet = () => {
     }
   };
 
+  // Add handler for background clicks
+  const handleBackgroundClick = (e) => {
+    // Only close if clicking the background overlay, not the modal content
+    if (e.target.className === 'wallet-modal') {
+      setIsOpen(false);
+    }
+  };
+
   return (
     <>
-      <button 
-        onClick={() => setShowWallet(true)}
-        className="button"
-        style={{ margin: '0 5px' }}
-      >
-        Wallet
-      </button>
-
-      {showWallet && (
-        <div className="wallet-modal">
+      <button onClick={() => setIsOpen(true)}>Wallet</button>
+      {isOpen && (
+        <div className="wallet-modal" onClick={handleBackgroundClick}>
           <div className="wallet-content">
             <div className="wallet-header">
               <h3>HD Wallet Keys</h3>
@@ -147,7 +148,7 @@ const Wallet = () => {
                     Download Keys
                   </button>
                 )}
-                <button onClick={() => setShowWallet(false)}>×</button>
+                <button onClick={() => setIsOpen(false)}>×</button>
               </div>
             </div>
             
