@@ -185,35 +185,62 @@ const TokenHolderGraph = ({ holders, onNodeClick, isCollapsed, setIsCollapsed })
 };
 
 // Add this component before the App component
-const HoldersList = ({ holders, onNodeClick, nicknames }) => {
+const HoldersList = ({ holders, onNodeClick, nicknames, setNicknames }) => {
+  const [editingNickname, setEditingNickname] = useState(null);
+
+  // Sort holders by token balance in descending order
+  const sortedHolders = [...holders].sort((a, b) => b.tokenBalance - a.tokenBalance);
+
   return (
     <div className="holders-list">
       <div className="holder-header">
         <div className="holder-col address">Address</div>
-        <div className="holder-col balance">Balance</div>
         <div className="holder-col percent">Share</div>
+        <div className="holder-col name">Name</div>
+        <div className="holder-col balance">$TRIBIFY</div>
+        <div className="holder-col sol">SOL</div>
+        <div className="holder-col usdc">USDC</div>
       </div>
-      {holders.map((holder) => (
+      {sortedHolders.map((holder) => (
         <div key={holder.address} className="holder-item">
           <div className="holder-col address">
             ◈ {holder.address}
-            {holder.address === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv' && (
-              <span style={{color: '#2ecc71'}}> (Treasury)</span>
-            )}
-            {holder.address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' && (
-              <span style={{color: '#87CEEB'}}> (Liquidity Pool)</span>
-            )}
-            {nicknames[holder.address] && (
-              <span style={{color: '#2ecc71'}}> ({nicknames[holder.address]})</span>
-            )}
-          </div>
-          <div className="holder-col balance">
-            ◇ {holder.tokenBalance.toLocaleString()} $TRIBIFY
           </div>
           <div className="holder-col percent" style={{
             color: getHolderColor(holder.address, holder.tokenBalance)
           }}>
             {((holder.tokenBalance / TOTAL_SUPPLY) * 100).toFixed(4)}%
+          </div>
+          <div className="holder-col name">
+            {editingNickname === holder.address ? (
+              <input
+                autoFocus
+                defaultValue={nicknames[holder.address] || ''}
+                onBlur={(e) => {
+                  setNicknames(prev => ({...prev, [holder.address]: e.target.value}));
+                  setEditingNickname(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setNicknames(prev => ({...prev, [holder.address]: e.target.value}));
+                    setEditingNickname(null);
+                  }
+                }}
+              />
+            ) : (
+              <span onClick={() => setEditingNickname(holder.address)}>
+                {nicknames[holder.address] || '+ Add name'}
+              </span>
+            )}
+          </div>
+          <div className="holder-col balance">
+            ◇ {holder.tokenBalance.toLocaleString()}
+          </div>
+          <div className="holder-col sol">
+            ◇ {holder.solBalance?.toFixed(4) || '0.0000'} SOL
+          </div>
+          <div className="holder-col usdc">
+            $ {holder.usdcBalance?.toFixed(2) || '0.00'}
           </div>
         </div>
       ))}
@@ -233,7 +260,10 @@ function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [balance, setBalance] = useState(null);
   const [showDocs, setShowDocs] = useState(false);
-  const [nicknames, setNicknames] = useState({});
+  const [nicknames, setNicknames] = useState({
+    'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv': 'Treasury',
+    '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7': 'Liquidity Pool'
+  });
   const [editingNickname, setEditingNickname] = useState(null);
   const [treasuryBalances, setTreasuryBalances] = useState({
     sol: 0,
@@ -1245,6 +1275,7 @@ function App() {
                   holders={tokenHolders}
                   onNodeClick={handleOpenChat}
                   nicknames={nicknames}
+                  setNicknames={setNicknames}
                 />
               </div>
             )}

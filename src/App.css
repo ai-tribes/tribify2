@@ -376,12 +376,13 @@ body.light .restore-button {
 }
 
 .token-holders {
-  margin-top: 20px;
-  border: 1px solid currentColor;
-  padding: 15px;
+  flex: 1;
   width: 100%;
-  max-width: 800px;
-  box-sizing: border-box;
+  height: 100%;
+  overflow: auto;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .holders-header {
@@ -393,37 +394,44 @@ body.light .restore-button {
 }
 
 .holder-item {
-  padding: 16px;
-  border-bottom: 1px dashed currentColor;
+  display: grid;
+  grid-template-columns: 1fr 100px 150px 200px 120px 120px;
+  gap: 20px;
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+  align-items: center;
+}
+
+.holder-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.holder-col.name {
+  cursor: pointer;
   opacity: 0.8;
-  width: 100%;
-  overflow: hidden;
-  font-size: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  box-sizing: border-box;
 }
 
-.holder-item > div:last-child {
-  text-align: left;
-  padding-left: 24px;
+.holder-col.name:hover {
+  opacity: 1;
+  color: #2ecc71;
 }
 
-.holder-item:last-child {
-  border-bottom: none;
+.holder-col.name input {
+  background: transparent;
+  border: 1px solid #2ecc71;
+  color: inherit;
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: inherit;
+  width: 90%;
 }
 
-.holder-balance {
-  margin-top: 4px;
-  font-size: 12px;
-  opacity: 0.7;
-}
-
-.holder-address {
-  word-break: break-all;
-  padding: 8px;
-  margin: 4px 0;
+.holder-col.sol,
+.holder-col.usdc,
+.holder-col.balance {
+  text-align: right;
+  color: #888;
 }
 
 .user-search form {
@@ -594,7 +602,7 @@ body.light .restore-button {
   display: flex;
   gap: 20px;
   width: 100%;
-  max-width: 1800px;
+  height: calc(100vh - 200px); /* Full viewport height minus header space */
   align-items: flex-start;
 }
 
@@ -2021,12 +2029,17 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 .holders-list {
   margin-top: 20px;
   width: 100%;
-  max-width: 1200px;
+  height: calc(100% - 60px); /* Full height minus header */
+  overflow: auto;
 }
 
 .holder-header {
+  position: sticky;
+  top: 0;
+  background: #000000;
+  z-index: 10;
   display: grid;
-  grid-template-columns: 1fr 300px 100px;
+  grid-template-columns: 1fr 100px 150px 200px 120px 120px;
   gap: 20px;
   padding: 12px;
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
@@ -2036,7 +2049,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 
 .holder-item {
   display: grid;
-  grid-template-columns: 1fr 300px 100px;
+  grid-template-columns: 1fr 100px 150px 200px 120px 120px;
   gap: 20px;
   padding: 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -2048,18 +2061,29 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   background: rgba(255, 255, 255, 0.05);
 }
 
-.holder-col {
-  font-family: monospace;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.holder-col.name {
+  cursor: pointer;
+  opacity: 0.8;
 }
 
+.holder-col.name:hover {
+  opacity: 1;
+  color: #2ecc71;
+}
+
+.holder-col.name input {
+  background: transparent;
+  border: 1px solid #2ecc71;
+  color: inherit;
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: inherit;
+  width: 90%;
+}
+
+.holder-col.sol,
+.holder-col.usdc,
 .holder-col.balance {
   text-align: right;
   color: #888;
-}
-
-.holder-col.percent {
-  text-align: right;
 }
