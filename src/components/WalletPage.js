@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as bip39 from 'bip39';
 import { derivePath } from 'ed25519-hd-key';
-import { Keypair } from '@solana/web3.js';
+import { Keypair, Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import CryptoJS from 'crypto-js';
 import bs58 from 'bs58';
+import { getAssociatedTokenAddress } from '@solana/spl-token';
 import './WalletPage.css';
 
 function WalletPage() {
@@ -36,6 +37,11 @@ function WalletPage() {
   const [showCAInput, setShowCAInput] = useState(false);
   const [caValue, setCAValue] = useState('');
   const [selectedAmountType, setSelectedAmountType] = useState('SOL');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+  const HELIUS_RPC_URL = `https://rpc-devnet.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_API_KEY}`;
+  const connection = new Connection(HELIUS_RPC_URL);
 
   useEffect(() => {
     const loadStoredKeypairs = () => {
@@ -412,6 +418,54 @@ function WalletPage() {
     }, { sol: 0, usdc: 0, tribify: 0 });
   };
 
+  const fetchBalances = async () => {
+    if (keypairs.length === 0) return;
+    
+    setIsLoading(true);
+    try {
+      const updatedKeypairs = await Promise.all(keypairs.map(async (keypair) => {
+        try {
+          // Fetch SOL balance
+          const solBalance = await connection.getBalance(keypair.publicKey);
+          
+          // Fetch USDC balance
+          let usdcBalance = 0;
+          try {
+            const ata = await getAssociatedTokenAddress(
+              new PublicKey(USDC_MINT),
+              keypair.publicKey
+            );
+            const account = await connection.getTokenAccountBalance(ata);
+            usdcBalance = account.value.uiAmount || 0;
+          } catch (e) {
+            console.log('No USDC account for:', keypair.publicKey.toString());
+          }
+
+          return {
+            ...keypair,
+            solBalance: solBalance / LAMPORTS_PER_SOL,
+            usdcBalance
+          };
+        } catch (e) {
+          console.error('Error fetching balances:', e);
+          return keypair;
+        }
+      }));
+      
+      setKeypairs(updatedKeypairs);
+    } catch (error) {
+      console.error('Failed to fetch balances:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (keypairs.length > 0) {
+      fetchBalances();
+    }
+  }, [keypairs.length]);
+
   return (
     <div className="wallet-fullscreen">
       {notification && (
@@ -421,13 +475,16 @@ function WalletPage() {
       )}
       <div className="wallet-content">
         <div className="wallet-header">
-          <button onClick={() => navigate('/')}>← Back</button>
-          <div className="wallet-actions">
+          <div className="wallet-controls">
+            <button onClick={() => navigate(-1)} className="back-button">← Back</button>
             <button onClick={generateHDWallet} disabled={generating}>
               {generating ? 'Generating...' : 'Generate Keys'}
             </button>
             <button onClick={downloadKeypairs} disabled={keypairs.length === 0}>
               Download Keys
+            </button>
+            <button onClick={fetchBalances} disabled={keypairs.length === 0 || isLoading}>
+              {isLoading ? 'Refreshing...' : '↻ Refresh Balances'}
             </button>
             <button onClick={() => setIsBuyModalOpen(true)}>Configure Buy</button>
             <button onClick={() => setIsSellModalOpen(true)}>Configure Sell</button>

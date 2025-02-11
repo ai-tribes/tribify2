@@ -64,4 +64,106 @@
   font-weight: bold;
   text-align: right;
   font-family: monospace;
+}
+
+/* Add these button styles */
+.wallet-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 10px; /* For scroll bar space if needed */
+}
+
+.wallet-controls button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.wallet-controls button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.wallet-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wallet-fullscreen {
+  padding: 20px;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+.wallet-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.wallet-header {
+  margin-bottom: 20px;
+  padding: 0 15px;
+}
+
+.wallet-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 10px; /* For scroll bar space if needed */
+}
+
+.wallet-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.back-button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.button-group button,
+.wallet-actions button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.button-group button:hover:not(:disabled),
+.wallet-actions button:hover:not(:disabled),
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.button-group button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.buy-all {
+  background: rgba(46, 204, 113, 0.2) !important;
+  border-color: rgba(46, 204, 113, 0.3) !important;
+}
+
+.sell-all {
+  background: rgba(231, 76, 60, 0.2) !important;
+  border-color: rgba(231, 76, 60, 0.3) !important;
 } 
