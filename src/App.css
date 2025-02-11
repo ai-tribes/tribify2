@@ -1361,7 +1361,7 @@ body.light .debug-value {
 .table-header,
 .table-row {
   display: grid;
-  grid-template-columns: 50px minmax(300px, 1fr) minmax(300px, 1fr) 150px;
+  grid-template-columns: 50px minmax(150px, 0.5fr) minmax(300px, 1fr) 150px;
   align-items: center;
   padding: 8px 15px;
   gap: 16px;
@@ -1381,12 +1381,18 @@ body.light .debug-value {
 
 .col-private,
 .col-public {
-  font-size: 12px;
   cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.col-private {
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  padding: 4px 8px;
+}
+
+.copied {
+  color: #2ecc71;
 }
 
 .col-sol,
@@ -1441,4 +1447,25 @@ body.light .debug-value {
   20% { opacity: 1; transform: translateY(0); }
   80% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(-10px); }
+}
+
+.copy-notification {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2ecc71;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  z-index: 1000;
+  animation: fadeInOut 2s ease;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translate(-50%, -20px); }
+  15% { opacity: 1; transform: translate(-50%, 0); }
+  85% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -20px); }
 }

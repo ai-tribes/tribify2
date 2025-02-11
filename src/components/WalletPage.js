@@ -13,6 +13,8 @@ function WalletPage() {
   const [keypairs, setKeypairs] = useState([]);
   const [generating, setGenerating] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const [copiedStates, setCopiedStates] = useState({});
+  const [notification, setNotification] = useState(null);
 
   useEffect(() => {
     const loadStoredKeypairs = () => {
@@ -153,11 +155,27 @@ function WalletPage() {
     }
   };
 
-  const copyToClipboard = async (text, index) => {
+  const copyToClipboard = async (text, index, type) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopiedIndex(index);
-      setTimeout(() => setCopiedIndex(null), 1000); // Reset after 1 second
+      
+      // Update copied state for this specific key
+      setCopiedStates(prev => ({
+        ...prev,
+        [`${type}-${index}`]: true
+      }));
+
+      // Show notification
+      setNotification(`${type === 'private' ? 'Private' : 'Public'} key copied to clipboard`);
+
+      // Reset states after 2 seconds
+      setTimeout(() => {
+        setCopiedStates(prev => ({
+          ...prev,
+          [`${type}-${index}`]: false
+        }));
+        setNotification(null);
+      }, 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
     }
@@ -165,6 +183,11 @@ function WalletPage() {
 
   return (
     <div className="wallet-fullscreen">
+      {notification && (
+        <div className="copy-notification">
+          {notification}
+        </div>
+      )}
       <div className="wallet-content">
         <div className="wallet-header">
           <button onClick={() => navigate('/')}>← Back</button>
@@ -192,13 +215,13 @@ function WalletPage() {
             <div key={i} className="table-row">
               <div className="col-index">{i + 1}</div>
               <div 
-                className="col-private"
+                className={`col-private ${copiedStates[`private-${i}`] ? 'copied' : ''}`}
                 onClick={() => copyToClipboard(Buffer.from(keypair.secretKey).toString('hex'), i, 'private')}
               >
                 {Buffer.from(keypair.secretKey).toString('hex')}
               </div>
               <div 
-                className="col-public"
+                className={`col-public ${copiedStates[`public-${i}`] ? 'copied' : ''}`}
                 onClick={() => copyToClipboard(keypair.publicKey.toString(), i, 'public')}
               >
                 {keypair.publicKey.toString()}
