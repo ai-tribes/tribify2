@@ -200,6 +200,7 @@ const HoldersList = ({ holders, onNodeClick, nicknames, setNicknames }) => {
         <div className="holder-col balance">$TRIBIFY</div>
         <div className="holder-col sol">SOL</div>
         <div className="holder-col usdc">USDC</div>
+        <div className="holder-col message">Message</div>
       </div>
       {sortedHolders.map((holder) => (
         <div key={holder.address} className="holder-item">
@@ -234,16 +235,64 @@ const HoldersList = ({ holders, onNodeClick, nicknames, setNicknames }) => {
             )}
           </div>
           <div className="holder-col balance">
-            ◇ {holder.tokenBalance.toLocaleString()}
+            {holder.tokenBalance.toLocaleString()}
           </div>
           <div className="holder-col sol">
-            ◇ {holder.solBalance?.toFixed(4) || '0.0000'}
+            {holder.solBalance?.toFixed(4) || '0.0000'}
           </div>
           <div className="holder-col usdc">
             $ {holder.usdcBalance?.toFixed(2) || '0.00'}
           </div>
+          <div className="holder-col message">
+            <button onClick={() => onNodeClick(holder.address)}>
+              Message
+            </button>
+          </div>
         </div>
       ))}
+    </div>
+  );
+};
+
+// Add MessageModal component
+const MessageModal = ({ isOpen, onClose, recipient, recipientName, messages, onSendMessage }) => {
+  const [messageInput, setMessageInput] = useState('');
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="message-modal">
+        <div className="modal-header">
+          <h3>Message {recipientName || recipient}</h3>
+          <button onClick={onClose}>×</button>
+        </div>
+        <div className="message-content">
+          {(messages || []).map((msg, i) => (
+            <div 
+              key={i} 
+              className={`message ${msg.from === recipient ? 'received' : 'sent'} ${
+                msg.delivered ? 'delivered' : ''
+              }`}
+            >
+              {msg.text}
+            </div>
+          ))}
+        </div>
+        <form className="message-input" onSubmit={(e) => {
+          e.preventDefault();
+          onSendMessage(messageInput);
+          setMessageInput('');
+        }}>
+          <input
+            value={messageInput}
+            onChange={(e) => setMessageInput(e.target.value)}
+            placeholder="Type a message..."
+            autoFocus
+          />
+          <button type="submit">Send</button>
+        </form>
+      </div>
     </div>
   );
 };
@@ -321,6 +370,12 @@ function App() {
 
   // Add new state near the top with other states
   const [showStatus, setShowStatus] = useState(false);
+
+  // Add state for message modal
+  const [messageModal, setMessageModal] = useState({ 
+    isOpen: false, 
+    recipient: null 
+  });
 
   // Define WalletTable component inside App to access state and functions
   const WalletTable = ({ wallets, onCopy }) => {
@@ -753,74 +808,28 @@ function App() {
     }
   };
 
-  // Update handleSendMessage to use new messages endpoint
-  const handleSendMessage = async (e, recipient) => {
-    e.preventDefault();
-    if (!messageInput.trim()) return;
+  // Update handleOpenChat
+  const handleOpenChat = (address) => {
+    setMessageModal({
+      isOpen: true,
+      recipient: address
+    });
+  };
 
-    try {
-      // Get sender's private key from Phantom
-      const privateKey = await window.phantom.solana.request({
-        method: 'signMessage',
-        params: {
-          message: 'Generate message encryption keys',
-          display: 'utf8'
-        }
-      });
+  // Add handleCloseChat
+  const handleCloseChat = () => {
+    setMessageModal({
+      isOpen: false,
+      recipient: null
+    });
+  };
 
-      // Encrypt message
-      const encryptedText = await encrypt(
-        messageInput,
-        recipient,
-        privateKey
-      );
-
-    const timestamp = Date.now();
-    const message = {
-      from: publicKey,
-        text: encryptedText,
-      timestamp,
-        delivered: false,
-        encrypted: true
-    };
-
-    // Add to local state immediately
-    setMessages(prev => ({
-      ...prev,
-      [recipient]: [...(prev[recipient] || []), message]
-    }));
-
-      // Send to messages API
-    try {
-        const response = await fetch('/api/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          from: publicKey,
-          to: recipient,
-            text: encryptedText,
-          timestamp,
-            encrypted: true
-        })
-      });
-
-      if (response.ok) {
-        setMessageInput('');
-        // Update message as delivered
-        setMessages(prev => ({
-          ...prev,
-          [recipient]: prev[recipient].map(msg => 
-            msg.timestamp === timestamp ? {...msg, delivered: true} : msg
-          )
-        }));
-      }
-    } catch (error) {
-      console.error('Failed to send message:', error);
-      }
-    } catch (error) {
-      console.error('Encryption failed:', error);
-      setStatus('Failed to encrypt message');
-    }
+  // Add handleSendMessage
+  const handleSendMessage = (message) => {
+    if (!messageModal.recipient || !message.trim()) return;
+    
+    // Your existing message sending logic here
+    console.log('Sending message to:', messageModal.recipient, message);
   };
 
   // Add effect to fetch undelivered messages on connect
@@ -850,16 +859,6 @@ function App() {
     } catch (error) {
       console.error('Disconnect error:', error);
     }
-  };
-
-  // Add function to clear unread when opening chat
-  const handleOpenChat = (address) => {
-    setActiveChat(address);
-    // Clear unread count when opening chat
-    setUnreadCounts(prev => ({
-      ...prev,
-      [address]: 0
-    }));
   };
 
   // Add inbox click handler
@@ -1252,18 +1251,22 @@ function App() {
 
       {isConnected && (
         <>
-          <div className="wallet-info">
-            <div className="balance-line">
-              ◈ {publicKey}
+          <div className="user-info-card">
+            <div className="user-info-content">
+              <span className="user-address">◈ {publicKey}</span>
               {publicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv' && (
-                <span style={{color: '#2ecc71'}}> (Treasury)</span>
+                <span className="user-label">(Treasury)</span>
               )}
-              <span className="balance-separator">•</span>
-              ◇ {balance} SOL
-              <span className="balance-separator">•</span>
-              ◇ {tokenHolders.find(h => h.address === publicKey)?.tokenBalance.toLocaleString()} $TRIBIFY
-              <span className="balance-separator">•</span>
-              ◇ ${tokenHolders.find(h => h.address === publicKey)?.usdcBalance.toLocaleString()} USDC
+              <span className="balance-dot">•</span>
+              <span className="balance-item">{balance} SOL</span>
+              <span className="balance-dot">•</span>
+              <span className="balance-item">
+                {tokenHolders.find(h => h.address === publicKey)?.tokenBalance.toLocaleString()} $TRIBIFY
+              </span>
+              <span className="balance-dot">•</span>
+              <span className="balance-item">
+                ${tokenHolders.find(h => h.address === publicKey)?.usdcBalance.toLocaleString()} USDC
+              </span>
             </div>
           </div>
 
@@ -1415,6 +1418,15 @@ function App() {
           </form>
         </div>
       )}
+
+      <MessageModal 
+        isOpen={messageModal.isOpen}
+        onClose={handleCloseChat}
+        recipient={messageModal.recipient}
+        recipientName={messageModal.recipient ? nicknames[messageModal.recipient] : ''}
+        messages={messageModal.recipient ? messages[messageModal.recipient] : []}
+        onSendMessage={handleSendMessage}
+      />
     </div>
   );
 }
