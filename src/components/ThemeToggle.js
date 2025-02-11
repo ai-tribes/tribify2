@@ -2,11 +2,7 @@ import React from 'react';
 
 const ThemeToggle = ({ isDark, onToggle }) => {
   return (
-    <button 
-      onClick={onToggle} 
-      className="theme-toggle"
-      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-    >
+    <button className="theme-toggle" onClick={onToggle}>
       {isDark ? '☀️' : '🌙'}
     </button>
   );
