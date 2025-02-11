@@ -12,6 +12,7 @@ function WalletPage() {
   const [showSellConfig, setShowSellConfig] = useState(false);
   const [keypairs, setKeypairs] = useState([]);
   const [generating, setGenerating] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState(null);
 
   const generateHDWallet = async () => {
     try {
@@ -78,6 +79,16 @@ function WalletPage() {
     }
   };
 
+  const copyToClipboard = async (text, index) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 1000); // Reset after 1 second
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
   return (
     <div className="wallet-fullscreen">
       <div className="wallet-content">
@@ -110,14 +121,14 @@ function WalletPage() {
               <span className="warning">Never share these!</span>
             </div>
             {keypairs.map((keypair, i) => (
-              <div key={i} className="keypair-item">
+              <div key={i} className={`keypair-item ${copiedIndex === `priv-${i}` ? 'copied' : ''}`}>
                 <span className="keypair-index">{i + 1}</span>
                 <div className="keypair-details">
-                  <code>
-                    {keypair.publicKey.toBase58()}
+                  <code onClick={() => copyToClipboard(Buffer.from(keypair.secretKey).toString('hex'), `priv-${i}`)}>
+                    {Buffer.from(keypair.secretKey).toString('hex')}
                   </code>
                 </div>
-                <span className="keypair-status">Copied</span>
+                <span className="keypair-status">Copied!</span>
               </div>
             ))}
           </div>
@@ -132,11 +143,14 @@ function WalletPage() {
               </div>
             </div>
             {keypairs.map((keypair, i) => (
-              <div key={i} className="keypair-item">
+              <div key={i} className={`keypair-item ${copiedIndex === `pub-${i}` ? 'copied' : ''}`}>
                 <span className="keypair-index">{i + 1}</span>
                 <div className="keypair-details">
-                  <code>{keypair.publicKey.toString()}</code>
+                  <code onClick={() => copyToClipboard(keypair.publicKey.toString(), `pub-${i}`)}>
+                    {keypair.publicKey.toString()}
+                  </code>
                 </div>
+                <span className="keypair-status">Copied!</span>
                 <div className="trade-buttons">
                   <button className="buy-button">Buy</button>
                   <button className="sell-button">Sell</button>

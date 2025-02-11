@@ -54,7 +54,7 @@
 
 .public-keys .keypair-item {
   display: grid;
-  grid-template-columns: 25px auto 120px 300px;  /* index, pubkey, buy/sell buttons, balances */
+  grid-template-columns: 25px auto 60px 120px 300px;  /* index | pubkey | status | buttons | balances */
   gap: 8px;
   padding: 4px 8px;
   background: #0a0a0a;
@@ -90,6 +90,16 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   direction: ltr;
+  transition: all 0.2s ease;
+}
+
+.keypair-details code:hover {
+  opacity: 0.8;
+  background: #111;
+}
+
+.keypair-details code:active {
+  transform: scale(0.98);
 }
 
 .trade-buttons {
@@ -234,6 +244,7 @@
   color: #2ecc71;
   font-size: 12px;
   opacity: 0;
+  text-align: center;
 }
 
 .keypair-item.copied .keypair-status {
