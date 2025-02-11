@@ -22,7 +22,12 @@ function WalletPage() {
     walletCount: 1,
     minAmount: 0.1,
     maxAmount: 1.0,
-    denominatedInSol: true
+    denominatedInSol: true,
+    startTime: null,
+    endTime: null,
+    minInterval: 5,
+    maxInterval: 30,
+    randomOrder: true
   });
 
   useEffect(() => {
@@ -190,6 +195,135 @@ function WalletPage() {
     }
   };
 
+  // Add randomization function
+  const randomizeConfig = () => {
+    // Get current time
+    const now = new Date();
+    
+    // Generate random start time between now and 24 hours from now
+    const randomStartMinutes = Math.floor(Math.random() * 60); // 0-59 minutes
+    const startTime = new Date(now.getTime() + randomStartMinutes * 60000);
+    
+    // Generate random end time between start time and 48 hours from start
+    const minEndTime = startTime.getTime() + (60 * 60 * 1000); // minimum 1 hour after start
+    const maxEndTime = startTime.getTime() + (48 * 60 * 60 * 1000); // maximum 48 hours after start
+    const endTime = new Date(minEndTime + Math.random() * (maxEndTime - minEndTime));
+
+    // Format dates to ISO string and trim milliseconds
+    const formattedStartTime = startTime.toISOString().slice(0, 19);
+    const formattedEndTime = endTime.toISOString().slice(0, 19);
+
+    setBuyConfig({
+      ...buyConfig,
+      walletCount: Math.floor(Math.random() * 100) + 1, // 1-100
+      minAmount: parseFloat((Math.random() * 0.5).toFixed(6)), // 0-0.5
+      maxAmount: parseFloat((Math.random() * 1.5 + 0.5).toFixed(6)), // 0.5-2.0
+      slippage: parseFloat((Math.random() * 4.9 + 0.1).toFixed(1)), // 0.1-5.0%
+      priorityFee: parseFloat((Math.random() * 0.000009 + 0.000001).toFixed(6)), // 0.000001-0.00001
+      startTime: formattedStartTime,
+      endTime: formattedEndTime,
+      minInterval: Math.floor(Math.random() * 28) + 2, // 2-30 seconds
+      maxInterval: Math.floor(Math.random() * 30) + 30, // 30-60 seconds
+      randomOrder: Math.random() > 0.5 // 50% chance of random order
+    });
+  };
+
+  const walletCountProps = {
+    type: "number",
+    min: "1",
+    max: "100",
+    value: buyConfig.walletCount,
+    onChange: (e) => setBuyConfig({
+      ...buyConfig,
+      walletCount: Math.min(100, Math.max(1, parseInt(e.target.value) || 1))
+    })
+  };
+
+  const minAmountProps = {
+    type: "number",
+    min: "0",
+    step: "0.000001",
+    value: buyConfig.minAmount,
+    onChange: (e) => setBuyConfig({
+      ...buyConfig,
+      minAmount: Math.max(0, parseFloat(e.target.value) || 0)
+    })
+  };
+
+  const maxAmountProps = {
+    type: "number",
+    min: "0",
+    step: "0.000001",
+    value: buyConfig.maxAmount,
+    onChange: (e) => setBuyConfig({
+      ...buyConfig,
+      maxAmount: Math.max(buyConfig.minAmount, parseFloat(e.target.value) || 0)
+    })
+  };
+
+  const startTimeProps = {
+    type: "datetime-local",
+    value: buyConfig.startTime || '',
+    onChange: (e) => setBuyConfig({
+      ...buyConfig,
+      startTime: e.target.value
+    })
+  };
+
+  const endTimeProps = {
+    type: "datetime-local",
+    min: buyConfig.startTime || '',
+    value: buyConfig.endTime || '',
+    onChange: (e) => setBuyConfig({
+      ...buyConfig,
+      endTime: e.target.value
+    })
+  };
+
+  const minIntervalProps = {
+    type: "number",
+    min: "1",
+    max: buyConfig.maxInterval,
+    value: buyConfig.minInterval,
+    onChange: (e) => setBuyConfig({
+      ...buyConfig,
+      minInterval: Math.max(1, parseInt(e.target.value) || 1)
+    })
+  };
+
+  const maxIntervalProps = {
+    type: "number",
+    min: buyConfig.minInterval,
+    value: buyConfig.maxInterval,
+    onChange: (e) => setBuyConfig({
+      ...buyConfig,
+      maxInterval: Math.max(buyConfig.minInterval, parseInt(e.target.value) || buyConfig.minInterval)
+    })
+  };
+
+  const slippageProps = {
+    type: "number",
+    min: "0.1",
+    max: "100",
+    step: "0.1",
+    value: buyConfig.slippage,
+    onChange: (e) => setBuyConfig({
+      ...buyConfig,
+      slippage: parseFloat(e.target.value)
+    })
+  };
+
+  const priorityFeeProps = {
+    type: "number",
+    min: "0",
+    step: "0.000001",
+    value: buyConfig.priorityFee,
+    onChange: (e) => setBuyConfig({
+      ...buyConfig,
+      priorityFee: parseFloat(e.target.value)
+    })
+  };
+
   return (
     <div className="wallet-fullscreen">
       {notification && (
@@ -245,130 +379,118 @@ function WalletPage() {
           <div className="dialog-overlay">
             <div className="dialog-box">
               <div className="dialog-content">
-                <h3>Configure Buy Settings</h3>
+                <div className="dialog-header">
+                  <h3>Configure Automated Buying</h3>
+                  <div className="header-buttons">
+                    <button 
+                      className="randomize-button"
+                      onClick={randomizeConfig}
+                      title="Generate random configuration"
+                    >
+                      🎲 Randomize
+                    </button>
+                    <button 
+                      className="save-button"
+                      onClick={() => {
+                        // Save configuration logic here
+                        setIsBuyModalOpen(false);
+                      }}
+                    >
+                      Save Config
+                    </button>
+                    <button 
+                      className="buy-button"
+                      onClick={() => {
+                        // Schedule automated buying
+                        console.log('Scheduling automated buys with config:', buyConfig);
+                      }}
+                    >
+                      Start Buying
+                    </button>
+                  </div>
+                </div>
                 <div className="buy-form">
-                  <div className="form-field">
-                    <label>Number of Wallets (1-100)</label>
-                    <input 
-                      type="number"
-                      min="1"
-                      max="100"
-                      value={buyConfig.walletCount}
-                      onChange={(e) => setBuyConfig({
-                        ...buyConfig,
-                        walletCount: Math.min(100, Math.max(1, parseInt(e.target.value) || 1))
-                      })}
-                    />
-                  </div>
-                  
-                  <div className="amount-range-fields">
-                    <div className="form-field">
-                      <label>Min Amount</label>
-                      <input 
-                        type="number"
-                        min="0"
-                        step="0.000001"
-                        value={buyConfig.minAmount}
-                        onChange={(e) => setBuyConfig({
-                          ...buyConfig,
-                          minAmount: Math.max(0, parseFloat(e.target.value) || 0)
-                        })}
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label>Max Amount</label>
-                      <input 
-                        type="number"
-                        min="0"
-                        step="0.000001"
-                        value={buyConfig.maxAmount}
-                        onChange={(e) => setBuyConfig({
-                          ...buyConfig,
-                          maxAmount: Math.max(buyConfig.minAmount, parseFloat(e.target.value) || 0)
-                        })}
-                      />
+                  {/* Wallet and Amount Section */}
+                  <div className="form-section">
+                    <div className="form-section-title">Wallet & Amount Settings</div>
+                    <div className="wallet-amount-section">
+                      <div className="form-field">
+                        <label>Number of Wallets (1-100)</label>
+                        <input type="number" {...walletCountProps} />
+                      </div>
+                      <div className="form-field">
+                        <label>Amount Type</label>
+                        <div className="radio-group">
+                          <label><input type="radio" /> SOL</label>
+                          <label><input type="radio" /> TRIBIFY</label>
+                        </div>
+                      </div>
+                      <div className="form-field">
+                        <label>Min Amount</label>
+                        <input type="number" {...minAmountProps} />
+                      </div>
+                      <div className="form-field">
+                        <label>Max Amount</label>
+                        <input type="number" {...maxAmountProps} />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="form-field">
-                    <label>Amount Type</label>
-                    <div className="radio-group">
-                      <label>
-                        <input 
-                          type="radio"
-                          checked={buyConfig.denominatedInSol}
-                          onChange={() => setBuyConfig({
-                            ...buyConfig,
-                            denominatedInSol: true
-                          })}
-                        /> SOL
-                      </label>
-                      <label>
-                        <input 
-                          type="radio"
-                          checked={!buyConfig.denominatedInSol}
-                          onChange={() => setBuyConfig({
-                            ...buyConfig,
-                            denominatedInSol: false
-                          })}
-                        /> TRIBIFY
-                      </label>
+                  {/* Time Settings Section */}
+                  <div className="form-section">
+                    <div className="form-section-title">Time Settings</div>
+                    <div className="time-settings">
+                      <div className="form-field">
+                        <label>Start Time</label>
+                        <input type="datetime-local" {...startTimeProps} />
+                      </div>
+                      <div className="form-field">
+                        <label>End Time</label>
+                        <input type="datetime-local" {...endTimeProps} />
+                      </div>
+                      <div className="form-field">
+                        <label>Min Interval (seconds)</label>
+                        <input type="number" {...minIntervalProps} />
+                      </div>
+                      <div className="form-field">
+                        <label>Max Interval (seconds)</label>
+                        <input type="number" {...maxIntervalProps} />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="form-field">
-                    <label>Slippage (%)</label>
-                    <input 
-                      type="number" 
-                      min="0.1"
-                      max="100"
-                      step="0.1"
-                      value={buyConfig.slippage}
-                      onChange={(e) => setBuyConfig({
-                        ...buyConfig,
-                        slippage: parseFloat(e.target.value)
-                      })}
-                    />
-                  </div>
-                  <div className="form-field">
-                    <label>Priority Fee (SOL)</label>
-                    <input 
-                      type="number"
-                      min="0"
-                      step="0.000001"
-                      value={buyConfig.priorityFee}
-                      onChange={(e) => setBuyConfig({
-                        ...buyConfig,
-                        priorityFee: parseFloat(e.target.value)
-                      })}
-                    />
+                  {/* Transaction Settings Section */}
+                  <div className="form-section">
+                    <div className="form-section-title">Transaction Settings</div>
+                    <div className="transaction-settings">
+                      <div className="form-field">
+                        <label>Slippage (%)</label>
+                        <input type="number" {...slippageProps} />
+                      </div>
+                      <div className="form-field">
+                        <label>Priority Fee (SOL)</label>
+                        <input type="number" {...priorityFeeProps} />
+                      </div>
+                      <div className="form-field">
+                        <label className="checkbox-label">
+                          <input type="checkbox" checked={buyConfig.randomOrder} />
+                          Randomize Wallet Order
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="dialog-note">
-                  Will buy random amounts between {buyConfig.minAmount} and {buyConfig.maxAmount} {buyConfig.denominatedInSol ? 'SOL' : 'TRIBIFY'} 
-                  for {buyConfig.walletCount} wallet{buyConfig.walletCount > 1 ? 's' : ''}
+                  Will automatically buy random amounts between {buyConfig.minAmount} and {buyConfig.maxAmount} {buyConfig.denominatedInSol ? 'SOL' : 'TRIBIFY'} 
+                  using {buyConfig.walletCount} wallet{buyConfig.walletCount > 1 ? 's' : ''}<br/>
+                  Buys will occur between {buyConfig.startTime ? new Date(buyConfig.startTime).toLocaleString() : '(not set)'} 
+                  and {buyConfig.endTime ? new Date(buyConfig.endTime).toLocaleString() : '(not set)'}<br/>
+                  with {buyConfig.minInterval}-{buyConfig.maxInterval} minute intervals between transactions
+                  {buyConfig.randomOrder && ' in random wallet order'}
                 </div>
               </div>
               <div className="dialog-buttons">
-                <button onClick={() => setIsBuyModalOpen(false)}>Cancel</button>
-                <button 
-                  className="save-button"
-                  onClick={() => {
-                    // Save configuration logic here
-                    setIsBuyModalOpen(false);
-                  }}
-                >
-                  Save Configuration
-                </button>
-                <button 
-                  className="buy-button"
-                  onClick={() => {
-                    // Buy execution logic here
-                    console.log('Executing buy with config:', buyConfig);
-                  }}
-                >
-                  Buy Now
-                </button>
+                <button onClick={() => setIsBuyModalOpen(false)}>Close</button>
               </div>
             </div>
           </div>

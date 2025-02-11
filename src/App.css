@@ -821,13 +821,51 @@ body.light .restore-button {
 .dialog-box {
   background: var(--bg-color);
   border: 1px solid currentColor;
-  padding: 20px;
-  width: 90%;
-  max-width: 400px;
+  padding: 24px;
+  width: 1000px;
+  height: 700px;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .dialog-content {
-  margin-bottom: 20px;
+  flex: 1;
+  overflow: visible;
+  padding-right: 10px;
+}
+
+.dialog-header {
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid currentColor;
+}
+
+.dialog-buttons {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid currentColor;
+}
+
+/* Add custom scrollbar styling */
+.dialog-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dialog-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dialog-content::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.5);
+  border-radius: 4px;
+}
+
+.dialog-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.7);
 }
 
 .dialog-content h3 {
@@ -836,41 +874,82 @@ body.light .restore-button {
 }
 
 .buy-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin: 20px 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+/* Left column sections */
+.buy-form .form-section:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.buy-form .form-section:nth-child(2) {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+/* Right column section */
+.buy-form .form-section:nth-child(3) {
+  grid-column: 2;
+  grid-row: 1 / 3;
+}
+
+.form-section {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: 4px;
+  height: fit-content;
+}
+
+.form-section-title {
+  font-size: 15px;
+  opacity: 0.8;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wallet-amount-section,
+.time-settings,
+.transaction-settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
 }
 
 .form-field {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.form-field:last-child {
+  margin-bottom: 0;
 }
 
 .form-field label {
+  display: block;
+  margin-bottom: 6px;
   font-size: 14px;
   opacity: 0.8;
 }
 
-.form-field input {
-  padding: 8px;
-  background: transparent;
-  border: 1px solid currentColor;
-  color: inherit;
-  font-family: inherit;
+input[type="datetime-local"],
+input[type="number"] {
+  height: 32px;
+  padding: 4px 10px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .dialog-note {
+  grid-column: 1 / -1;
   font-size: 14px;
-  opacity: 0.7;
-  margin-top: 15px;
-}
-
-.dialog-buttons {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
+  padding: 16px;
+  margin-top: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
 }
 
 .dialog-buttons button {
@@ -970,8 +1049,8 @@ body.light .restore-button {
 
 /* For the sniper */
 .holder-item.sniper-warning {
-  border: 2px solid #ff0000;  /* Inside border */
-  margin: -1px;  /* Compensate for border to maintain alignment */
+  border: 2px solid #ff0000;
+  margin: -1px;
 }
 
 .percentage {
@@ -989,7 +1068,7 @@ body.light .restore-button {
 }
 
 .small-holder {
-  color: #2ecc71;  /* Nice green color */
+  color: #2ecc71;
   font-weight: bold;
 }
 
@@ -1556,4 +1635,67 @@ body.light .debug-value {
 
 .radio-group input[type="radio"] {
   margin: 0;
+}
+
+input[type="datetime-local"],
+input[type="number"] {
+  height: 28px;
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.checkbox-label {
+  font-size: 13px;
+}
+
+/* Style datetime inputs */
+input[type="datetime-local"] {
+  background: #1a1a1a;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 4px 8px;
+  font-size: 13px;
+  height: 28px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Style calendar picker icon */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* For Firefox */
+input[type="datetime-local"]::-moz-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.8;
+}
+
+/* For dark mode calendar popup (where supported) */
+input[type="datetime-local"]::-webkit-datetime-edit {
+  color: white;
+}
+
+input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper {
+  color: white;
+}
+
+input[type="datetime-local"]::-webkit-datetime-edit-text {
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0 2px;
+}
+
+input[type="datetime-local"]::-webkit-datetime-edit-month-field,
+input[type="datetime-local"]::-webkit-datetime-edit-day-field,
+input[type="datetime-local"]::-webkit-datetime-edit-year-field,
+input[type="datetime-local"]::-webkit-datetime-edit-hour-field,
+input[type="datetime-local"]::-webkit-datetime-edit-minute-field,
+input[type="datetime-local"]::-webkit-datetime-edit-second-field {
+  color: white;
 }
