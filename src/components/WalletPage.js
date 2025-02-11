@@ -487,9 +487,9 @@ function WalletPage() {
               {isLoading ? 'Refreshing...' : '↻ Refresh Balances'}
             </button>
             <button onClick={() => setIsBuyModalOpen(true)}>Configure Buy</button>
+            <button className="buy-all">Trigger Buy Config</button>
             <button onClick={() => setIsSellModalOpen(true)}>Configure Sell</button>
-            <button className="buy-all">Buy All</button>
-            <button className="sell-all">Sell All</button>
+            <button className="sell-all">Trigger Sell Config</button>
           </div>
         </div>
 
