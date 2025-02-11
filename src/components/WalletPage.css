@@ -78,31 +78,30 @@
 /* Add these button styles */
 .wallet-controls {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   flex-wrap: nowrap;
-  overflow-x: auto;
-  padding-bottom: 10px; /* For scroll bar space if needed */
+  width: 100%;
 }
 
 .wallet-controls button {
   padding: 8px 16px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: transparent;
-  color: inherit;
+  font-size: 14px;
+  font-family: monospace;
   cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
+  background: transparent;
+  border: 1px solid currentColor;
+  color: inherit;
+  border-radius: 0;
+  min-width: 100px;
+  transition: all 0.2s ease;
+  opacity: 0.8;
+  margin: 0 4px;
 }
 
-.wallet-controls button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.wallet-controls button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.wallet-controls button:hover {
+  opacity: 1;
+  transform: translateY(-1px);
 }
 
 .wallet-fullscreen {
@@ -119,19 +118,15 @@
 
 .wallet-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: row;
+  gap: 8px;
   margin-bottom: 20px;
-  padding: 0 15px;
-}
-
-.wallet-controls {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  padding-bottom: 10px;
+  padding: 20px 40px;
+  font-family: monospace;
+  transition: all 0.3s ease;
+  text-align: center;
+  font-size: 16px;
+  background: transparent;
 }
 
 .wallet-actions {

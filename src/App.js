@@ -184,6 +184,43 @@ const TokenHolderGraph = ({ holders, onNodeClick, isCollapsed, setIsCollapsed })
   );
 };
 
+// Add this component before the App component
+const HoldersList = ({ holders, onNodeClick, nicknames }) => {
+  return (
+    <div className="holders-list">
+      <div className="holder-header">
+        <div className="holder-col address">Address</div>
+        <div className="holder-col balance">Balance</div>
+        <div className="holder-col percent">Share</div>
+      </div>
+      {holders.map((holder) => (
+        <div key={holder.address} className="holder-item">
+          <div className="holder-col address">
+            ◈ {holder.address}
+            {holder.address === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv' && (
+              <span style={{color: '#2ecc71'}}> (Treasury)</span>
+            )}
+            {holder.address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' && (
+              <span style={{color: '#87CEEB'}}> (Liquidity Pool)</span>
+            )}
+            {nicknames[holder.address] && (
+              <span style={{color: '#2ecc71'}}> ({nicknames[holder.address]})</span>
+            )}
+          </div>
+          <div className="holder-col balance">
+            ◇ {holder.tokenBalance.toLocaleString()} $TRIBIFY
+          </div>
+          <div className="holder-col percent" style={{
+            color: getHolderColor(holder.address, holder.tokenBalance)
+          }}>
+            {((holder.tokenBalance / TOTAL_SUPPLY) * 100).toFixed(4)}%
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 function App() {
   const navigate = useNavigate();
   // Add all state declarations at the top of App
@@ -1204,48 +1241,11 @@ function App() {
             {showHolders && (
               <div className="token-holders">
                 <h3>$TRIBIFY Holders</h3>
-                <TokenHolderGraph 
+                <HoldersList 
                   holders={tokenHolders}
                   onNodeClick={handleOpenChat}
-                  isCollapsed={isCollapsed}
-                  setIsCollapsed={setIsCollapsed}
+                  nicknames={nicknames}
                 />
-                
-                {showStatus && (
-                  <div className="connection-status-panel">
-                    <h3>Connection Status</h3>
-                    <div className="debug-grid">
-                      <div className="debug-item">
-                        <div className="debug-label">State:</div>
-                        <div className={`debug-value state-${debugState.connectionState}`}>
-                          {debugState.connectionState}
-                        </div>
-                      </div>
-                      <div className="debug-item">
-                        <div className="debug-label">Socket ID:</div>
-                        <div className="debug-value">{debugState.socketId || 'none'}</div>
-                      </div>
-                      <div className="debug-item">
-                        <div className="debug-label">Auth Attempts:</div>
-                        <div className="debug-value">{debugState.authAttempts}</div>
-                      </div>
-                      <div className="debug-item">
-                        <div className="debug-label">My Public Key:</div>
-                        <div className="debug-value">{publicKey || 'none'}</div>
-                      </div>
-                      <div className="debug-item">
-                        <div className="debug-label">Online Users:</div>
-                        <div className="debug-value">{onlineUsers.size}</div>
-                      </div>
-                      {debugState.lastAuthError && (
-                        <div className="debug-item error">
-                          <div className="debug-label">Last Error:</div>
-                          <div className="debug-value">{debugState.lastAuthError.message}</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 

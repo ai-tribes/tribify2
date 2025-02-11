@@ -2017,3 +2017,49 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 .tribify-button {
   min-width: unset;
 }
+
+.holders-list {
+  margin-top: 20px;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.holder-header {
+  display: grid;
+  grid-template-columns: 1fr 300px 100px;
+  gap: 20px;
+  padding: 12px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  font-weight: bold;
+  color: #888;
+}
+
+.holder-item {
+  display: grid;
+  grid-template-columns: 1fr 300px 100px;
+  gap: 20px;
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+  align-items: center;
+}
+
+.holder-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.holder-col {
+  font-family: monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.holder-col.balance {
+  text-align: right;
+  color: #888;
+}
+
+.holder-col.percent {
+  text-align: right;
+}
