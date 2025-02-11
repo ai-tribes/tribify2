@@ -237,7 +237,7 @@ const HoldersList = ({ holders, onNodeClick, nicknames, setNicknames }) => {
             ◇ {holder.tokenBalance.toLocaleString()}
           </div>
           <div className="holder-col sol">
-            ◇ {holder.solBalance?.toFixed(4) || '0.0000'} SOL
+            ◇ {holder.solBalance?.toFixed(4) || '0.0000'}
           </div>
           <div className="holder-col usdc">
             $ {holder.usdcBalance?.toFixed(2) || '0.00'}
