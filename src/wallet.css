@@ -1,18 +1,15 @@
 .wallet-fullscreen {
-  position: fixed;
-  inset: 0;
+  min-height: 100vh;
+  padding: 20px;
   background: #000;
-  z-index: 1000;
-  overflow: auto;
   color: #fff;
+  font-family: monospace;
 }
 
 .wallet-content {
-  background: #111;
-  min-height: 100vh;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .wallet-header {
@@ -265,6 +262,186 @@
 
 .download-keys:active {
   transform: translateY(1px);
+}
+
+.fund-button {
+  background: transparent;
+  border: 1px solid #2ecc71 !important;
+  color: #2ecc71 !important;
+}
+
+.fund-button:hover {
+  background: rgba(46, 204, 113, 0.1);
+}
+
+.fund-button:active {
+  transform: translateY(0);
+}
+
+/* Match button styles with main app */
+.wallet-controls button {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-family: monospace;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  border-radius: 0;
+  min-width: 100px;
+  transition: all 0.2s ease;
+  opacity: 0.8;
+  margin: 0 4px;
+}
+
+.wallet-controls button:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+/* Table styles to match main app */
+.wallet-table {
+  margin-top: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.table-header {
+  padding: 12px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  font-weight: bold;
+  color: #888;
+}
+
+.table-row {
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.table-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Column styles */
+.col-private,
+.col-public {
+  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.col-sol,
+.col-usdc,
+.col-tribify {
+  text-align: right;
+  color: #888;
+}
+
+/* Loading state */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 40px;
+  color: #888;
+}
+
+/* Special buttons */
+.close-button {
+  border-color: #e74c3c !important;
+  color: #e74c3c !important;
+}
+
+.close-button:hover {
+  background: rgba(231, 76, 60, 0.1);
+}
+
+/* Mobile Responsive Styles */
+@media screen and (max-width: 768px) {
+  .wallet-fullscreen {
+    padding: 10px;
+  }
+
+  .wallet-controls {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .wallet-controls button {
+    margin: 0;
+    width: 100%;
+    font-size: 12px;
+    padding: 6px 8px;
+    min-width: unset;
+  }
+
+  .table-header,
+  .table-row {
+    display: grid;
+    grid-template-columns: 40px minmax(120px, 1fr) 80px;
+    font-size: 12px;
+    padding: 8px;
+  }
+
+  /* Hide less important columns on mobile */
+  .col-private,
+  .col-usdc,
+  .col-tribify {
+    display: none;
+  }
+
+  /* Make public key truncate nicely */
+  .col-public {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Stack modals vertically */
+  .config-content {
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .config-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .config-actions button {
+    width: 100%;
+  }
+
+  /* Adjust loading state */
+  .loading-container {
+    padding: 20px;
+  }
+
+  .loading-text {
+    font-size: 14px;
+    text-align: center;
+  }
+}
+
+/* Even smaller screens */
+@media screen and (max-width: 480px) {
+  .wallet-controls {
+    grid-template-columns: 1fr;  /* Stack buttons vertically */
+  }
+
+  .table-header,
+  .table-row {
+    grid-template-columns: 30px minmax(100px, 1fr) 70px;
+    font-size: 11px;
+    padding: 6px;
+  }
 }
 
 /* ... other wallet styles ... */

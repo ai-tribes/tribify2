@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
+import './wallet.css';  // Make sure wallet.css is imported
 import { Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
 import ForceGraph2D from 'react-force-graph-2d';
@@ -17,6 +18,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { clusterApiUrl } from '@solana/web3.js';
+import HamburgerMenu from './components/HamburgerMenu';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -244,9 +246,11 @@ const HoldersList = ({ holders, onNodeClick, nicknames, setNicknames }) => {
             $ {holder.usdcBalance?.toFixed(2) || '0.00'}
           </div>
           <div className="holder-col message">
-            <button onClick={() => onNodeClick(holder.address)}>
-              Message
-            </button>
+            {holder.address !== '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' && (
+              <button onClick={() => onNodeClick(holder.address)}>
+                Message
+              </button>
+            )}
           </div>
         </div>
       ))}
@@ -1065,19 +1069,16 @@ function App() {
 
   return (
     <div className="App">
-      {/* Always show the connection-group */}
-      <div className="connection-group">
-        {!isConnected ? (
-          // Show only Connect button when disconnected
-          <button 
-            onClick={handleConnection}
-            className="button"
-          >
-            Connect
-          </button>
-        ) : (
-          // Show all other buttons when connected
-          <>
+      {!isConnected && (
+        <div className="connection-group">
+          <button onClick={handleConnection}>Connect</button>
+        </div>
+      )}
+
+      {isConnected && (
+        <>
+          {/* Desktop Navigation */}
+          <div className="desktop-nav">
             <Connected onClick={() => console.log('Already connected')} />
             <Refresh onClick={fetchTokenHolders} />
             <Password onClick={() => {
@@ -1211,44 +1212,161 @@ function App() {
             <Messages onClick={() => setShowAllMessages(true)} />
             <Backup onClick={backupNicknames} />
             <Restore onClick={() => document.getElementById('restore-input').click()} />
-            <button onClick={() => navigate('/wallet')}>
-              Wallet
-            </button>
-            <button 
-              className="tribify-button"
-              onClick={() => setShowTribifyPrompt(true)}
-            >
-              AI
-            </button>
-            <button 
-              className="docs-button"
-              onClick={() => setShowDocs(!showDocs)}
-            >
-              Docs
-            </button>
-            <button 
-              className="graph-toggle-button"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-            >
-              Graph
-            </button>
-            <button 
-              className="holders-toggle-button"
-              onClick={() => setShowHolders(!showHolders)}
-            >
-              Holders
-            </button>
-            <button 
-              className="status-toggle-button"
-              onClick={() => setShowStatus(!showStatus)}
-            >
-              Connection
-            </button>
+            <button onClick={() => navigate('/wallet')}>Wallet</button>
+            <button className="tribify-button" onClick={() => setShowTribifyPrompt(true)}>AI</button>
+            <button className="docs-button" onClick={() => setShowDocs(!showDocs)}>Docs</button>
+            <button className="graph-toggle-button" onClick={() => setIsCollapsed(!isCollapsed)}>Graph</button>
+            <button className="holders-toggle-button" onClick={() => setShowHolders(!showHolders)}>Holders</button>
+            <button className="status-toggle-button" onClick={() => setShowStatus(!showStatus)}>Connection</button>
             <Disconnect onClick={handleDisconnect} />
-          </>
-        )}
-      </div>
+          </div>
 
+          {/* Mobile Hamburger Menu */}
+          <HamburgerMenu>
+            <Connected onClick={() => console.log('Already connected')} />
+            <Refresh onClick={fetchTokenHolders} />
+            <Password onClick={() => {
+              if (friendPassword) {
+                // Has password - show change form
+                setDialogConfig({
+                  show: true,
+                  message: (
+                    <>
+                      <h3>Password</h3>
+                      <div className="password-form">
+                        <div className="password-field">
+                          <label>Username</label>
+                          <input 
+                            type="text"
+                            name="username"
+                            value={publicKey}
+                            readOnly
+                          />
+                        </div>
+                        <div className="password-field">
+                          <label>Current Password</label>
+                          <input 
+                            type="text" 
+                            value={friendPassword}
+                            disabled
+                            style={{ opacity: 0.7 }}
+                          />
+                        </div>
+                        <div className="password-field">
+                          <label>New Password</label>
+                          <input 
+                            type="password"
+                            id="newPassword"
+                            name="password"
+                            autoComplete="new-password"
+                            placeholder="Enter new password"
+                          />
+                        </div>
+                        <div className="password-field">
+                          <label>Confirm New Password</label>
+                          <input 
+                            type="password"
+                            id="confirmPassword"
+                            name={`${publicKey}-confirm`}
+                            autoComplete="new-password"
+                            placeholder="Confirm new password"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  ),
+                  onConfirm: async () => {
+                    const newPassword = document.getElementById('newPassword').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
+
+                    if (newPassword !== confirmPassword) {
+                      setStatus('New passwords do not match');
+                      return;
+                    }
+
+                    try {
+                      // Payment for password change
+                      setStatus('Please approve payment (0.001 SOL) to change your password...');
+                      const transaction = new Transaction().add(
+                        SystemProgram.transfer({
+                          fromPubkey: new PublicKey(publicKey),
+                          toPubkey: new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
+                          lamports: LAMPORTS_PER_SOL * 0.001
+                        })
+                      );
+
+                      const { blockhash } = await connection.getLatestBlockhash('processed');
+                      transaction.recentBlockhash = blockhash;
+                      transaction.feePayer = new PublicKey(publicKey);
+                      const signed = await window.phantom.solana.signTransaction(transaction);
+                      await connection.sendRawTransaction(signed.serialize());
+
+                      localStorage.setItem('friend_password', newPassword);
+                      setFriendPassword(newPassword);
+                      setStatus('Password updated successfully!');
+                    } catch (error) {
+                      setStatus('Failed to change password: ' + error.message);
+                    }
+                  },
+                  confirmText: 'Buy New Password ($1)'
+                });
+              } else {
+                // No password - offer to create
+                setDialogConfig({
+                  show: true,
+                  message: (
+                    <>
+                      <h3>Create Password</h3>
+                      <p>Would you like to create a password? This will cost 0.001 SOL.</p>
+                      <p className="dialog-note">A password lets you access special features.</p>
+                    </>
+                  ),
+                  onConfirm: async () => {
+                    try {
+                      // Payment for new password
+                      setStatus('Please approve payment (0.001 SOL) to create your password...');
+                      const transaction = new Transaction().add(
+                        SystemProgram.transfer({
+                          fromPubkey: new PublicKey(publicKey),
+                          toPubkey: new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
+                          lamports: LAMPORTS_PER_SOL * 0.001
+                        })
+                      );
+
+                      const { blockhash } = await connection.getLatestBlockhash('processed');
+                      transaction.recentBlockhash = blockhash;
+                      transaction.feePayer = new PublicKey(publicKey);
+                      const signed = await window.phantom.solana.signTransaction(transaction);
+                      await connection.sendRawTransaction(signed.serialize());
+
+                      // After payment, set password
+                      const newPassword = prompt('Payment received! Enter your password:');
+                      if (newPassword) {
+                        localStorage.setItem('friend_password', newPassword);
+                        setFriendPassword(newPassword);
+                        setStatus('Password created successfully!');
+                      }
+                    } catch (error) {
+                      setStatus('Failed to create password: ' + error.message);
+                    }
+                  }
+                });
+              }
+            }} />
+            <Messages onClick={() => setShowAllMessages(true)} />
+            <Backup onClick={backupNicknames} />
+            <Restore onClick={() => document.getElementById('restore-input').click()} />
+            <button onClick={() => navigate('/wallet')}>Wallet</button>
+            <button className="tribify-button" onClick={() => setShowTribifyPrompt(true)}>AI</button>
+            <button className="docs-button" onClick={() => setShowDocs(!showDocs)}>Docs</button>
+            <button className="graph-toggle-button" onClick={() => setIsCollapsed(!isCollapsed)}>Graph</button>
+            <button className="holders-toggle-button" onClick={() => setShowHolders(!showHolders)}>Holders</button>
+            <button className="status-toggle-button" onClick={() => setShowStatus(!showStatus)}>Connection</button>
+            <Disconnect onClick={handleDisconnect} />
+          </HamburgerMenu>
+        </>
+      )}
+      
       {isConnected && (
         <>
           <div className="user-info-card">
@@ -1392,7 +1510,7 @@ function App() {
         </div>
       )}
 
-      {/* Add tribify prompt box */}
+      {/* AI Terminal */}
       {showTribifyPrompt && (
         <div className="ai-terminal">
           <div className="terminal-header">

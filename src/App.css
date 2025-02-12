@@ -24,16 +24,19 @@ body.dark {
 
 /* App container */
 .App {
+  min-height: 100vh;
+  padding: 20px;
+  background: #000;
+  color: #fff;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  min-height: 100vh;
-  padding: 40px;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
   font-family: monospace;
   transition: all 0.3s ease;
   text-align: center;
   font-size: 16px;
-  background: #000000;  /* Ensure App container is also pure black */
 }
 
 /* Connection Status */
@@ -399,8 +402,8 @@ body.light .restore-button {
 
 .holder-item {
   display: grid;
-  grid-template-columns: minmax(400px, 0.8fr) 100px 150px 200px 120px 120px 100px;
-  gap: 20px;
+  grid-template-columns: 400px 100px 150px 200px 120px 120px 100px;
+  gap: 12px;
   padding: 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.2s ease;
@@ -411,31 +414,71 @@ body.light .restore-button {
   background: rgba(255, 255, 255, 0.05);
 }
 
-.holder-col.name {
-  cursor: pointer;
-  opacity: 0.8;
-}
-
-.holder-col.name:hover {
-  opacity: 1;
-  color: #2ecc71;
-}
-
-.holder-col.name input {
-  background: transparent;
-  border: 1px solid #2ecc71;
-  color: inherit;
-  padding: 4px 8px;
-  font-family: inherit;
-  font-size: inherit;
-  width: 90%;
+.holder-col {
+  font-family: monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 8px;
+  text-align: left;  /* Default left alignment */
 }
 
 .holder-col.sol,
 .holder-col.usdc,
 .holder-col.balance {
   text-align: right;
+}
+
+.holder-col.message {
+  text-align: center;
+}
+
+.holder-header {
+  position: sticky;
+  top: 0;
+  background: #000000;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 400px 100px 150px 200px 120px 120px 100px;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  font-weight: bold;
   color: #888;
+}
+
+.holder-header .holder-col {
+  font-family: monospace;
+  font-weight: bold;
+  color: #888;
+}
+
+.holder-header .holder-col.address {
+  text-align: left;
+}
+
+.holder-header .holder-col.percent {
+  text-align: right;
+}
+
+.holder-header .holder-col.name {
+  text-align: left;
+}
+
+.holder-header .holder-col.balance {
+  text-align: right;
+}
+
+.holder-header .holder-col.sol {
+  text-align: right;
+}
+
+.holder-header .holder-col.usdc {
+  text-align: right;
+}
+
+.holder-header .holder-col.message {
+  text-align: center;
 }
 
 .user-search form {
@@ -709,28 +752,51 @@ body.light .restore-button {
 /* Connection group container */
 .connection-group {
   display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
+  justify-content: center;
   align-items: center;
-  flex-wrap: nowrap;  /* Prevent wrapping to second row */
-  overflow-x: auto;   /* Allow horizontal scrolling if needed */
-  padding-bottom: 10px; /* Space for scrollbar */
   width: 100%;
+  padding: 20px;
+  margin-bottom: 20px;
+  z-index: 100;
 }
 
-/* Make buttons shrink if needed */
-.connection-group button,
-.connection-group a button,
-.connection-group .button {
-  flex-shrink: 0;    /* Prevent buttons from shrinking */
-  min-width: 80px;   /* Slightly smaller minimum width */
-  padding: 8px 12px; /* Slightly smaller padding */
-  margin: 0 2px;     /* Smaller margins */
+.connection-group button {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  padding: 12px 24px;
+  font-size: 16px;
+  cursor: pointer;
+  min-width: 150px;
+  opacity: 1;
+  font-family: monospace;
 }
 
-/* Keep AI button small */
-.tribify-button {
-  min-width: unset;
+.connection-group button:hover {
+  border-color: #2ecc71;
+  background: rgba(46, 204, 113, 0.1);
+}
+
+/* Mobile styles */
+@media screen and (max-width: 768px) {
+  .App {
+    padding: 10px;
+  }
+
+  /* Always show connection group when not connected */
+  .connection-group {
+    display: flex !important;
+  }
+
+  /* Only hide connection group buttons when connected */
+  .connection-group.connected {
+    display: none !important;
+  }
+
+  .connection-group button {
+    width: 200px;
+    margin: 0 auto;
+  }
 }
 
 /* Remove any specific button styles */
@@ -2043,8 +2109,8 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   background: #000000;
   z-index: 10;
   display: grid;
-  grid-template-columns: minmax(400px, 0.8fr) 100px 150px 200px 120px 120px 100px;
-  gap: 20px;
+  grid-template-columns: 400px 100px 150px 200px 120px 120px 100px;
+  gap: 12px;
   padding: 12px;
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
   font-weight: bold;
@@ -2053,8 +2119,8 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 
 .holder-item {
   display: grid;
-  grid-template-columns: minmax(400px, 0.8fr) 100px 150px 200px 120px 120px 100px;
-  gap: 20px;
+  grid-template-columns: 400px 100px 150px 200px 120px 120px 100px;
+  gap: 12px;
   padding: 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.2s ease;
@@ -2231,39 +2297,23 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  padding: 0 8px;
+  text-align: left;  /* Default left alignment */
 }
 
-.holder-col.address {
-  text-align: left;
-}
-
-.holder-col.percent {
-  text-align: right;
-}
-
-.holder-col.name {
-  text-align: left;
-}
-
-.holder-col.balance {
-  text-align: right;
-}
-
-.holder-col.sol {
-  text-align: right;
-}
-
+/* Only keep right alignment for specific numeric columns */
+.holder-col.sol,
 .holder-col.usdc {
-  text-align: right;
+  text-align: right;  /* Keep numbers right-aligned */
 }
 
+/* Keep message column centered */
 .holder-col.message {
   text-align: center;
 }
 
 /* Update column header alignment */
 .holder-header .holder-col {
-  font-family: monospace;
   font-weight: bold;
   color: #888;
 }
@@ -2294,4 +2344,184 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 
 .holder-header .holder-col.message {
   text-align: center;
+}
+
+/* Hamburger Menu Styles */
+.hamburger-container {
+  display: none;  /* Hidden by default on desktop */
+}
+
+@media screen and (max-width: 768px) {
+  .App {
+    padding: 10px;
+  }
+
+  /* Show connection group when not connected */
+  .connection-group:only-child {
+    display: flex !important;  /* Force display when it's the only child (Connect button) */
+    justify-content: center;
+    width: 100%;
+    padding: 20px;
+  }
+
+  /* Only hide connection group when connected (multiple buttons) */
+  .connection-group:not(:only-child) {
+    display: none;
+  }
+
+  /* Ensure connect button is visible and centered */
+  .connection-group button {
+    opacity: 1;
+    margin: 0;
+    min-width: 150px;
+  }
+
+  .hamburger-container {
+    display: block;
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 1000;
+    padding: 20px;
+  }
+
+  .hamburger-button {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 2rem;
+    height: 2rem;
+    background: transparent;
+    border: none !important;
+    cursor: pointer;
+    padding: 0;
+    z-index: 1001;
+    margin: 0;
+    min-width: unset !important;
+  }
+
+  .hamburger-button span {
+    width: 2rem;
+    height: 0.25rem;
+    background: #2ecc71;
+    border-radius: 10px;
+    transition: all 0.3s linear;
+    position: relative;
+    transform-origin: 1px;
+  }
+
+  .hamburger-button.open span:first-child {
+    transform: rotate(45deg);
+  }
+
+  .hamburger-button.open span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .hamburger-button.open span:nth-child(3) {
+    transform: rotate(-45deg);
+  }
+
+  .mobile-menu {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 80%;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.95);
+    padding: 60px 20px 20px 20px;
+    transition: right 0.3s ease-in-out;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    z-index: 1000;
+  }
+
+  .mobile-menu.open {
+    right: 0;
+  }
+
+  /* Style menu items */
+  .mobile-menu button {
+    width: 100%;
+    text-align: left;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    margin: 0;
+    min-width: unset;
+    font-family: monospace;
+  }
+
+  .mobile-menu button:hover {
+    background: rgba(46, 204, 113, 0.1);
+    border-color: #2ecc71;
+  }
+
+  /* Adjust holders list for mobile */
+  .holder-header,
+  .holder-item {
+    grid-template-columns: 150px 80px 100px 100px;
+    font-size: 12px;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  /* Hide less important columns on mobile */
+  .holder-col.usdc,
+  .holder-col.sol {
+    display: none;
+  }
+
+  /* Make user info card scrollable on mobile */
+  .user-info-content {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 12px;
+  }
+}
+
+/* Add styles for desktop navigation */
+.desktop-nav {
+  display: none;  /* Hidden on mobile */
+  width: 100%;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.desktop-nav button {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  margin: 0 4px;
+  font-family: monospace;
+}
+
+.desktop-nav button:hover {
+  border-color: #2ecc71;
+  background: rgba(46, 204, 113, 0.1);
+}
+
+/* Show desktop nav on larger screens */
+@media screen and (min-width: 769px) {
+  .desktop-nav {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  /* Hide hamburger on desktop */
+  .hamburger-container {
+    display: none;
+  }
 }

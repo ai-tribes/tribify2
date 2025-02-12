@@ -523,6 +523,15 @@ function WalletPage() {
     event.target.value = '';
   };
 
+  const handleFundWallets = async () => {
+    try {
+      // Add funding logic here
+      console.log('Funding wallets...');
+    } catch (error) {
+      console.error('Error funding wallets:', error);
+    }
+  };
+
   return (
     <div className="wallet-fullscreen">
       {notification && (
@@ -558,6 +567,12 @@ function WalletPage() {
               disabled={keypairs.length === 0 || isLoading}
             >
               Refresh
+            </button>
+            <button 
+              className="fund-button"
+              onClick={handleFundWallets}
+            >
+              Fund Wallets
             </button>
             <button onClick={() => setIsBuyModalOpen(true)}>Configure Buy</button>
             <button className="buy-all">Trigger Buy Config</button>
