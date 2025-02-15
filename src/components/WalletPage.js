@@ -2,11 +2,32 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as bip39 from 'bip39';
 import { derivePath } from 'ed25519-hd-key';
-import { Keypair, Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Keypair, Connection, PublicKey, LAMPORTS_PER_SOL, Transaction, SystemProgram } from '@solana/web3.js';
 import CryptoJS from 'crypto-js';
 import bs58 from 'bs58';
-import { getAssociatedTokenAddress } from '@solana/spl-token';
+import { 
+  getAssociatedTokenAddress, 
+  createAssociatedTokenAccountInstruction, 
+  transfer,
+  TOKEN_PROGRAM_ID 
+} from '@solana/spl-token';
 import './WalletPage.css';
+
+const TOTAL_SUPPLY = 1_000_000_000; // 1 Billion tokens
+
+const getHolderColor = (address, tokenBalance) => {
+  if (address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7') {
+    return '#87CEEB';  // Light blue for LP
+  }
+  const percentage = (tokenBalance / TOTAL_SUPPLY) * 100;
+  if (percentage > 10) {
+    return '#ff0000';  // Red for whales
+  }
+  if (percentage > 1) {
+    return '#ffa500';  // Orange/yellow for medium holders
+  }
+  return '#2ecc71';  // Green for small holders
+};
 
 function WalletPage() {
   const navigate = useNavigate();
@@ -26,13 +47,14 @@ function WalletPage() {
     walletCount: 1,
     minAmount: 0.1,
     maxAmount: 1.0,
+    budget: 0,
     denominatedInSol: true,
     startTime: null,
     endTime: null,
     minInterval: 5,
     maxInterval: 30,
     randomOrder: true,
-    denominationType: 'SOL'
+    denominationType: 'SOL',
   });
   const [showCAInput, setShowCAInput] = useState(false);
   const [caValue, setCAValue] = useState('');
@@ -41,7 +63,19 @@ function WalletPage() {
   const [status, setStatus] = useState('');
   const [contractAddress, setContractAddress] = useState('');
   const [parentWalletAddress, setParentWalletAddress] = useState('');
+  const [fundingWallet, setFundingWallet] = useState(null);
+  const [budget, setBudget] = useState({
+    amount: 0,
+    currency: 'SOL' // or 'USDC'
+  });
+  const [isFundingModalOpen, setIsFundingModalOpen] = useState(false);
+  const [fundingConfig, setFundingConfig] = useState({
+    fundingWallet: null,
+    amount: 0,
+    currency: 'SOL'
+  });
 
+  const TRIBIFY_TOKEN_MINT = "672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump";
   const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
   const HELIUS_RPC_URL = `https://rpc-devnet.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_API_KEY}`;
   const connection = new Connection(HELIUS_RPC_URL);
@@ -210,6 +244,201 @@ function WalletPage() {
       }, 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
+    }
+  };
+
+  // Add Buy and Distribute Functionality
+  const buyAndDistribute = async () => {
+    const {
+      walletCount,
+      minAmount,
+      maxAmount,
+      budget,
+      fundingWallet,
+      slippage,
+      priorityFee,
+      startTime,
+      endTime,
+      minInterval,
+      maxInterval,
+      randomOrder,
+      denominationType
+    } = buyConfig;
+
+    // Validate funding wallet
+    if (!fundingWallet) {
+      setStatus('Funding wallet not configured');
+      return;
+    }
+
+    // Check if budget is set
+    if (!budget.amount || budget.amount <= 0) {
+      setStatus('Invalid budget amount');
+      return;
+    }
+
+    // Create keypair from funding wallet
+    try {
+      const fundingKeypair = Keypair.fromSecretKey(
+        bs58.decode(fundingWallet.secretKey)
+      );
+
+      // Check funding wallet balance
+      const balance = await connection.getBalance(fundingKeypair.publicKey);
+      const balanceInSol = balance / LAMPORTS_PER_SOL;
+
+      if (budget.currency === 'SOL' && balanceInSol < budget.amount) {
+        setStatus('Insufficient funds in funding wallet');
+        return;
+      }
+
+      // Track spent amount
+      let spentAmount = 0;
+
+      // Modify the scheduleBuy function to check budget
+      const scheduleBuy = async () => {
+        const currentTime = new Date();
+
+        if (currentTime < new Date(startTime)) {
+          const delay = new Date(startTime) - currentTime;
+          setTimeout(scheduleBuy, delay);
+          return;
+        }
+
+        if (currentTime > new Date(endTime)) {
+          setStatus('Buy schedule has ended.');
+          return;
+        }
+
+        // Check if we're still within budget
+        if (spentAmount >= budget.amount) {
+          setStatus('Budget limit reached');
+          return;
+        }
+
+        // Calculate next buy amount
+        const nextAmount = Math.random() * (maxAmount - minAmount) + minAmount;
+        
+        // Check if this purchase would exceed budget
+        if (spentAmount + nextAmount > budget.amount) {
+          setStatus('Remaining budget insufficient for next purchase');
+          return;
+        }
+
+        // Perform the buy
+        await performBuy(fundingKeypair);
+        spentAmount += nextAmount;
+
+        // Schedule the next buy
+        setTimeout(scheduleBuy, Math.floor(Math.random() * (maxInterval - minInterval + 1)) + minInterval);
+      };
+
+      // Start the scheduling
+      scheduleBuy();
+    } catch (error) {
+      console.error('Error with funding wallet:', error);
+      setStatus('Invalid funding wallet configuration');
+      return;
+    }
+  };
+
+  const performBuy = async (keypair) => {
+    const { denominationType, slippage, priorityFee } = buyConfig;
+    
+    try {
+      // Depending on the denominationType, adjust the buy logic
+      if (denominationType === 'SOL') {
+        // Example: Swap SOL for TRIBIFY using a DEX (Placeholder)
+        await buyTRIBIFY(keypair, selectedAmount, slippage, priorityFee);
+      } else if (denominationType === 'USDC') {
+        // Implement USDC purchasing logic
+        await buyTRIBIFY_USDC(keypair, selectedAmount, slippage, priorityFee);
+      } else if (denominationType === 'TRIBIFY') {
+        // Direct mint or transfer TRIBIFY tokens
+        await buyTRIBIFY_Token(keypair, selectedAmount, slippage, priorityFee);
+      } else if (denominationType === 'CA') {
+        // Handle Contract Address logic if applicable
+        await buyTRIBIFY_CA(keypair, contractAddress, selectedAmount, slippage, priorityFee);
+      }
+
+      // After purchase, distribute tokens to target wallets
+      await distributeTRIBIFY(keypair, selectedAmount);
+      
+      setStatus(`Successfully bought and distributed ${selectedAmount} TRIBIFY`);
+    } catch (error) {
+      console.error('Error during buy and distribute:', error);
+      setStatus(`Error buying TRIBIFY: ${error.message}`);
+    }
+  };
+
+  // Placeholder function to buy TRIBIFY using SOL
+  const buyTRIBIFY = async (keypair, amount, slippage, priorityFee) => {
+    // TODO: Implement the actual swap logic using a DEX like Raydium or Serum
+    // This typically involves interacting with the DEX's API to create a swap transaction
+    // Example:
+    // const transaction = new Transaction().add(/* Swap instructions */);
+    // await connection.sendTransaction(transaction, [keypair], {/* options */});
+    
+    console.log(`Buying ${amount} TRIBIFY using SOL from wallet ${keypair.publicKey.toString()}`);
+    
+    // Simulate purchase delay
+    await new Promise(res => setTimeout(res, 1000));
+  };
+
+  // Placeholder functions for other denomination types
+  const buyTRIBIFY_USDC = async (keypair, amount, slippage, priorityFee) => {
+    // Implement USDC purchasing logic
+    console.log(`Buying ${amount} TRIBIFY using USDC from wallet ${keypair.publicKey.toString()}`);
+    await new Promise(res => setTimeout(res, 1000));
+  };
+
+  const buyTRIBIFY_Token = async (keypair, amount, slippage, priorityFee) => {
+    // Implement TRIBIFY token logic
+    console.log(`Handling TRIBIFY token directly from wallet ${keypair.publicKey.toString()}`);
+    await new Promise(res => setTimeout(res, 1000));
+  };
+
+  const buyTRIBIFY_CA = async (keypair, contractAddress, amount, slippage, priorityFee) => {
+    // Implement Contract Address logic
+    console.log(`Buying TRIBIFY using CA from wallet ${keypair.publicKey.toString()} to contract ${contractAddress}`);
+    await new Promise(res => setTimeout(res, 1000));
+  };
+
+  // Function to distribute TRIBIFY tokens to target wallets
+  const distributeTRIBIFY = async (sourceKeypair, amount) => {
+    const targetWallets = keypairs.slice(0, 5); // Example: distribute to first 5 wallets
+    const tribifyMint = new PublicKey(TRIBIFY_TOKEN_MINT);
+
+    for (let target of targetWallets) {
+      try {
+        const ata = await getAssociatedTokenAddress(tribifyMint, target.publicKey);
+        
+        // Create associated token account if it doesn't exist
+        const transaction = new Transaction().add(
+          createAssociatedTokenAccountInstruction(
+            sourceKeypair.publicKey, // payer
+            ata, // associated token account
+            target.publicKey, // owner
+            tribifyMint // mint
+          )
+        );
+
+        // Transfer tokens
+        transaction.add(
+          transfer(
+            sourceKeypair.publicKey, // from
+            ata, // to
+            sourceKeypair, // owner
+            [], // multisigners
+            amount * Math.pow(10, 6) // Assuming TRIBIFY has 6 decimals
+          )
+        );
+
+        await connection.sendTransaction(transaction, [sourceKeypair], { skipPreflight: false, preflightCommitment: 'confirmed' });
+        console.log(`Transferred ${amount} TRIBIFY to ${target.publicKey.toString()}`);
+      } catch (error) {
+        console.error(`Failed to transfer TRIBIFY to ${target.publicKey.toString()}:`, error);
+      }
     }
   };
 
@@ -532,6 +761,125 @@ function WalletPage() {
     }
   };
 
+  const distributeFunds = async () => {
+    if (!fundingConfig.fundingWallet) {
+      setStatus('Funding wallet not configured');
+      return;
+    }
+
+    try {
+      const fundingKeypair = Keypair.fromSecretKey(
+        bs58.decode(fundingConfig.fundingWallet.secretKey)
+      );
+
+      // Check funding wallet balance
+      const balance = await connection.getBalance(fundingKeypair.publicKey);
+      const balanceInSol = balance / LAMPORTS_PER_SOL;
+
+      if (fundingConfig.currency === 'SOL' && balanceInSol < fundingConfig.amount) {
+        setStatus('Insufficient funds in funding wallet');
+        return;
+      }
+
+      // Calculate amount per wallet
+      const amountPerWallet = fundingConfig.amount / keypairs.length;
+
+      // Distribute to each wallet
+      for (const keypair of keypairs) {
+        if (fundingConfig.currency === 'SOL') {
+          const transaction = new Transaction().add(
+            SystemProgram.transfer({
+              fromPubkey: fundingKeypair.publicKey,
+              toPubkey: keypair.publicKey,
+              lamports: amountPerWallet * LAMPORTS_PER_SOL
+            })
+          );
+
+          await connection.sendTransaction(transaction, [fundingKeypair]);
+        } else if (fundingConfig.currency === 'USDC') {
+          // Implement USDC transfer logic here
+        }
+      }
+
+      setStatus('Successfully distributed funds to all wallets');
+      setIsFundingModalOpen(false);
+    } catch (error) {
+      console.error('Error distributing funds:', error);
+      setStatus(`Failed to distribute funds: ${error.message}`);
+    }
+  };
+
+  const HoldersList = ({ holders, onNodeClick, nicknames, setNicknames }) => {
+    const [editingNickname, setEditingNickname] = useState(null);
+
+    // Sort holders by token balance in descending order
+    const sortedHolders = [...holders].sort((a, b) => b.tokenBalance - a.tokenBalance);
+
+    return (
+      <div className="holders-list">
+        <div className="holder-header">
+          <div className="holder-col address">Address</div>
+          <div className="holder-col percent">Share</div>
+          <div className="holder-col name">Name</div>
+          <div className="holder-col balance">$TRIBIFY</div>
+          <div className="holder-col sol">SOL</div>
+          <div className="holder-col usdc">USDC</div>
+          <div className="holder-col message">Message</div>
+        </div>
+        {sortedHolders.map((holder) => (
+          <div key={holder.address} className="holder-item">
+            <div className="holder-col address">
+              ◈ {holder.address}
+            </div>
+            <div className="holder-col percent" style={{
+              color: getHolderColor(holder.address, holder.tokenBalance)
+            }}>
+              {((holder.tokenBalance / TOTAL_SUPPLY) * 100).toFixed(4)}%
+            </div>
+            <div className="holder-col name">
+              {editingNickname === holder.address ? (
+                <input
+                  autoFocus
+                  defaultValue={nicknames[holder.address] || ''}
+                  onBlur={(e) => {
+                    setNicknames(prev => ({...prev, [holder.address]: e.target.value}));
+                    setEditingNickname(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setNicknames(prev => ({...prev, [holder.address]: e.target.value}));
+                      setEditingNickname(null);
+                    }
+                  }}
+                />
+              ) : (
+                <span onClick={() => setEditingNickname(holder.address)}>
+                  {nicknames[holder.address] || '+ Add name'}
+                </span>
+              )}
+            </div>
+            <div className="holder-col balance">
+              {holder.tokenBalance.toLocaleString()}
+            </div>
+            <div className="holder-col sol">
+              {holder.solBalance?.toFixed(4) || '0.0000'}
+            </div>
+            <div className="holder-col usdc">
+              $ {holder.usdcBalance?.toFixed(2) || '0.00'}
+            </div>
+            <div className="holder-col message">
+              {holder.address !== '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' && (
+                <button onClick={() => onNodeClick(holder.address)}>
+                  Message
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="wallet-fullscreen">
       {notification && (
@@ -570,7 +918,7 @@ function WalletPage() {
             </button>
             <button 
               className="fund-button"
-              onClick={handleFundWallets}
+              onClick={() => setIsFundingModalOpen(true)}
             >
               Fund Wallets
             </button>
@@ -590,28 +938,28 @@ function WalletPage() {
         <div className="wallet-table">
           <div className="table-header">
             <div className="col-index">#</div>
-            <div className="col-private">PRIVATE KEY</div>
-            <div className="col-public">PUBLIC KEY</div>
+            <div className="col-private">Private Key</div>
+            <div className="col-public">Public Key</div>
+            <div className="col-tribify">TRIBIFY</div>
             <div className="col-sol">SOL</div>
             <div className="col-usdc">USDC</div>
-            <div className="col-tribify">TRIBIFY</div>
-            <div className="col-ca">CA</div>
+            <div className="col-message">Message</div>
           </div>
           
           <div className="table-row totals-row">
             <div className="col-index">0</div>
             <div className="col-private">CUMULATIVE BALANCE</div>
             <div className="col-public"></div>
+            <div className="col-tribify total-value">
+              {calculateTotals().tribify} TRIBIFY
+            </div>
             <div className="col-sol total-value">
               {calculateTotals().sol.toFixed(4)} SOL
             </div>
             <div className="col-usdc total-value">
               ${calculateTotals().usdc.toFixed(2)}
             </div>
-            <div className="col-tribify total-value">
-              {calculateTotals().tribify} TRIBIFY
-            </div>
-            <div className="col-ca">
+            <div className="col-message">
               {contractAddress || '-'}
             </div>
           </div>
@@ -631,16 +979,16 @@ function WalletPage() {
               >
                 {keypair.publicKey.toString()}
               </div>
+              <div className="col-tribify">
+                {keypair.tribifyBalance || 0} TRIBIFY
+              </div>
               <div className="col-sol">
                 {(keypair.solBalance || 0).toFixed(4)} SOL
               </div>
               <div className="col-usdc">
                 ${(keypair.usdcBalance || 0).toFixed(2)}
               </div>
-              <div className="col-tribify">
-                {keypair.tribifyBalance || 0} TRIBIFY
-              </div>
-              <div className="col-ca">
+              <div className="col-message">
                 {contractAddress || '-'}
               </div>
             </div>
@@ -649,90 +997,96 @@ function WalletPage() {
 
         {/* Buy Configuration Modal */}
         {isBuyModalOpen && (
-          <div className="modal-container">
-            <FeatureExplanation type="buy" />
-            <div className="modal-content">
+          <div className="buy-config-modal">
+            <div className="left-side">
+              <FeatureExplanation type="buy" />
+            </div>
+            <div className="right-side">
               <div className="dialog-box">
                 <div className="dialog-content">
                   <div className="dialog-header">
-                    <div className="header-left">
-                      <h3>Configure Automated Buying Sequence</h3>
-                      <div className="header-buttons">
-                        <button 
-                          className="randomize-button"
-                          onClick={randomizeConfig}
-                          title="Generate random configuration"
-                        >
-                          🎲 Randomize
-                        </button>
-                        <button 
-                          className="save-button"
-                          onClick={() => {
-                            // Save configuration logic here
-                            setIsBuyModalOpen(false);
-                          }}
-                        >
-                          Save Config
-                        </button>
-                        <button 
-                          className="buy-button"
-                          onClick={() => {
-                            // Schedule automated buying
-                            console.log('Scheduling automated buys with config:', buyConfig);
-                          }}
-                        >
-                          Start Buying
-                        </button>
-                      </div>
+                    <h3>Configure Automated Buying Sequence</h3>
+                    <div className="header-buttons">
+                      <button 
+                        className="randomize-button"
+                        onClick={randomizeConfig}
+                        title="Generate random configuration"
+                      >
+                        🎲 Randomize
+                      </button>
+                      <button 
+                        className="save-button"
+                        onClick={() => {
+                          // Save configuration logic here (e.g., local storage or state)
+                          setIsBuyModalOpen(false);
+                        }}
+                      >
+                        Save Config
+                      </button>
+                      <button 
+                        className="buy-button"
+                        onClick={() => {
+                          // Schedule automated buying
+                          buyAndDistribute();
+                          setIsBuyModalOpen(false);
+                          setStatus('Automated buying has been started.');
+                        }}
+                      >
+                        Start Buying
+                      </button>
                     </div>
-                    <div className="header-right">
-                      <div className="form-field">
-                        <div className="radio-group">
-                          <label>
-                            <input 
-                              type="radio" 
-                              name="amountType" 
-                              checked={selectedAmountType === 'SOL'}
-                              onChange={() => {
-                                setSelectedAmountType('SOL');
-                                setShowCAInput(false);
-                              }} 
-                            /> SOL
-                          </label>
-                          <label>
-                            <input 
-                              type="radio" 
-                              name="amountType" 
-                              checked={selectedAmountType === 'USDC'}
-                              onChange={() => {
-                                setSelectedAmountType('USDC');
-                                setShowCAInput(false);
-                              }} 
-                            /> USDC
-                          </label>
-                          <label>
-                            <input 
-                              type="radio" 
-                              name="amountType" 
-                              checked={selectedAmountType === 'TRIBIFY'}
-                              onChange={() => {
-                                setSelectedAmountType('TRIBIFY');
-                                setShowCAInput(false);
-                              }} 
-                            /> TRIBIFY
-                          </label>
-                          <label>
-                            <input 
-                              type="radio" 
-                              name="amountType" 
-                              checked={selectedAmountType === 'CA'}
-                              onChange={() => {
-                                setSelectedAmountType('CA');
-                                setShowCAInput(true);
-                              }} 
-                            /> CA
-                          </label>
-                        </div>
+                  </div>
+                  <div className="right-side-content">
+                    <div className="form-field">
+                      <div className="radio-group">
+                        <label>
+                          <input 
+                            type="radio" 
+                            name="amountType" 
+                            checked={selectedAmountType === 'SOL'}
+                            onChange={() => {
+                              setSelectedAmountType('SOL');
+                              setShowCAInput(false);
+                              setBuyConfig({ ...buyConfig, denominationType: 'SOL' });
+                            }} 
+                          /> SOL
+                        </label>
+                        <label>
+                          <input 
+                            type="radio" 
+                            name="amountType" 
+                            checked={selectedAmountType === 'USDC'}
+                            onChange={() => {
+                              setSelectedAmountType('USDC');
+                              setShowCAInput(false);
+                              setBuyConfig({ ...buyConfig, denominationType: 'USDC' });
+                            }} 
+                          /> USDC
+                        </label>
+                        <label>
+                          <input 
+                            type="radio" 
+                            name="amountType" 
+                            checked={selectedAmountType === 'TRIBIFY'}
+                            onChange={() => {
+                              setSelectedAmountType('TRIBIFY');
+                              setShowCAInput(false);
+                              setBuyConfig({ ...buyConfig, denominationType: 'TRIBIFY' });
+                            }} 
+                          /> TRIBIFY
+                        </label>
+                        <label>
+                          <input 
+                            type="radio" 
+                            name="amountType" 
+                            checked={selectedAmountType === 'CA'}
+                            onChange={() => {
+                              setSelectedAmountType('CA');
+                              setShowCAInput(true);
+                              setBuyConfig({ ...buyConfig, denominationType: 'CA' });
+                            }} 
+                          /> CA
+                        </label>
                       </div>
                     </div>
                   </div>
@@ -750,6 +1104,7 @@ function WalletPage() {
                         onClick={() => {
                           // Save CA logic here
                           console.log('Saving CA:', caValue);
+                          setBuyConfig({ ...buyConfig, contractAddress: caValue });
                           // You can add validation and storage logic here
                         }}
                       >
@@ -757,136 +1112,6 @@ function WalletPage() {
                       </button>
                     </div>
                   )}
-                  <div className="buy-form">
-                    {/* Wallet and Amount Section */}
-                    <div className="form-section">
-                      <div className="form-section-title">Wallet & Amount Settings</div>
-                      <div className="wallet-amount-section">
-                        <div className="form-field">
-                          <label>Number of Wallets (1-100)</label>
-                          <input type="number" {...walletCountProps} />
-                        </div>
-                        <div className="form-field">
-                          <label>Min Amount</label>
-                          <input type="number" {...minAmountProps} />
-                        </div>
-                        <div className="form-field">
-                          <label>Max Amount</label>
-                          <input type="number" {...maxAmountProps} />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Time Settings Section */}
-                    <div className="form-section">
-                      <div className="form-section-title">Time Settings</div>
-                      <div className="time-settings">
-                        <div className="form-field">
-                          <label>Start Time</label>
-                          <input type="datetime-local" {...startTimeProps} />
-                        </div>
-                        <div className="form-field">
-                          <label>End Time</label>
-                          <input type="datetime-local" {...endTimeProps} />
-                        </div>
-                        <div className="form-field">
-                          <label>Min Interval (seconds)</label>
-                          <input type="number" {...minIntervalProps} />
-                        </div>
-                        <div className="form-field">
-                          <label>Max Interval (seconds)</label>
-                          <input type="number" {...maxIntervalProps} />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Transaction Settings Section */}
-                    <div className="form-section">
-                      <div className="form-section-title">Transaction Settings</div>
-                      <div className="transaction-settings">
-                        <div className="form-field">
-                          <label>Slippage (%)</label>
-                          <input type="number" {...slippageProps} />
-                        </div>
-                        <div className="form-field">
-                          <label>Priority Fee (SOL)</label>
-                          <input type="number" {...priorityFeeProps} />
-                        </div>
-                        <div className="form-field">
-                          <label className="checkbox-label">
-                            <input type="checkbox" checked={buyConfig.randomOrder} />
-                            Randomize Wallet Order
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="dialog-note">
-                    Will automatically buy random amounts between {buyConfig.minAmount} and {buyConfig.maxAmount} {buyConfig.denominatedInSol ? 'SOL' : 'TRIBIFY'} 
-                    using {buyConfig.walletCount} wallet{buyConfig.walletCount > 1 ? 's' : ''}<br/>
-                    Buys will occur between {buyConfig.startTime ? new Date(buyConfig.startTime).toLocaleString() : '(not set)'} 
-                    and {buyConfig.endTime ? new Date(buyConfig.endTime).toLocaleString() : '(not set)'}<br/>
-                    with {buyConfig.minInterval}-{buyConfig.maxInterval} minute intervals between transactions
-                    {buyConfig.randomOrder && ' in random wallet order'}
-                  </div>
-                </div>
-                <div className="dialog-buttons">
-                  <button onClick={() => setIsBuyModalOpen(false)}>Close</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Sell Configuration Modal */}
-        {isSellModalOpen && (
-          <div className="modal-container">
-            <FeatureExplanation type="sell" />
-            <div className="modal-content">
-              <div className="dialog-box">
-                <div className="dialog-content">
-                  <div className="dialog-header">
-                    <div className="header-left">
-                      <h3>Configure Automated Selling Sequence</h3>
-                      <div className="header-buttons">
-                        <button 
-                          className="randomize-button"
-                          onClick={randomizeConfig}
-                          title="Generate random configuration"
-                        >
-                          🎲 Randomize
-                        </button>
-                        <button 
-                          className="save-button"
-                          onClick={() => {
-                            // Save configuration logic here
-                            setIsSellModalOpen(false);
-                          }}
-                        >
-                          Save Config
-                        </button>
-                        <button 
-                          className="sell-button"
-                          onClick={() => {
-                            // Schedule automated selling
-                            console.log('Scheduling automated sells with config:', buyConfig);
-                          }}
-                        >
-                          Start Selling
-                        </button>
-                      </div>
-                    </div>
-                    <div className="header-right">
-                      <div className="form-field">
-                        <div className="radio-group">
-                          <label><input type="radio" name="sellAmountType" /> SOL</label>
-                          <label><input type="radio" name="sellAmountType" /> USDC</label>
-                          <label><input type="radio" name="sellAmountType" /> TRIBIFY</label>
-                          <label><input type="radio" name="sellAmountType" /> CA</label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                   <div className="buy-form">
                     {/* Wallet and Amount Section */}
                     <div className="form-section">
@@ -957,18 +1182,166 @@ function WalletPage() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Budget Section in Buy Modal */}
+                    <div className="form-section">
+                      <div className="form-section-title">Budget</div>
+                      <div className="budget-settings">
+                        <div className="form-field">
+                          <label>Maximum Budget ({buyConfig.denominationType})</label>
+                          <input 
+                            type="number"
+                            value={buyConfig.budget}
+                            onChange={(e) => setBuyConfig({
+                              ...buyConfig,
+                              budget: parseFloat(e.target.value)
+                            })}
+                            min="0"
+                            step="0.1"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <div className="dialog-note">
-                    Will automatically sell random amounts between {buyConfig.minAmount} and {buyConfig.maxAmount} {buyConfig.denominatedInSol ? 'SOL' : 'TRIBIFY'} 
+                    Will automatically buy random amounts between {buyConfig.minAmount} and {buyConfig.maxAmount} {buyConfig.denominatedInSol ? 'SOL' : 'TRIBIFY'} 
                     using {buyConfig.walletCount} wallet{buyConfig.walletCount > 1 ? 's' : ''}<br/>
-                    Sells will occur between {buyConfig.startTime ? new Date(buyConfig.startTime).toLocaleString() : '(not set)'} 
+                    Buys will occur between {buyConfig.startTime ? new Date(buyConfig.startTime).toLocaleString() : '(not set)'} 
                     and {buyConfig.endTime ? new Date(buyConfig.endTime).toLocaleString() : '(not set)'}<br/>
                     with {buyConfig.minInterval}-{buyConfig.maxInterval} minute intervals between transactions
                     {buyConfig.randomOrder && ' in random wallet order'}
                   </div>
                 </div>
-                <div className="dialog-buttons">
-                  <button onClick={() => setIsSellModalOpen(false)}>Close</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Sell Configuration Modal */}
+        {isSellModalOpen && (
+          <div className="modal-container">
+            <h3>Configure Automated Selling Sequence</h3>
+            <div className="modal-content">
+              <p>Set up your automated selling parameters here.</p>
+              <div className="form-section">
+                <div className="form-field">
+                  <label>Minimum Sell Amount</label>
+                  <input type="number" placeholder="Enter minimum amount" />
+                </div>
+                <div className="form-field">
+                  <label>Maximum Sell Amount</label>
+                  <input type="number" placeholder="Enter maximum amount" />
+                </div>
+                <div className="form-field">
+                  <label>Sell Interval (seconds)</label>
+                  <input type="number" placeholder="Enter interval" />
+                </div>
+              </div>
+              <button onClick={() => setIsSellModalOpen(false)}>Close</button>
+            </div>
+          </div>
+        )}
+
+        {/* Add Funding Modal */}
+        {isFundingModalOpen && (
+          <div className="modal-container">
+            <div className="modal-content">
+              <div className="dialog-box">
+                <div className="dialog-content">
+                  <div className="dialog-header">
+                    <h3>Fund Wallets</h3>
+                  </div>
+                  
+                  {/* Add explanation section */}
+                  <div className="explanation-box">
+                    <div className="explanation-title">
+                      <i className="info-icon">ℹ️</i>
+                      <span>How Wallet Funding Works</span>
+                    </div>
+                    <div className="explanation-content">
+                      <p>
+                        This feature allows you to fund multiple micro-position wallets from a single funding source:
+                      </p>
+                      <ul>
+                        <li>Use a separate funding wallet to distribute funds across your generated wallets</li>
+                        <li>Funds will be distributed in random amounts to {keypairs.length} generated wallets</li>
+                        <li>Random distribution enhances privacy by diversifying transaction patterns</li>
+                        <li>Total amount to distribute: {fundingConfig.amount} {fundingConfig.currency}</li>
+                        <li>This approach maintains privacy by separating your funding source from your trading wallets</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="funding-settings">
+                    <div className="form-field">
+                      <label>Amount to Distribute</label>
+                      <input 
+                        type="number"
+                        value={fundingConfig.amount}
+                        onChange={(e) => setFundingConfig({
+                          ...fundingConfig,
+                          amount: parseFloat(e.target.value)
+                        })}
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                    <div className="form-field">
+                      <label>Currency</label>
+                      <select
+                        value={fundingConfig.currency}
+                        onChange={(e) => setFundingConfig({
+                          ...fundingConfig,
+                          currency: e.target.value
+                        })}
+                      >
+                        <option value="SOL">SOL</option>
+                        <option value="USDC">USDC</option>
+                      </select>
+                    </div>
+                    <div className="form-field funding-wallet">
+                      <label>Funding Wallet</label>
+                      <div className="wallet-input-group">
+                        <input
+                          type="text"
+                          placeholder="Public Key"
+                          value={fundingConfig.fundingWallet?.publicKey || ''}
+                          readOnly
+                        />
+                        <input
+                          type="password"
+                          placeholder="Private Key"
+                          value={fundingConfig.fundingWallet?.secretKey || ''}
+                          onChange={(e) => {
+                            try {
+                              const secretKey = bs58.decode(e.target.value);
+                              const keypair = Keypair.fromSecretKey(secretKey);
+                              setFundingConfig({
+                                ...fundingConfig,
+                                fundingWallet: {
+                                  publicKey: keypair.publicKey.toString(),
+                                  secretKey: e.target.value
+                                }
+                              });
+                            } catch (error) {
+                              console.error('Invalid private key');
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="dialog-summary">
+                    Total amount to distribute: {fundingConfig.amount} {fundingConfig.currency}<br/>
+                    Amount per wallet: {fundingConfig.amount > 0 ? 
+                      (fundingConfig.amount / keypairs.length).toFixed(4) : '0'} {fundingConfig.currency}
+                  </div>
+
+                  <div className="dialog-buttons">
+                    <button onClick={() => distributeFunds()}>Start Funding</button>
+                    <button onClick={() => setIsFundingModalOpen(false)}>Close</button>
+                  </div>
                 </div>
               </div>
             </div>

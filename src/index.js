@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
+import './components/WalletPage.css';
 import App from './App.js';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import WalletPage from './components/WalletPage';

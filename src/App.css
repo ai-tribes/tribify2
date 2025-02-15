@@ -328,7 +328,7 @@ body.light .restore-button {
   min-width: 300px;
   background: transparent;
   width: 100%;
-  max-width: 600px;
+  max-width: 1200px;
   box-sizing: border-box;
 }
 
@@ -752,12 +752,18 @@ body.light .restore-button {
 /* Connection group container */
 .connection-group {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  width: 100%;
-  padding: 20px;
-  margin-bottom: 20px;
-  z-index: 100;
+  justify-content: center;
+  height: 100vh;
+  margin-top: 0;
+}
+
+.tribify-text {
+  margin-bottom: 8px; /* Space between text and button */
+  font-size: 14px; /* Adjust font size as needed */
+  color: #888; /* Adjust color as needed */
+  text-align: center; /* Center the text */
 }
 
 .connection-group button {

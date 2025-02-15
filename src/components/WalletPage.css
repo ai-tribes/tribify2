@@ -1,87 +1,40 @@
 .wallet-table {
   width: 100%;
+  max-width: 1200px; /* Match the max-width of wallet-content */
+  margin: 0 auto; /* Center the table */
 }
 
-.table-header {
+.table-header, .table-row {
   display: grid;
-  grid-template-columns: 50px 300px 300px 120px 120px 120px 120px;
-  align-items: center;
-  padding: 8px 15px;
+  /* Match EXACTLY what's in your screenshot */
+  grid-template-columns: 
+    300px    /* Address */
+    100px    /* Share */
+    150px    /* Name */
+    150px    /* $TRIBIFY */
+    100px    /* SOL */
+    100px    /* USDC */
+    100px;   /* Message */
   gap: 16px;
-  font-weight: bold;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.table-header > div {
-  font-size: 12px;
-  color: #888;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.table-row {
-  display: grid;
-  grid-template-columns: 50px 300px 300px 120px 120px 120px 120px;
-  align-items: center;
   padding: 8px 15px;
-  gap: 16px;
+  align-items: center;
 }
 
-.col-index {
-  text-align: center;
-}
+/* Ensure text alignment matches screenshot */
+.col-private { text-align: left; }   /* Address */
+.col-tribify { text-align: right; }  /* Share */
+.col-public { text-align: left; }    /* Name */
+.col-balance { text-align: right; }  /* $TRIBIFY */
+.col-sol { text-align: right; }      /* SOL */
+.col-usdc { text-align: right; }     /* USDC */
+.col-message { text-align: center; } /* Message */
 
-.col-private,
-.col-public {
-  font-family: monospace;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-}
-
-.col-sol,
-.col-usdc,
-.col-tribify {
-  text-align: right;
-  font-family: monospace;
-  font-size: 14px;
-}
-
-.col-ca {
-  text-align: right;
-  font-family: monospace;
-  font-size: 14px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Add other wallet-specific styles here */
-
-/* Add styles for the totals row */
-.totals-row {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.totals-row .col-private {
-  font-family: inherit;  /* Reset from monospace */
-  cursor: default;
-}
-
-.total-value {
-  color: #3498db;  /* Blue color */
-  font-weight: bold;
-  text-align: right;
-  font-family: monospace;
-}
-
-/* Add these button styles */
 .wallet-controls {
+  margin-top: 20px;
   display: flex;
   gap: 8px;
   align-items: center;
-  flex-wrap: nowrap;
-  width: 100%;
+  justify-content: center;
 }
 
 .wallet-controls button {
@@ -105,8 +58,10 @@
 }
 
 .wallet-fullscreen {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 20px;
-  height: 100vh;
   box-sizing: border-box;
 }
 
@@ -237,4 +192,183 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.wallet-address {
+  display: inline-block; /* or use flexbox */
+  white-space: nowrap; /* Prevent line breaks */
+  overflow: hidden; /* Hide overflow */
+  text-overflow: ellipsis; /* Add ellipsis for overflow text */
+  max-width: 200px; /* Set a max width as needed */
+}
+
+.holders-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.holders-content {
+  background: #1a1a1a;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 800px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.holders-list {
+  width: 100%;
+  margin: 20px 0;
+}
+
+.holder-header {
+  display: grid;
+  grid-template-columns: 300px 100px 150px 150px 100px 100px 100px;
+  gap: 16px;
+  padding: 8px 15px;
+  font-weight: bold;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.holder-item {
+  display: grid;
+  grid-template-columns: 300px 100px 150px 150px 100px 100px 100px;
+  gap: 16px;
+  padding: 8px 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.holder-address {
+  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 400px;
+}
+
+.holder-balance {
+  font-family: monospace;
+  min-width: 150px;
+  text-align: right;
+}
+
+.funding-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.wallet-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.wallet-input-group input {
+  flex: 1;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: inherit;
+  font-family: monospace;
+}
+
+.funding-wallet {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.explanation-box {
+  background: rgba(52, 152, 219, 0.1);
+  border-left: 4px solid #3498db;
+  padding: 16px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+}
+
+.explanation-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+  margin-bottom: 12px;
+  color: #3498db;
+}
+
+.info-icon {
+  font-size: 18px;
+}
+
+.explanation-content {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.explanation-content ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.explanation-content li {
+  margin: 4px 0;
+  color: #888;
+}
+
+.dialog-summary {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Remove the card background */
+.button-card {
+  background: none; /* Remove background */
+  border: none; /* Remove border if any */
+  padding: 0; /* Adjust padding if needed */
+}
+
+.holders-header {
+  font-size: 16px; /* Adjust size as needed */
+  font-weight: bold; /* Make it bold */
+  margin-bottom: 12px; /* Space below the header */
+  color: #fff; /* Adjust color as needed */
+  text-align: center; /* Center the header */
+}
+
+.buy-config-modal {
+  display: flex;
+  justify-content: space-between;
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Add border */
+  border-radius: 4px; /* Rounded corners */
+  overflow: hidden; /* Prevent overflow */
+}
+
+.left-side, .right-side {
+  flex: 1; /* Equal width for both sides */
+  padding: 20px; /* Add padding */
+  box-sizing: border-box; /* Include padding in width */
+}
+
+.left-side {
+  border-right: 1px solid rgba(255, 255, 255, 0.1); /* Optional: add a divider */
+}
+
+.right-side {
+  /* Ensure the right side has the same styling */
 } 

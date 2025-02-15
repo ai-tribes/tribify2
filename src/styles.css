@@ -20,6 +20,8 @@ body {
   flex-direction: column;
   align-items: center;
   width: 100%;
+  max-width: 1200px; /* Add max-width */
+  margin: 0 auto; /* Center the app */
   box-sizing: border-box;
   font-family: monospace;
   transition: all 0.3s ease;
@@ -109,6 +111,19 @@ body {
   border: none; /* Remove any specific border styles */
   color: inherit; /* Ensure text color inherits */
   opacity: 1; /* Ensure full opacity */
+}
+
+.wallet-table {
+  width: 100%;
+}
+
+.table-header, .table-row {
+  display: grid;
+  grid-template-columns: 50px 300px 200px 150px 100px 100px 100px;
+  gap: 16px;
+  padding: 8px 15px;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Add any other styles from WalletPage.css here */

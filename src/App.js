@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
-import './wallet.css';  // Make sure wallet.css is imported
+import './components/WalletPage.css';  // Replaced wallet.css with WalletPage.css
 import { Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
 import ForceGraph2D from 'react-force-graph-2d';
@@ -405,12 +405,13 @@ function App() {
         </div>
         <div className="wallet-table">
           <div className="table-header">
-            <span>#</span>
-            <span>Private Key</span>
-            <span>Public Key</span>
-            <span>SOL</span>
-            <span>USDC</span>
-            <span>TRIBIFY</span>
+            <div className="col-index">#</div>
+            <div className="col-private">Address</div>
+            <div className="col-public">$Tribify Shareholders</div>
+            <div className="col-tribify">Share</div>
+            <div className="col-sol">SOL</div>
+            <div className="col-usdc">USDC</div>
+            <div className="col-message">Message</div>
           </div>
           {wallets.map((wallet, index) => (
             <div key={index} className="table-row">
@@ -427,14 +428,21 @@ function App() {
               >
                 {wallet.publicKey}
               </span>
+              <span className="col-tribify">
+                {wallet.tribifyBalance || 0} TRIBIFY
+              </span>
               <span className="col-sol">
                 {(wallet.solBalance || 0).toFixed(4)} SOL
               </span>
               <span className="col-usdc">
                 ${(wallet.usdcBalance || 0).toFixed(2)}
               </span>
-              <span className="col-tribify">
-                {wallet.tribifyBalance || 0} TRIBIFY
+              <span className="col-message">
+                {wallet.address !== '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' && (
+                  <button onClick={() => onCopy(wallet.address, 'address')}>
+                    Message
+                  </button>
+                )}
               </span>
             </div>
           ))}
@@ -1071,6 +1079,7 @@ function App() {
     <div className="App">
       {!isConnected && (
         <div className="connection-group">
+          <div className="tribify-text">/tribify.ai</div>
           <button onClick={handleConnection}>Connect</button>
         </div>
       )}
@@ -1391,7 +1400,7 @@ function App() {
           <div className="main-layout">
             {showHolders && (
               <div className="token-holders">
-                <h3>Shareholders</h3>
+                <h3>$Tribify Shareholders</h3>
                 <HoldersList 
                   holders={tokenHolders}
                   onNodeClick={handleOpenChat}
