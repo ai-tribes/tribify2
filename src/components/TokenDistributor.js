@@ -200,7 +200,15 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
   return (
     <div className="distribution-container">
       <div className="wallet-info-section">
-        <h4>Parent Wallet Balances</h4>
+        <div className="wallet-info-header">
+          <h4>Parent Wallet Balances</h4>
+          <button 
+            className="refresh-button"
+            onClick={fetchWalletBalances}
+          >
+            Refresh Balances
+          </button>
+        </div>
         <div className="balance-info">
           <div className="balance-item">
             <span className="balance-label">TRIBIFY Balance:</span>
@@ -325,8 +333,6 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
           }
         </button>
       </div>
-
-      <button onClick={fetchWalletBalances}>Refresh Balances</button>
     </div>
   );
 };

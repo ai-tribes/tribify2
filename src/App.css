@@ -2637,3 +2637,30 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   margin: 0;
   cursor: pointer;
 }
+
+.wallet-info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.wallet-info-header h4 {
+  margin: 0;  /* Remove margin since it's handled by the container */
+}
+
+.refresh-button {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: transparent;
+  border: 1px solid #2ecc71;
+  color: #2ecc71;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.refresh-button:hover {
+  background: rgba(46, 204, 113, 0.1);
+  transform: translateY(-1px);
+}
