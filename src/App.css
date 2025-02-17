@@ -381,6 +381,8 @@ body.light .restore-button {
   width: 100%;
   box-sizing: border-box;
   overflow-x: auto; /* Allow horizontal scroll if needed */
+  max-width: 100%;
+  margin: 0 auto;
 }
 
 .holders-header {
@@ -396,16 +398,15 @@ body.light .restore-button {
 .holder-item {
   display: grid;
   grid-template-columns: 
-    minmax(300px, 2fr)    /* Address */
-    minmax(100px, 0.5fr)  /* Share */
-    minmax(150px, 0.8fr)  /* Name */
-    minmax(200px, 1fr)    /* TRIBIFY */
-    minmax(100px, 0.5fr)  /* SOL */
-    minmax(100px, 0.5fr)  /* USDC */
-    minmax(100px, 0.3fr); /* Message */
-  gap: 12px;
-  padding: 12px 20px;
-  align-items: center;
+    minmax(200px, 1.5fr)  /* Address - reduced min width */
+    minmax(80px, 0.4fr)   /* Share - reduced min width */
+    minmax(100px, 0.6fr)  /* Name - reduced min width */
+    minmax(120px, 0.8fr)  /* TRIBIFY - reduced min width */
+    minmax(80px, 0.4fr)   /* SOL - reduced min width */
+    minmax(80px, 0.4fr)   /* USDC - reduced min width */
+    minmax(80px, 0.4fr);  /* Message - adjusted ratio */
+  gap: 8px;               /* Reduced gap */
+  padding: 12px;
   width: 100%;
 }
 
@@ -456,16 +457,6 @@ body.light .restore-button {
 .holder-col.sol { text-align: right; }
 .holder-col.usdc { text-align: right; }
 .holder-col.message { text-align: center; }
-
-/* Container styles */
-.token-holders {
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 4px;
-  padding: 20px;
-  width: 100%;
-  box-sizing: border-box;
-  overflow-x: auto;
-}
 
 .user-search form {
   width: 100%;
