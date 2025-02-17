@@ -349,8 +349,33 @@ function App() {
   // Add new state for tribify prompt
   const [showTribifyPrompt, setShowTribifyPrompt] = useState(false);
 
-  // Add new state for tribify prompt responses
-  const [tribifyResponses, setTribifyResponses] = useState([]);
+  // Update the initial tribifyResponses state
+  const [tribifyResponses, setTribifyResponses] = useState([
+    {
+      type: 'response',
+      text: `Welcome to /tribify.ai! 👋
+
+I'm your AI assistant for navigating the Tribify platform. Here's a quick guide:
+
+Navigation:
+• Use the buttons at the top to switch between views
+• /tribify.ai (current view) - Chat with AI for help and information
+• Shareholders - View all token holders and their balances
+• Wallet - Manage your wallets and transactions
+
+Commands you can try:
+• /help - Show this message again
+• /holders - Get information about shareholders
+• /wallet - Learn about wallet features
+• /buy - Understand how to buy tokens
+• /sell - Learn about selling tokens
+• /distribute - Learn about token distribution
+
+You can also ask me questions in natural language about any aspect of Tribify.
+
+How can I help you get started?`
+    }
+  ]);
   const [tribifyInput, setTribifyInput] = useState('');
 
   // Add state for connection debugging
@@ -971,51 +996,129 @@ function App() {
   // Add tribify prompt handler
   const handleTribifyPrompt = async (e) => {
     e.preventDefault();
+    
     if (!tribifyInput.trim()) return;
 
     // Add user input to responses
-    setTribifyResponses(prev => [...prev, {
-      type: 'input',
-      text: tribifyInput
-    }]);
+    setTribifyResponses(prev => [...prev, { type: 'input', text: tribifyInput }]);
+    
+    // Process the command
+    const input = tribifyInput.toLowerCase().trim();
+    let response = '';
 
-    try {
-      // Add "thinking" message
-      setTribifyResponses(prev => [...prev, {
-        type: 'system',
-        text: '...'
-      }]);
+    // Handle commands
+    if (input.startsWith('/')) {
+      switch (input) {
+        case '/help':
+          response = `Available commands:
+• /help - Show this help message
+• /holders - View shareholder information
+• /wallet - Learn about wallet features
+• /buy - Get buying instructions
+• /sell - Get selling instructions
+• /distribute - Learn about token distribution
+• /stats - View current statistics`;
+          break;
 
-      // Call AI endpoint
-      const response = await fetch('/api/tribify/prompt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: tribifyInput })
-      });
+        case '/holders':
+          const totalHolders = tokenHolders.length;
+          const totalSupply = tokenHolders.reduce((sum, h) => sum + h.tokenBalance, 0);
+          response = `Shareholder Statistics:
+• Total Holders: ${totalHolders}
+• Total Supply: ${totalSupply.toLocaleString()} $TRIBIFY
+• Largest Holder: ${tokenHolders[0]?.tokenBalance.toLocaleString()} $TRIBIFY
+• Treasury Balance: ${tokenHolders.find(h => h.address === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv')?.tokenBalance.toLocaleString()} $TRIBIFY
 
-      const data = await response.json();
+Use the Shareholders button to view the complete list.`;
+          break;
 
-      // Replace "thinking" with response
-      setTribifyResponses(prev => [
-        ...prev.slice(0, -1),
-        {
-          type: 'response',
-          text: data.response
-        }
-      ]);
+        case '/wallet':
+          response = `Wallet Features:
+1. Generate Keys - Create new wallets
+2. Download Keys - Backup your wallet data
+3. Restore Keys - Recover from backup
+4. Fund Wallets - Distribute funds
+5. Configure Buy/Sell - Set up automated trading
+6. Buy/Sell Sequence - Execute trades
+7. Distribute Tokens - Send tokens to multiple wallets
 
-      setTribifyInput('');
-    } catch (error) {
-      console.error('Failed to get AI response:', error);
-      // Replace "thinking" with error
-      setTribifyResponses(prev => [
-        ...prev.slice(0, -1),
-        {
-          type: 'error',
-          text: 'Failed to get response. Please try again.'
-        }
-      ]);
+Need more details about any feature? Just ask!`;
+          break;
+
+        case '/buy':
+          response = `How to Buy $TRIBIFY:
+
+1. Configure Buy Settings:
+   • Set amount range (min/max)
+   • Choose number of wallets
+   • Set time interval
+   • Adjust slippage and fees
+
+2. Start Buying:
+   • Use "Buy Sequence" for automated purchases
+   • Monitor transactions in real-time
+   • View balances in wallet page
+
+Need help with specific settings? Just ask!`;
+          break;
+
+        case '/sell':
+          response = `How to Sell $TRIBIFY:
+
+1. Configure Sell Settings:
+   • Set amount range (min/max)
+   • Choose number of wallets
+   • Set time interval
+   • Adjust slippage and fees
+
+2. Start Selling:
+   • Use "Sell Sequence" for automated sales
+   • Monitor transactions in real-time
+   • Track proceeds in wallet page
+
+Need help with specific settings? Just ask!`;
+          break;
+
+        case '/distribute':
+          response = `Token Distribution Guide:
+
+1. Access Distribution:
+   • Click "Distribute Tokens" button
+   • Choose source wallet (parent or external)
+   • Set distribution parameters
+
+2. Distribution Options:
+   • Fixed amount per wallet
+   • Random amounts within range
+   • Scheduled distribution
+   • Batch processing
+
+Need help setting up distribution? Just ask!`;
+          break;
+
+        default:
+          response = "I don't recognize that command. Try /help to see available commands.";
+      }
+    } else {
+      // Handle natural language queries
+      if (input.includes('buy') || input.includes('purchase')) {
+        response = "To buy tokens, you can use the Configure Buy button to set up your purchase parameters, or use /buy for more details.";
+      } else if (input.includes('sell')) {
+        response = "To sell tokens, you can use the Configure Sell button to set up your sale parameters, or use /sell for more details.";
+      } else if (input.includes('wallet') || input.includes('keys')) {
+        response = "The Wallet page lets you manage your keys, fund wallets, and execute trades. Use /wallet for more details.";
+      } else if (input.includes('holder') || input.includes('shareholder')) {
+        response = "You can view all shareholders and their balances using the Shareholders button. Use /holders for statistics.";
+      } else {
+        response = "I'm not sure about that. Try asking about buying, selling, wallets, or shareholders, or use /help to see available commands.";
+      }
     }
+
+    // Add AI response
+    setTribifyResponses(prev => [...prev, { type: 'response', text: response }]);
+    
+    // Clear input
+    setTribifyInput('');
   };
 
   // Move generateWallets inside App component
