@@ -2077,29 +2077,26 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 }
 
 .explanation-section {
-  margin-bottom: 20px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 4px;
+  margin-bottom: 24px;
 }
 
 .explanation-section h3 {
-  color: #2ecc71;
+  color: #3498db;
+  font-size: 16px;
   margin-bottom: 12px;
-  font-size: 15px;
 }
 
 .explanation-section ul {
-  margin: 0;
-  padding: 0;
   list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .explanation-section li {
-  color: #888;
-  margin: 8px 0;
-  padding-left: 16px;
+  padding: 8px 0;
+  padding-left: 24px;
   position: relative;
+  color: #888;
   font-size: 14px;
   line-height: 1.4;
 }
@@ -2107,8 +2104,30 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 .explanation-section li:before {
   content: "•";
   position: absolute;
-  left: 0;
-  color: #2ecc71;
+  left: 8px;
+  color: #3498db;
+}
+
+.explanation-note {
+  background: rgba(52, 152, 219, 0.1);
+  border: 1px solid rgba(52, 152, 219, 0.2);
+  border-radius: 6px;
+  padding: 16px;
+  margin-top: 24px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.note-icon {
+  font-size: 20px;
+}
+
+.explanation-note p {
+  margin: 0;
+  font-size: 14px;
+  color: #888;
+  line-height: 1.5;
 }
 
 /* Time Settings Grid */
@@ -3124,4 +3143,96 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 .distribute-button:hover {
   background: rgba(241, 196, 15, 0.2) !important;
   transform: translateY(-1px);
+}
+
+.funding-modal {
+  max-width: 600px;
+  padding: 24px;
+}
+
+.funding-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.parent-sol-balance {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.parent-sol-balance .balance {
+  color: #f1c40f;
+  font-family: monospace;
+  font-weight: 500;
+}
+
+.funding-section,
+.recovery-section {
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.funding-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.amount-input {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.amount-input input {
+  width: 120px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: white;
+  font-family: monospace;
+}
+
+.total-needed {
+  color: #f1c40f;
+  font-family: monospace;
+}
+
+.fund-all-button,
+.recover-sol-button {
+  padding: 12px;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fund-all-button {
+  background: rgba(46, 204, 113, 0.1);
+  border: 1px solid #2ecc71;
+  color: #2ecc71;
+}
+
+.recover-sol-button {
+  background: rgba(241, 196, 15, 0.1);
+  border: 1px solid #f1c40f;
+  color: #f1c40f;
+}
+
+.recovery-status {
+  margin-top: 12px;
+  padding: 8px;
+  background: rgba(241, 196, 15, 0.1);
+  border-radius: 4px;
+  color: #f1c40f;
+  font-family: monospace;
 }
