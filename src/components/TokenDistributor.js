@@ -1,56 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { Connection, PublicKey, Transaction, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { 
-  TOKEN_PROGRAM_ID,
-  createTransferInstruction,
-  getAssociatedTokenAddress,
-  createAssociatedTokenAccountInstruction
-} from '@solana/spl-token';
+import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 
-// Use the same Helius RPC URL that's used in WalletPage
-const HELIUS_RPC_URL = `https://rpc-devnet.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_API_KEY}`;
-const ESTIMATED_FEE_PER_TX = 0.00001; // SOL per transaction
-
-// Add utility function for safe number conversion
-const toBigNumber = (amount, decimals = 6) => {
-  const num = Math.floor(amount * Math.pow(10, decimals));
-  return num.toString(); // Convert to string to handle large numbers safely
-};
+// Estimated SOL fee per transaction
+const ESTIMATED_SOL_PER_TX = 0.000005;
 
 const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
-  const [status, setStatus] = useState('idle');
-  const [progress, setProgress] = useState([]);
   const [walletInfo, setWalletInfo] = useState({
     tribifyBalance: 0,
     solBalance: 0
   });
   const [distributionConfig, setDistributionConfig] = useState({
-    numberOfWallets: 10,
     totalAmount: '',
-    distributeRandomly: false
+    numberOfWallets: 10,
+    amountPerWallet: 0,
+    isRandomDistribution: false
   });
-
-  const addProgress = (message, type = 'info') => {
-    setProgress(prev => [...prev, { message, type, timestamp: Date.now() }]);
-  };
 
   const fetchWalletBalances = async () => {
     try {
-      if (!parentWallet?.isConnected || !parentWallet?.publicKey) {
+      if (!window.phantom?.solana?.isConnected) {
         console.log('Wallet not connected');
         return;
       }
 
-      const connection = new Connection(HELIUS_RPC_URL);
+      // Use the same connection from App.js
+      const connection = new Connection(
+        `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
+        {
+          commitment: 'confirmed',
+          wsEndpoint: undefined,
+          confirmTransactionInitialTimeout: 60000
+        }
+      );
+
+      const walletPublicKey = new PublicKey(window.phantom.solana.publicKey.toString());
       const tribifyMint = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
-      const publicKey = new PublicKey(parentWallet.publicKey.toString());
 
-      // Fetch SOL balance
-      const solBalance = await connection.getBalance(publicKey);
+      // Get SOL balance
+      const solBalance = await connection.getBalance(walletPublicKey);
 
-      // Fetch TRIBIFY balance
+      // Get TRIBIFY balance
       const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-        publicKey,
+        walletPublicKey,
         { mint: tribifyMint }
       );
 
@@ -63,114 +54,33 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
         solBalance: solBalance / LAMPORTS_PER_SOL
       });
 
-      addProgress(`Wallet balances loaded: ${tribifyBalance.toLocaleString()} TRIBIFY, ${(solBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`, 'info');
     } catch (error) {
       console.error('Error fetching balances:', error);
-      addProgress('Error fetching balances: ' + error.message, 'error');
     }
   };
 
-  const calculateFees = () => {
-    const txCount = distributionConfig.numberOfWallets;
-    return txCount * ESTIMATED_FEE_PER_TX;
+  // Calculate total SOL fees
+  const calculateTotalFees = () => {
+    return distributionConfig.numberOfWallets * ESTIMATED_SOL_PER_TX;
   };
 
-  const getAmountPerWallet = () => {
-    if (!distributionConfig.totalAmount || distributionConfig.numberOfWallets <= 0) return 0;
-    return distributionConfig.totalAmount / distributionConfig.numberOfWallets;
-  };
-
-  const distributeTokens = async () => {
-    if (!distributionConfig.totalAmount || distributionConfig.numberOfWallets <= 0) {
-      addProgress('Please enter valid distribution amounts', 'error');
-      return;
+  // Calculate per wallet amount
+  useEffect(() => {
+    if (distributionConfig.totalAmount && distributionConfig.numberOfWallets > 0) {
+      const perWallet = distributionConfig.isRandomDistribution 
+        ? 0 // Don't show per wallet for random distribution
+        : distributionConfig.totalAmount / distributionConfig.numberOfWallets;
+      
+      setDistributionConfig(prev => ({
+        ...prev,
+        amountPerWallet: perWallet
+      }));
     }
-
-    try {
-      setStatus('distributing');
-      addProgress('Starting distribution process...', 'info');
-
-      const connection = new Connection(HELIUS_RPC_URL);
-      const tribifyMint = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
-
-      // Select random wallets if needed
-      let selectedWallets = distributionConfig.distributeRandomly
-        ? [...subwallets].sort(() => 0.5 - Math.random()).slice(0, distributionConfig.numberOfWallets)
-        : subwallets.slice(0, distributionConfig.numberOfWallets);
-
-      // Create all transactions first
-      const transactions = [];
-      const amountPerWallet = getAmountPerWallet();
-
-      for (const subwallet of selectedWallets) {
-        const subwalletTokenAccount = await getAssociatedTokenAddress(
-          tribifyMint,
-          subwallet.publicKey
-        );
-
-        const transaction = new Transaction();
-        
-        // Add ATA creation if needed
-        const accountInfo = await connection.getAccountInfo(subwalletTokenAccount);
-        if (!accountInfo) {
-          transaction.add(
-            createAssociatedTokenAccountInstruction(
-              new PublicKey(parentWallet.publicKey.toString()),
-              subwalletTokenAccount,
-              subwallet.publicKey,
-              tribifyMint
-            )
-          );
-        }
-
-        // Add transfer instruction
-        const amount = distributionConfig.distributeRandomly
-          ? Math.random() * amountPerWallet * 2 // Random amount between 0 and 2x the average
-          : amountPerWallet;
-
-        transaction.add(
-          createTransferInstruction(
-            (await connection.getParsedTokenAccountsByOwner(
-              new PublicKey(parentWallet.publicKey.toString()),
-              { mint: tribifyMint }
-            )).value[0].pubkey,
-            subwalletTokenAccount,
-            new PublicKey(parentWallet.publicKey.toString()),
-            toBigNumber(amount)
-          )
-        );
-
-        transactions.push(transaction);
-      }
-
-      // Sign and send all transactions
-      for (let i = 0; i < transactions.length; i++) {
-        const transaction = transactions[i];
-        const { blockhash } = await connection.getLatestBlockhash();
-        transaction.recentBlockhash = blockhash;
-        transaction.feePayer = new PublicKey(parentWallet.publicKey.toString());
-
-        const signed = await parentWallet.signTransaction(transaction);
-        const signature = await connection.sendRawTransaction(signed.serialize());
-        await connection.confirmTransaction(signature);
-
-        addProgress(`Completed transfer ${i + 1}/${transactions.length}`, 'success');
-      }
-
-      setStatus('completed');
-      addProgress('Distribution completed successfully!', 'success');
-      onComplete?.();
-
-    } catch (error) {
-      setStatus('error');
-      addProgress(`Distribution failed: ${error.message}`, 'error');
-      console.error('Distribution error:', error);
-    }
-  };
+  }, [distributionConfig.totalAmount, distributionConfig.numberOfWallets, distributionConfig.isRandomDistribution]);
 
   useEffect(() => {
     fetchWalletBalances();
-  }, [parentWallet]);
+  }, []);
 
   return (
     <div className="distribution-container">
@@ -190,32 +100,9 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
 
       <div className="distribution-form">
         <div className="form-group">
-          <label htmlFor="numberOfWallets">Number of Wallets (1-100):</label>
+          <label>Total TRIBIFY to Distribute:</label>
           <input
-            id="numberOfWallets"
             type="number"
-            min="1"
-            max="100"
-            value={distributionConfig.numberOfWallets}
-            onChange={(e) => {
-              const value = parseInt(e.target.value);
-              if (value >= 1 && value <= 100) {
-                setDistributionConfig(prev => ({
-                  ...prev,
-                  numberOfWallets: value
-                }));
-              }
-            }}
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="totalAmount">Total TRIBIFY to Distribute:</label>
-          <input
-            id="totalAmount"
-            type="number"
-            min="0"
-            max={walletInfo.tribifyBalance}
             value={distributionConfig.totalAmount}
             onChange={(e) => {
               const value = parseFloat(e.target.value);
@@ -226,6 +113,27 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
                 }));
               }
             }}
+            max={walletInfo.tribifyBalance}
+            placeholder={`Max: ${walletInfo.tribifyBalance.toLocaleString()}`}
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Number of Wallets to Distribute To (1-100):</label>
+          <input
+            type="number"
+            value={distributionConfig.numberOfWallets}
+            onChange={(e) => {
+              const value = parseInt(e.target.value);
+              if (!isNaN(value) && value >= 1 && value <= 100) {
+                setDistributionConfig(prev => ({
+                  ...prev,
+                  numberOfWallets: value
+                }));
+              }
+            }}
+            min="1"
+            max="100"
           />
         </div>
 
@@ -233,52 +141,66 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
           <label>
             <input
               type="checkbox"
-              checked={distributionConfig.distributeRandomly}
+              checked={distributionConfig.isRandomDistribution}
               onChange={(e) => {
                 setDistributionConfig(prev => ({
                   ...prev,
-                  distributeRandomly: e.target.checked
+                  isRandomDistribution: e.target.checked
                 }));
               }}
             />
-            Distribute Randomly
+            Distribute tokens randomly
           </label>
+          <div className="checkbox-description">
+            {distributionConfig.isRandomDistribution 
+              ? "Tokens will be distributed in random amounts while maintaining the total"
+              : "Tokens will be distributed equally to all wallets"
+            }
+          </div>
         </div>
 
-        {!distributionConfig.distributeRandomly && distributionConfig.totalAmount > 0 && (
+        {distributionConfig.totalAmount > 0 && distributionConfig.numberOfWallets > 0 && (
           <div className="distribution-preview">
-            Amount per wallet: {getAmountPerWallet().toLocaleString()} TRIBIFY
+            {!distributionConfig.isRandomDistribution && (
+              <div className="preview-item">
+                <span>Amount per wallet:</span>
+                <span>{distributionConfig.amountPerWallet.toLocaleString()} TRIBIFY</span>
+              </div>
+            )}
+            <div className="preview-item">
+              <span>Total wallets:</span>
+              <span>{distributionConfig.numberOfWallets}</span>
+            </div>
+            <div className="preview-item">
+              <span>Total to distribute:</span>
+              <span>{distributionConfig.totalAmount.toLocaleString()} TRIBIFY</span>
+            </div>
+            <div className="preview-item fee-estimate">
+              <span>Estimated SOL fee:</span>
+              <span>{calculateTotalFees().toFixed(6)} SOL</span>
+            </div>
           </div>
         )}
 
-        <div className="fee-preview">
-          Estimated total fees: {calculateFees().toFixed(4)} SOL
-        </div>
+        <button 
+          className="distribute-button"
+          disabled={
+            !distributionConfig.totalAmount || 
+            distributionConfig.totalAmount <= 0 ||
+            calculateTotalFees() > walletInfo.solBalance
+          }
+          onClick={() => {
+            console.log('Distribution config:', distributionConfig);
+          }}
+        >
+          {calculateTotalFees() > walletInfo.solBalance 
+            ? 'Insufficient SOL for fees'
+            : 'Start Distribution'
+          }
+        </button>
       </div>
 
-      <div className="distribution-progress">
-        {progress.map((item, index) => (
-          <div key={index} className={`progress-item ${item.type}`}>
-            <span>{item.message}</span>
-            <span className="progress-timestamp">
-              {new Date(item.timestamp).toLocaleTimeString()}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <button 
-        className="distribute-button"
-        onClick={distributeTokens}
-        disabled={
-          status === 'distributing' || 
-          !distributionConfig.totalAmount || 
-          distributionConfig.numberOfWallets <= 0 ||
-          calculateFees() > walletInfo.solBalance
-        }
-      >
-        {status === 'distributing' ? 'Distributing...' : 'Start Distribution'}
-      </button>
+      <button onClick={fetchWalletBalances}>Refresh Balances</button>
     </div>
   );
 };

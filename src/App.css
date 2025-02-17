@@ -2427,86 +2427,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   margin: 20px 0;
   padding: 20px;
   background: rgba(46, 204, 113, 0.05);
-  border: 1px solid rgba(46, 204, 113, 0.2);
   border-radius: 4px;
-}
-
-.available-balance {
-  font-size: 16px;
-  margin-bottom: 16px;
-  color: #2ecc71;
-  font-family: monospace;
-}
-
-.amount-input {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.amount-input label {
-  font-size: 14px;
-  color: #888;
-}
-
-.amount-input input {
-  padding: 8px 12px;
-  font-size: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.2);
-  color: #fff;
-  border-radius: 4px;
-  font-family: monospace;
-}
-
-.amount-input input:focus {
-  outline: none;
-  border-color: #2ecc71;
-}
-
-.amount-input input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.distribution-info {
-  font-size: 14px;
-  color: #888;
-  margin-top: 8px;
-}
-
-.distribution-container {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-}
-
-.wallet-info-section {
-  background: rgba(46, 204, 113, 0.05);
-  padding: 20px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-}
-
-.balance-info {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.balance-item {
-  display: flex;
-  justify-content: space-between;
-  font-family: monospace;
-  font-size: 16px;
-}
-
-.balance-label {
-  color: #888;
-}
-
-.balance-value {
-  color: #2ecc71;
 }
 
 .form-group {
@@ -2519,34 +2440,78 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   color: #888;
 }
 
+.form-group input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+  color: #fff;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.distribution-preview {
+  margin: 20px 0;
+  padding: 16px;
+  background: rgba(52, 152, 219, 0.1);
+  border-radius: 4px;
+}
+
+.preview-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-family: monospace;
+}
+
+.preview-item:not(:last-child) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.distribute-button {
+  width: 100%;
+  padding: 12px;
+  background: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+.distribute-button:disabled {
+  background: #444 !important;
+  border-color: #666 !important;
+  color: #888 !important;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .form-group.checkbox {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
 }
 
 .form-group.checkbox label {
-  margin: 0;
   display: flex;
   align-items: center;
   gap: 8px;
+  margin: 0;
   cursor: pointer;
 }
 
-.distribution-preview {
-  background: rgba(52, 152, 219, 0.1);
-  padding: 12px;
-  border-radius: 4px;
-  margin: 16px 0;
-  font-family: monospace;
-  color: #3498db;
+.checkbox-description {
+  font-size: 12px;
+  color: #888;
+  margin-left: 24px;
 }
 
-.fee-preview {
-  background: rgba(241, 196, 15, 0.1);
-  padding: 12px;
-  border-radius: 4px;
-  margin: 16px 0;
-  font-family: monospace;
+.fee-estimate {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   color: #f1c40f;
 }

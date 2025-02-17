@@ -113,6 +113,18 @@ function WalletPage() {
   const fileInputRef = useRef(null);
 
   useEffect(() => {
+    // Check if Phantom is installed
+    if (!window.phantom?.solana) {
+      navigate('/'); // Redirect to home page
+      return;
+    }
+
+    // Check if wallet is connected
+    if (!window.phantom.solana.isConnected) {
+      navigate('/'); // Redirect to home page
+      return;
+    }
+
     const loadStoredKeypairs = () => {
       try {
         if (!window.phantom?.solana?.publicKey) return;
@@ -147,7 +159,7 @@ function WalletPage() {
     };
 
     loadStoredKeypairs();
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     const storeKeypairs = () => {
