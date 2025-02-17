@@ -11,7 +11,6 @@ import {
   transfer,
   TOKEN_PROGRAM_ID 
 } from '@solana/spl-token';
-import './WalletPage.css';
 
 const TOTAL_SUPPLY = 1_000_000_000; // 1 Billion tokens
 
@@ -73,6 +72,21 @@ function WalletPage() {
     fundingWallet: null,
     amount: 0,
     currency: 'SOL'
+  });
+  const [sellConfig, setSellConfig] = useState({
+    slippage: 1.0,
+    priorityFee: 0.000001,
+    walletCount: 1,
+    minAmount: 0.1,
+    maxAmount: 1.0,
+    budget: 0,
+    denominatedInSol: true,
+    startTime: null,
+    endTime: null,
+    minInterval: 5,
+    maxInterval: 30,
+    randomOrder: true,
+    denominationType: 'SOL',
   });
 
   const TRIBIFY_TOKEN_MINT = "672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump";
@@ -443,7 +457,7 @@ function WalletPage() {
   };
 
   // Add randomization function
-  const randomizeConfig = () => {
+  const randomizeConfig = (type) => {
     // Get current time
     const now = new Date();
     
@@ -460,21 +474,39 @@ function WalletPage() {
     const formattedStartTime = startTime.toISOString().slice(0, 19);
     const formattedEndTime = endTime.toISOString().slice(0, 19);
 
-    setBuyConfig({
-      ...buyConfig,
-      walletCount: Math.floor(Math.random() * 100) + 1, // 1-100
-      minAmount: parseFloat((Math.random() * 0.5).toFixed(6)), // 0-0.5
-      maxAmount: parseFloat((Math.random() * 1.5 + 0.5).toFixed(6)), // 0.5-2.0
-      slippage: parseFloat((Math.random() * 4.9 + 0.1).toFixed(1)), // 0.1-5.0%
-      priorityFee: parseFloat((Math.random() * 0.000009 + 0.000001).toFixed(6)), // 0.000001-0.00001
-      startTime: formattedStartTime,
-      endTime: formattedEndTime,
-      minInterval: Math.floor(Math.random() * 28) + 2, // 2-30 seconds
-      maxInterval: Math.floor(Math.random() * 30) + 30, // 30-60 seconds
-      randomOrder: Math.random() > 0.5, // 50% chance of random order
-      denominationType: 'SOL'
-    });
-    setShowCAInput(false);
+    if (type === 'buy') {
+      setBuyConfig({
+        ...buyConfig,
+        walletCount: Math.floor(Math.random() * 100) + 1, // 1-100
+        minAmount: parseFloat((Math.random() * 0.5).toFixed(6)), // 0-0.5
+        maxAmount: parseFloat((Math.random() * 1.5 + 0.5).toFixed(6)), // 0.5-2.0
+        slippage: parseFloat((Math.random() * 4.9 + 0.1).toFixed(1)), // 0.1-5.0%
+        priorityFee: parseFloat((Math.random() * 0.000009 + 0.000001).toFixed(6)), // 0.000001-0.00001
+        startTime: formattedStartTime,
+        endTime: formattedEndTime,
+        minInterval: Math.floor(Math.random() * 28) + 2, // 2-30 seconds
+        maxInterval: Math.floor(Math.random() * 30) + 30, // 30-60 seconds
+        randomOrder: Math.random() > 0.5, // 50% chance of random order
+        denominationType: 'SOL'
+      });
+      setShowCAInput(false);
+    } else if (type === 'sell') {
+      setSellConfig({
+        ...sellConfig,
+        walletCount: Math.floor(Math.random() * 100) + 1, // 1-100
+        minAmount: parseFloat((Math.random() * 0.5).toFixed(6)), // 0-0.5
+        maxAmount: parseFloat((Math.random() * 1.5 + 0.5).toFixed(6)), // 0.5-2.0
+        slippage: parseFloat((Math.random() * 4.9 + 0.1).toFixed(1)), // 0.1-5.0%
+        priorityFee: parseFloat((Math.random() * 0.000009 + 0.000001).toFixed(6)), // 0.000001-0.00001
+        startTime: formattedStartTime,
+        endTime: formattedEndTime,
+        minInterval: Math.floor(Math.random() * 28) + 2, // 2-30 seconds
+        maxInterval: Math.floor(Math.random() * 30) + 30, // 30-60 seconds
+        randomOrder: Math.random() > 0.5, // 50% chance of random order
+        denominationType: 'SOL'
+      });
+      setShowCAInput(false);
+    }
   };
 
   const walletCountProps = {
@@ -573,69 +605,83 @@ function WalletPage() {
     })
   };
 
-  const FeatureExplanation = ({ type }) => {
-    const features = {
+  const ConfigExplanation = ({ type }) => {
+    const explanations = {
       buy: {
-        title: "Buy Configuration Features",
-        features: [
+        title: "Buy Configuration Guide",
+        sections: [
           {
-            title: "Amount Type Selection",
-            description: "Choose between SOL, USDC, TRIBIFY, or CA (Contract Address) to specify how you want to denominate your purchases."
+            title: "Required Details",
+            items: [
+              "Contract Address: The token contract you want to buy",
+              "ATA (Associated Token Account): Where tokens will be received",
+              "RPC URL: Your custom RPC endpoint (optional)",
+              "Priority Fee: Higher fees = faster transactions"
+            ]
           },
           {
-            title: "Wallet & Amount Settings",
-            description: "Configure how many wallets to use (1-100) and set minimum/maximum purchase amounts for randomization."
+            title: "Amount Settings",
+            items: [
+              "Min/Max Amount: Range for random purchase sizes",
+              "Wallet Count: Number of wallets to use (1-100)",
+              "Random Order: Shuffles wallet sequence for privacy"
+            ]
           },
           {
-            title: "Time Settings",
-            description: "Schedule your buys by setting start/end times and intervals between transactions. This helps prevent detection and spreads out your purchases."
-          },
-          {
-            title: "Transaction Settings",
-            description: "Set slippage tolerance and priority fees. Enable random wallet order to further obscure the pattern of purchases."
-          },
-          {
-            title: "Randomization",
-            description: "The 🎲 Randomize button automatically generates random values within safe ranges for all settings."
+            title: "Timing Settings",
+            items: [
+              "Start/End Time: Schedule your buys",
+              "Intervals: Random delays between transactions",
+              "Slippage: Maximum acceptable price impact"
+            ]
           }
         ]
       },
       sell: {
-        title: "Sell Configuration Features",
-        features: [
+        title: "Sell Configuration Guide",
+        sections: [
           {
-            title: "Amount Type Selection",
-            description: "Choose between SOL, USDC, TRIBIFY, or CA (Contract Address) to specify how you want to denominate your sales."
+            title: "Required Details",
+            items: [
+              "Token Address: The token you want to sell",
+              "DEX Contract: The exchange contract address",
+              "Output Token: Where to receive proceeds (SOL/USDC)",
+              "Priority Fee: Higher fees = faster transactions"
+            ]
           },
           {
-            title: "Wallet & Amount Settings",
-            description: "Configure how many wallets to use (1-100) and set minimum/maximum sale amounts for randomization."
+            title: "Amount Settings",
+            items: [
+              "Min/Max Amount: Range for random sell sizes",
+              "Wallet Count: Number of wallets to use (1-100)",
+              "Random Order: Shuffles wallet sequence for privacy"
+            ]
           },
           {
-            title: "Time Settings",
-            description: "Schedule your sells by setting start/end times and intervals between transactions. This helps prevent detection and spreads out your sales."
-          },
-          {
-            title: "Transaction Settings",
-            description: "Set slippage tolerance and priority fees. Enable random wallet order to further obscure the pattern of sales."
-          },
-          {
-            title: "Randomization",
-            description: "The 🎲 Randomize button automatically generates random values within safe ranges for all settings."
+            title: "Timing Settings",
+            items: [
+              "Start/End Time: Schedule your sells",
+              "Intervals: Random delays between transactions",
+              "Slippage: Maximum acceptable price impact"
+            ]
           }
         ]
       }
     };
 
-    const content = features[type];
+    const content = explanations[type];
 
     return (
-      <div className="explanation-panel">
+      <div className="config-explanation">
         <h2>{content.title}</h2>
-        {content.features.map((feature, index) => (
-          <div key={index} className="feature-explanation">
-            <h3>{feature.title}</h3>
-            <p>{feature.description}</p>
+        {content.sections.map((section, i) => (
+          <div key={i} className="explanation-section">
+            <h3>{section.title}</h3>
+            <ul>
+              {section.items.map((item, j) => (
+                <li key={j}>{item}</li>
+              ))}
+            </ul>
           </div>
         ))}
       </div>
@@ -880,6 +926,79 @@ function WalletPage() {
     );
   };
 
+  const sellAndDistribute = async () => {
+    const {
+      walletCount,
+      minAmount,
+      maxAmount,
+      slippage,
+      priorityFee,
+      startTime,
+      endTime,
+      minInterval,
+      maxInterval,
+      randomOrder,
+      denominationType
+    } = sellConfig;
+
+    try {
+      // Track sold amount
+      let soldAmount = 0;
+
+      // Modify the scheduleSell function to check remaining balance
+      const scheduleSell = async () => {
+        const currentTime = new Date();
+
+        if (currentTime < new Date(startTime)) {
+          const delay = new Date(startTime) - currentTime;
+          setTimeout(scheduleSell, delay);
+          return;
+        }
+
+        if (currentTime > new Date(endTime)) {
+          setStatus('Sell schedule has ended.');
+          return;
+        }
+
+        // Calculate next sell amount
+        const nextAmount = Math.random() * (maxAmount - minAmount) + minAmount;
+
+        // Perform the sell
+        await performSell(nextAmount);
+        soldAmount += nextAmount;
+
+        // Schedule the next sell
+        setTimeout(scheduleSell, Math.floor(Math.random() * (maxInterval - minInterval + 1) + minInterval) * 1000);
+      };
+
+      // Start the scheduling
+      scheduleSell();
+    } catch (error) {
+      console.error('Error in sell and distribute:', error);
+      setStatus('Failed to start selling: ' + error.message);
+    }
+  };
+
+  const performSell = async (amount) => {
+    const { denominationType, slippage, priorityFee } = sellConfig;
+    
+    try {
+      // Implement your selling logic here based on denominationType
+      if (denominationType === 'SOL') {
+        // Implement SOL selling logic
+      } else if (denominationType === 'USDC') {
+        // Implement USDC selling logic
+      } else if (denominationType === 'TRIBIFY') {
+        // Implement TRIBIFY selling logic
+      }
+      
+      setStatus(`Successfully sold ${amount} ${denominationType}`);
+    } catch (error) {
+      console.error('Error during sell:', error);
+      setStatus(`Error selling ${denominationType}: ${error.message}`);
+    }
+  };
+
   return (
     <div className="wallet-fullscreen">
       {notification && (
@@ -890,51 +1009,77 @@ function WalletPage() {
       <div className="wallet-content">
         <div className="wallet-header">
           <div className="wallet-controls">
-            <button onClick={generateHDWallet} disabled={generating}>
-              {generating ? 'Generating...' : 'Generate Keys'}
-            </button>
-            <button onClick={downloadKeypairs} disabled={keypairs.length === 0}>
-              Download Keys
-            </button>
-            <button 
-              onClick={() => fileInputRef.current?.click()} 
-              className="restore-button"
-            >
-              Restore Keys
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              accept="application/json"
-              style={{ display: 'none' }}
-            />
-            <button 
-              className="refresh-button"
-              onClick={fetchBalances}
-              disabled={keypairs.length === 0 || isLoading}
-            >
-              Refresh
-            </button>
-            <button 
-              className="fund-button"
-              onClick={() => setIsFundingModalOpen(true)}
-            >
-              Fund Wallets
-            </button>
-            <button onClick={() => setIsBuyModalOpen(true)}>Configure Buy</button>
-            <button className="buy-all">Trigger Buy Config</button>
-            <button onClick={() => setIsSellModalOpen(true)}>Configure Sell</button>
-            <button className="sell-all">Trigger Sell Config</button>
-            <button onClick={() => navigate(-1)} className="close-button">Close Wallet</button>
+            <div className="left-controls">
+              <button onClick={() => navigate(-1)}>Close Wallet</button>
+              <button 
+                onClick={generateHDWallet} 
+                disabled={generating}
+              >
+                {generating ? 'Generating...' : 'Generate Keys'}
+              </button>
+              <button 
+                onClick={downloadKeypairs} 
+                disabled={keypairs.length === 0}
+              >
+                Download Keys
+              </button>
+              <button 
+                onClick={() => fileInputRef.current?.click()} 
+              >
+                Restore Keys
+              </button>
+              <button 
+                onClick={fetchBalances}
+                disabled={keypairs.length === 0 || isLoading}
+              >
+                Refresh
+              </button>
+              <button 
+                className="fund-button"
+                onClick={() => setIsFundingModalOpen(true)}
+              >
+                Fund Wallets
+              </button>
+              <button onClick={() => setIsBuyModalOpen(true)}>Configure Buy</button>
+              <button 
+                className="sequence-button"
+                onClick={() => {
+                  buyAndDistribute();
+                  setStatus('Buy sequence started');
+                }}
+              >
+                Buy Sequence
+              </button>
+              <button onClick={() => setIsSellModalOpen(true)}>Configure Sell</button>
+              <button 
+                className="sequence-button sell"
+                onClick={() => {
+                  sellAndDistribute();
+                  setStatus('Sell sequence started');
+                }}
+              >
+                Sell Sequence
+              </button>
+            </div>
+            <div className="right-controls">
+              <button 
+                className="sell-all-button"
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to sell all tokens from all wallets?')) {
+                    // Implement sell all logic here
+                    console.log('Selling all tokens from all wallets');
+                  }
+                }}
+              >
+                Sell All
+              </button>
+            </div>
           </div>
         </div>
-
         <div className="parent-wallet-info">
           <span className="label">Parent Wallet:</span>
           <span className="address">{parentWalletAddress || 'Not Connected'}</span>
         </div>
-
         <div className="wallet-table">
           <div className="table-header">
             <div className="col-index">#</div>
@@ -997,220 +1142,180 @@ function WalletPage() {
 
         {/* Buy Configuration Modal */}
         {isBuyModalOpen && (
-          <div className="buy-config-modal">
-            <div className="left-side">
-              <FeatureExplanation type="buy" />
-            </div>
-            <div className="right-side">
-              <div className="dialog-box">
-                <div className="dialog-content">
-                  <div className="dialog-header">
-                    <h3>Configure Automated Buying Sequence</h3>
-                    <div className="header-buttons">
-                      <button 
-                        className="randomize-button"
-                        onClick={randomizeConfig}
-                        title="Generate random configuration"
-                      >
-                        🎲 Randomize
-                      </button>
-                      <button 
-                        className="save-button"
-                        onClick={() => {
-                          // Save configuration logic here (e.g., local storage or state)
-                          setIsBuyModalOpen(false);
-                        }}
-                      >
-                        Save Config
-                      </button>
-                      <button 
-                        className="buy-button"
-                        onClick={() => {
-                          // Schedule automated buying
-                          buyAndDistribute();
-                          setIsBuyModalOpen(false);
-                          setStatus('Automated buying has been started.');
-                        }}
-                      >
-                        Start Buying
-                      </button>
+          <div className="modal-container">
+            <div className="modal-overlay" onClick={() => setIsBuyModalOpen(false)} />
+            <div className="modal-content">
+              {/* Left side - Guide */}
+              <div className="modal-left">
+                <ConfigExplanation type="buy" />
+                <div className="required-fields">
+                  <h3>Required Details</h3>
+                  <div className="field-group">
+                    <label>Contract Address</label>
+                    <input 
+                      type="text"
+                      placeholder="Token contract address"
+                      value={buyConfig.contractAddress}
+                      onChange={(e) => setBuyConfig({
+                        ...buyConfig,
+                        contractAddress: e.target.value
+                      })}
+                    />
+                  </div>
+                  <div className="field-group">
+                    <label>Custom RPC URL (Optional)</label>
+                    <input 
+                      type="text"
+                      placeholder="Your RPC endpoint"
+                      value={buyConfig.rpcUrl}
+                      onChange={(e) => setBuyConfig({
+                        ...buyConfig,
+                        rpcUrl: e.target.value
+                      })}
+                    />
+                  </div>
+                  <div className="field-group">
+                    <label>Associated Token Account</label>
+                    <input 
+                      type="text"
+                      placeholder="ATA address"
+                      value={buyConfig.ataAddress}
+                      onChange={(e) => setBuyConfig({
+                        ...buyConfig,
+                        ataAddress: e.target.value
+                      })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Right side - Settings */}
+              <div className="modal-right">
+                <div className="dialog-header">
+                  <h3>Configure Automated Buying Sequence</h3>
+                  <div className="header-buttons">
+                    <button 
+                      className="randomize-button"
+                      onClick={() => randomizeConfig('buy')}
+                      title="Generate random configuration"
+                    >
+                      🎲 Randomize
+                    </button>
+                    <button className="save-button" onClick={() => setIsBuyModalOpen(false)}>
+                      Save Config
+                    </button>
+                    <button 
+                      className="buy-button"
+                      onClick={() => {
+                        buyAndDistribute();
+                        setIsBuyModalOpen(false);
+                        setStatus('Automated buying has been started.');
+                      }}
+                    >
+                      Start Buying
+                    </button>
+                  </div>
+                </div>
+
+                <div className="settings-grid">
+                  {/* Wallet & Amount Settings */}
+                  <div className="form-section">
+                    <div className="form-section-title">Wallet & Amount Settings</div>
+                    <div className="wallet-amount-section">
+                      <div className="form-field">
+                        <label>Number of Wallets (1-100)</label>
+                        <input type="number" {...walletCountProps} />
+                      </div>
+                      <div className="form-field">
+                        <label>Min Amount</label>
+                        <input type="number" {...minAmountProps} />
+                      </div>
+                      <div className="form-field">
+                        <label>Max Amount</label>
+                        <input type="number" {...maxAmountProps} />
+                      </div>
                     </div>
                   </div>
-                  <div className="right-side-content">
-                    <div className="form-field">
-                      <div className="radio-group">
-                        <label>
-                          <input 
-                            type="radio" 
-                            name="amountType" 
-                            checked={selectedAmountType === 'SOL'}
-                            onChange={() => {
-                              setSelectedAmountType('SOL');
-                              setShowCAInput(false);
-                              setBuyConfig({ ...buyConfig, denominationType: 'SOL' });
-                            }} 
-                          /> SOL
-                        </label>
-                        <label>
-                          <input 
-                            type="radio" 
-                            name="amountType" 
-                            checked={selectedAmountType === 'USDC'}
-                            onChange={() => {
-                              setSelectedAmountType('USDC');
-                              setShowCAInput(false);
-                              setBuyConfig({ ...buyConfig, denominationType: 'USDC' });
-                            }} 
-                          /> USDC
-                        </label>
-                        <label>
-                          <input 
-                            type="radio" 
-                            name="amountType" 
-                            checked={selectedAmountType === 'TRIBIFY'}
-                            onChange={() => {
-                              setSelectedAmountType('TRIBIFY');
-                              setShowCAInput(false);
-                              setBuyConfig({ ...buyConfig, denominationType: 'TRIBIFY' });
-                            }} 
-                          /> TRIBIFY
-                        </label>
-                        <label>
-                          <input 
-                            type="radio" 
-                            name="amountType" 
-                            checked={selectedAmountType === 'CA'}
-                            onChange={() => {
-                              setSelectedAmountType('CA');
-                              setShowCAInput(true);
-                              setBuyConfig({ ...buyConfig, denominationType: 'CA' });
-                            }} 
-                          /> CA
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                  {showCAInput && (
-                    <div className="ca-input-container">
-                      <input
-                        type="text"
-                        value={caValue}
-                        onChange={(e) => setCAValue(e.target.value)}
-                        placeholder="Paste contract address here..."
-                        className="ca-input"
-                      />
-                      <button 
-                        className="save-ca-button"
-                        onClick={() => {
-                          // Save CA logic here
-                          console.log('Saving CA:', caValue);
-                          setBuyConfig({ ...buyConfig, contractAddress: caValue });
-                          // You can add validation and storage logic here
-                        }}
-                      >
-                        Save CA
-                      </button>
-                    </div>
-                  )}
-                  <div className="buy-form">
-                    {/* Wallet and Amount Section */}
-                    <div className="form-section">
-                      <div className="form-section-title">Wallet & Amount Settings</div>
-                      <div className="wallet-amount-section">
-                        <div className="form-field">
-                          <label>Number of Wallets (1-100)</label>
-                          <input type="number" {...walletCountProps} />
-                        </div>
-                        <div className="form-field">
-                          <label>Min Amount</label>
-                          <input type="number" {...minAmountProps} />
-                        </div>
-                        <div className="form-field">
-                          <label>Max Amount</label>
-                          <input type="number" {...maxAmountProps} />
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* Time Settings Section */}
-                    <div className="form-section">
-                      <div className="form-section-title">Time Settings</div>
-                      <div className="time-settings">
-                        <div className="form-field">
-                          <label>Start Time</label>
-                          <input type="datetime-local" {...startTimeProps} />
-                        </div>
-                        <div className="form-field">
-                          <label>End Time</label>
-                          <input type="datetime-local" {...endTimeProps} />
-                        </div>
-                        <div className="form-field">
-                          <label>Min Interval (seconds)</label>
-                          <input type="number" {...minIntervalProps} />
-                        </div>
-                        <div className="form-field">
-                          <label>Max Interval (seconds)</label>
-                          <input type="number" {...maxIntervalProps} />
-                        </div>
+                  {/* Transaction Settings */}
+                  <div className="form-section">
+                    <div className="form-section-title">Transaction Settings</div>
+                    <div className="transaction-settings">
+                      <div className="form-field">
+                        <label>Slippage (%)</label>
+                        <input type="number" {...slippageProps} />
                       </div>
-                    </div>
-
-                    {/* Transaction Settings Section */}
-                    <div className="form-section">
-                      <div className="form-section-title">Transaction Settings</div>
-                      <div className="transaction-settings">
-                        <div className="form-field">
-                          <label>Slippage (%)</label>
-                          <input type="number" {...slippageProps} />
-                        </div>
-                        <div className="form-field">
-                          <label>Priority Fee (SOL)</label>
-                          <input type="number" {...priorityFeeProps} />
-                        </div>
-                        <div className="form-field">
-                          <label className="checkbox-label">
-                            <input 
-                              type="checkbox" 
-                              checked={buyConfig.randomOrder}
-                              onChange={(e) => setBuyConfig({
-                                ...buyConfig,
-                                randomOrder: e.target.checked
-                              })}
-                            />
-                            Randomize Wallet Order
-                          </label>
-                        </div>
+                      <div className="form-field">
+                        <label>Priority Fee (SOL)</label>
+                        <input type="number" {...priorityFeeProps} />
                       </div>
-                    </div>
-
-                    {/* Budget Section in Buy Modal */}
-                    <div className="form-section">
-                      <div className="form-section-title">Budget</div>
-                      <div className="budget-settings">
-                        <div className="form-field">
-                          <label>Maximum Budget ({buyConfig.denominationType})</label>
+                      <div className="form-field">
+                        <label className="checkbox-label">
                           <input 
-                            type="number"
-                            value={buyConfig.budget}
+                            type="checkbox" 
+                            checked={buyConfig.randomOrder}
                             onChange={(e) => setBuyConfig({
                               ...buyConfig,
-                              budget: parseFloat(e.target.value)
+                              randomOrder: e.target.checked
                             })}
-                            min="0"
-                            step="0.1"
                           />
-                        </div>
+                          Randomize Wallet Order
+                        </label>
                       </div>
                     </div>
                   </div>
-                  <div className="dialog-note">
-                    Will automatically buy random amounts between {buyConfig.minAmount} and {buyConfig.maxAmount} {buyConfig.denominatedInSol ? 'SOL' : 'TRIBIFY'} 
-                    using {buyConfig.walletCount} wallet{buyConfig.walletCount > 1 ? 's' : ''}<br/>
-                    Buys will occur between {buyConfig.startTime ? new Date(buyConfig.startTime).toLocaleString() : '(not set)'} 
-                    and {buyConfig.endTime ? new Date(buyConfig.endTime).toLocaleString() : '(not set)'}<br/>
-                    with {buyConfig.minInterval}-{buyConfig.maxInterval} minute intervals between transactions
-                    {buyConfig.randomOrder && ' in random wallet order'}
+
+                  {/* Time Settings */}
+                  <div className="form-section">
+                    <div className="form-section-title">Time Settings</div>
+                    <div className="time-settings">
+                      <div className="form-field">
+                        <label>Start Time</label>
+                        <input type="datetime-local" {...startTimeProps} />
+                      </div>
+                      <div className="form-field">
+                        <label>End Time</label>
+                        <input type="datetime-local" {...endTimeProps} />
+                      </div>
+                      <div className="form-field">
+                        <label>Min Interval (seconds)</label>
+                        <input type="number" {...minIntervalProps} />
+                      </div>
+                      <div className="form-field">
+                        <label>Max Interval (seconds)</label>
+                        <input type="number" {...maxIntervalProps} />
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Budget Settings */}
+                  <div className="form-section">
+                    <div className="form-section-title">Budget</div>
+                    <div className="budget-settings">
+                      <div className="form-field">
+                        <label>Maximum Budget ({buyConfig.denominationType})</label>
+                        <input 
+                          type="number"
+                          value={buyConfig.budget}
+                          onChange={(e) => setBuyConfig({
+                            ...buyConfig,
+                            budget: parseFloat(e.target.value)
+                          })}
+                          min="0"
+                          step="0.1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="dialog-note">
+                  Will automatically buy random amounts between {buyConfig.minAmount} and {buyConfig.maxAmount} {buyConfig.denominatedInSol ? 'SOL' : 'TRIBIFY'} 
+                  using {buyConfig.walletCount} wallet{buyConfig.walletCount > 1 ? 's' : ''}<br/>
+                  Buys will occur between {buyConfig.startTime ? new Date(buyConfig.startTime).toLocaleString() : '(not set)'} 
+                  and {buyConfig.endTime ? new Date(buyConfig.endTime).toLocaleString() : '(not set)'}<br/>
+                  with {buyConfig.minInterval}-{buyConfig.maxInterval} minute intervals between transactions
+                  {buyConfig.randomOrder && ' in random wallet order'}
                 </div>
               </div>
             </div>
@@ -1220,24 +1325,258 @@ function WalletPage() {
         {/* Sell Configuration Modal */}
         {isSellModalOpen && (
           <div className="modal-container">
-            <h3>Configure Automated Selling Sequence</h3>
+            <div className="modal-overlay" onClick={() => setIsSellModalOpen(false)} />
             <div className="modal-content">
-              <p>Set up your automated selling parameters here.</p>
-              <div className="form-section">
-                <div className="form-field">
-                  <label>Minimum Sell Amount</label>
-                  <input type="number" placeholder="Enter minimum amount" />
-                </div>
-                <div className="form-field">
-                  <label>Maximum Sell Amount</label>
-                  <input type="number" placeholder="Enter maximum amount" />
-                </div>
-                <div className="form-field">
-                  <label>Sell Interval (seconds)</label>
-                  <input type="number" placeholder="Enter interval" />
+              {/* Left side - Guide */}
+              <div className="modal-left">
+                <ConfigExplanation type="sell" />
+                <div className="required-fields">
+                  <h3>Required Details</h3>
+                  <div className="field-group">
+                    <label>Token Address to Sell</label>
+                    <input 
+                      type="text"
+                      placeholder="Token address"
+                      value={sellConfig.tokenAddress}
+                      onChange={(e) => setSellConfig({
+                        ...sellConfig,
+                        tokenAddress: e.target.value
+                      })}
+                    />
+                  </div>
+                  <div className="field-group">
+                    <label>DEX Contract Address</label>
+                    <input 
+                      type="text"
+                      placeholder="DEX contract address"
+                      value={sellConfig.dexAddress}
+                      onChange={(e) => setSellConfig({
+                        ...sellConfig,
+                        dexAddress: e.target.value
+                      })}
+                    />
+                  </div>
+                  <div className="field-group">
+                    <label>Output Token Address (SOL/USDC)</label>
+                    <input 
+                      type="text"
+                      placeholder="Output token address"
+                      value={sellConfig.outputAddress}
+                      onChange={(e) => setSellConfig({
+                        ...sellConfig,
+                        outputAddress: e.target.value
+                      })}
+                    />
+                  </div>
                 </div>
               </div>
-              <button onClick={() => setIsSellModalOpen(false)}>Close</button>
+
+              {/* Right side - Settings */}
+              <div className="modal-right">
+                <div className="dialog-header">
+                  <h3>Configure Automated Selling Sequence</h3>
+                  <div className="header-buttons">
+                    <button 
+                      className="randomize-button"
+                      onClick={() => randomizeConfig('sell')}
+                      title="Generate random configuration"
+                    >
+                      🎲 Randomize
+                    </button>
+                    <button className="save-button" onClick={() => setIsSellModalOpen(false)}>
+                      Save Config
+                    </button>
+                    <button 
+                      className="sell-button"
+                      onClick={() => {
+                        sellAndDistribute();
+                        setIsSellModalOpen(false);
+                        setStatus('Automated selling has been started.');
+                      }}
+                    >
+                      Start Selling
+                    </button>
+                  </div>
+                </div>
+
+                <div className="settings-grid">
+                  {/* Wallet & Amount Settings */}
+                  <div className="form-section">
+                    <div className="form-section-title">Wallet & Amount Settings</div>
+                    <div className="wallet-amount-section">
+                      <div className="form-field">
+                        <label>Number of Wallets (1-100)</label>
+                        <input 
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={sellConfig.walletCount}
+                          onChange={(e) => setSellConfig({
+                            ...sellConfig,
+                            walletCount: Math.min(100, Math.max(1, parseInt(e.target.value) || 1))
+                          })}
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label>Min Amount</label>
+                        <input 
+                          type="number"
+                          min="0"
+                          step="0.000001"
+                          value={sellConfig.minAmount}
+                          onChange={(e) => setSellConfig({
+                            ...sellConfig,
+                            minAmount: Math.max(0, parseFloat(e.target.value) || 0)
+                          })}
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label>Max Amount</label>
+                        <input 
+                          type="number"
+                          min="0"
+                          step="0.000001"
+                          value={sellConfig.maxAmount}
+                          onChange={(e) => setSellConfig({
+                            ...sellConfig,
+                            maxAmount: Math.max(sellConfig.minAmount, parseFloat(e.target.value) || 0)
+                          })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Transaction Settings */}
+                  <div className="form-section">
+                    <div className="form-section-title">Transaction Settings</div>
+                    <div className="transaction-settings">
+                      <div className="form-field">
+                        <label>Slippage (%)</label>
+                        <input 
+                          type="number"
+                          min="0.1"
+                          max="100"
+                          step="0.1"
+                          value={sellConfig.slippage}
+                          onChange={(e) => setSellConfig({
+                            ...sellConfig,
+                            slippage: parseFloat(e.target.value)
+                          })}
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label>Priority Fee (SOL)</label>
+                        <input 
+                          type="number"
+                          min="0"
+                          step="0.000001"
+                          value={sellConfig.priorityFee}
+                          onChange={(e) => setSellConfig({
+                            ...sellConfig,
+                            priorityFee: parseFloat(e.target.value)
+                          })}
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label className="checkbox-label">
+                          <input 
+                            type="checkbox" 
+                            checked={sellConfig.randomOrder}
+                            onChange={(e) => setSellConfig({
+                              ...sellConfig,
+                              randomOrder: e.target.checked
+                            })}
+                          />
+                          Randomize Wallet Order
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Time Settings */}
+                  <div className="form-section">
+                    <div className="form-section-title">Time Settings</div>
+                    <div className="time-settings">
+                      <div className="form-field">
+                        <label>Start Time</label>
+                        <input 
+                          type="datetime-local"
+                          value={sellConfig.startTime || ''}
+                          onChange={(e) => setSellConfig({
+                            ...sellConfig,
+                            startTime: e.target.value
+                          })}
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label>End Time</label>
+                        <input 
+                          type="datetime-local"
+                          min={sellConfig.startTime || ''}
+                          value={sellConfig.endTime || ''}
+                          onChange={(e) => setSellConfig({
+                            ...sellConfig,
+                            endTime: e.target.value
+                          })}
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label>Min Interval (seconds)</label>
+                        <input 
+                          type="number"
+                          min="1"
+                          value={sellConfig.minInterval}
+                          onChange={(e) => setSellConfig({
+                            ...sellConfig,
+                            minInterval: Math.max(1, parseInt(e.target.value) || 1)
+                          })}
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label>Max Interval (seconds)</label>
+                        <input 
+                          type="number"
+                          min={sellConfig.minInterval}
+                          value={sellConfig.maxInterval}
+                          onChange={(e) => setSellConfig({
+                            ...sellConfig,
+                            maxInterval: Math.max(sellConfig.minInterval, parseInt(e.target.value) || sellConfig.minInterval)
+                          })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Budget Section */}
+                  <div className="form-section">
+                    <div className="form-section-title">Budget</div>
+                    <div className="budget-settings">
+                      <div className="form-field">
+                        <label>Maximum Budget ({sellConfig.denominationType})</label>
+                        <input 
+                          type="number"
+                          value={sellConfig.budget}
+                          onChange={(e) => setSellConfig({
+                            ...sellConfig,
+                            budget: parseFloat(e.target.value)
+                          })}
+                          min="0"
+                          step="0.1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="dialog-note">
+                  Will automatically sell random amounts between {sellConfig.minAmount} and {sellConfig.maxAmount} {sellConfig.denominationType} 
+                  using {sellConfig.walletCount} wallet{sellConfig.walletCount > 1 ? 's' : ''}<br/>
+                  Sales will occur between {sellConfig.startTime ? new Date(sellConfig.startTime).toLocaleString() : '(not set)'} 
+                  and {sellConfig.endTime ? new Date(sellConfig.endTime).toLocaleString() : '(not set)'}<br/>
+                  with {sellConfig.minInterval}-{sellConfig.maxInterval} second intervals between transactions
+                  {sellConfig.randomOrder && ' in random wallet order'}
+                </div>
+              </div>
             </div>
           </div>
         )}
