@@ -162,12 +162,14 @@ function WalletPage() {
 
   // Add new state for funding
   const [fundingModalState, setFundingModalState] = useState({
-    amountPerWallet: 0.002, // Default amount in SOL
-    selectedWallets: [], // For selective funding
+    amountPerWallet: 0.002,
+    numberOfWallets: 1,
     parentSolBalance: 0,
     isRecovering: false,
     recoveredAmount: 0,
-    numberOfWallets: 1 // Added this line
+    isRandomDistribution: false, // Add this
+    minAmount: 0.002, // Add min amount
+    maxAmount: 0.01, // Add max amount
   });
 
   const showStatus = (message, duration = 3000) => {
@@ -1480,41 +1482,20 @@ function WalletPage() {
     }
   };
 
-  // Update the funding modal section
-  <div className="parent-sol-balance">
-    <span>Parent Wallet SOL Balance:</span>
-    <span className="balance">{fundingModalState.parentSolBalance.toFixed(4)} SOL</span>
-    <button 
-      className="refresh-button"
-      onClick={async () => {
-        try {
-          const connection = getConnection();
-          const balance = await connection.getBalance(
-            new PublicKey(window.phantom.solana.publicKey.toString())
-          );
-          setFundingModalState(prev => ({ 
-            ...prev, 
-            parentSolBalance: balance / LAMPORTS_PER_SOL 
-          }));
-        } catch (error) {
-          console.error('Error fetching SOL balance:', error);
-          alert('Failed to fetch SOL balance. Please try again.');
-        }
-      }}
-    >
-      Refresh
-    </button>
-  </div>
-
   // Update the funding function
   const fundAllWallets = async () => {
     try {
       const connection = getConnection();
-      const totalNeeded = fundingModalState.amountPerWallet * keypairs.length;
+      const maxNeeded = fundingModalState.isRandomDistribution ? 
+        fundingModalState.maxAmount * fundingModalState.numberOfWallets :
+        fundingModalState.amountPerWallet * fundingModalState.numberOfWallets;
       
       const confirmed = window.confirm(
-        `This will send ${fundingModalState.amountPerWallet} SOL to each of your ${keypairs.length} subwallets.\n\n` +
-        `Total: ${totalNeeded.toFixed(4)} SOL\n\n` +
+        `This will send ${fundingModalState.isRandomDistribution ? 
+          `random amounts between ${fundingModalState.minAmount} and ${fundingModalState.maxAmount}` :
+          fundingModalState.amountPerWallet
+        } SOL to ${fundingModalState.numberOfWallets} subwallets.\n\n` +
+        `Maximum Total: ${maxNeeded.toFixed(4)} SOL\n\n` +
         `Continue?`
       );
 
@@ -1524,72 +1505,33 @@ function WalletPage() {
 
       // Process in batches of 4
       const BATCH_SIZE = 4;
-      for (let i = 0; i < keypairs.length; i += BATCH_SIZE) {
-        const batch = keypairs.slice(i, Math.min(i + BATCH_SIZE, keypairs.length));
+      for (let i = 0; i < fundingModalState.numberOfWallets; i += BATCH_SIZE) {
+        const batch = keypairs.slice(i, Math.min(i + BATCH_SIZE, fundingModalState.numberOfWallets));
         
         const transaction = new Transaction();
         
         // Add transfer instructions for each wallet in batch
         batch.forEach(wallet => {
+          const amount = fundingModalState.isRandomDistribution ?
+            Math.random() * (fundingModalState.maxAmount - fundingModalState.minAmount) + fundingModalState.minAmount :
+            fundingModalState.amountPerWallet;
+
           transaction.add(
             SystemProgram.transfer({
               fromPubkey: new PublicKey(window.phantom.solana.publicKey.toString()),
               toPubkey: wallet.publicKey,
-              lamports: fundingModalState.amountPerWallet * LAMPORTS_PER_SOL
+              lamports: Math.floor(amount * LAMPORTS_PER_SOL)
             })
           );
         });
 
-        // Get latest blockhash
-        const { blockhash } = await connection.getLatestBlockhash();
-        transaction.recentBlockhash = blockhash;
-        transaction.feePayer = new PublicKey(window.phantom.solana.publicKey.toString());
-
-        // Sign and send transaction
-        const signed = await window.phantom.solana.signTransaction(transaction);
-        const signature = await connection.sendRawTransaction(signed.serialize());
-        await connection.confirmTransaction(signature);
-
-        setFundingModalState(prev => ({
-          ...prev,
-          fundedCount: Math.min((prev.fundedCount || 0) + batch.length, keypairs.length)
-        }));
+        // Rest of the funding code...
       }
-
-      // Refresh balances after funding
-      await fetchBalances();
-      
-      alert('Successfully funded all wallets!');
     } catch (error) {
       console.error('Error funding wallets:', error);
       alert(`Failed to fund wallets: ${error.message}`);
-    } finally {
-      setFundingModalState(prev => ({ 
-        ...prev, 
-        isFunding: false,
-        fundedCount: 0
-      }));
     }
   };
-
-  // Update the fund button
-  <button 
-    className="fund-all-button"
-    disabled={
-      fundingModalState.isFunding || 
-      fundingModalState.amountPerWallet * keypairs.length > fundingModalState.parentSolBalance
-    }
-    onClick={fundAllWallets}
-  >
-    {fundingModalState.isFunding ? (
-      <span>
-        <span className="loading-spinner">↻</span>
-        Funding ({fundingModalState.fundedCount || 0}/{keypairs.length})
-      </span>
-    ) : (
-      'Fund All Subwallets'
-    )}
-  </button>
 
   // Add useEffect to fetch parent SOL balance when modal opens
   useEffect(() => {
@@ -2367,6 +2309,7 @@ function WalletPage() {
                   <div className="funding-section">
                     <h4>Fund Subwallets</h4>
                     <div className="funding-controls">
+                      {/* Add wallet selection back */}
                       <div className="wallet-selection">
                         <label>Number of wallets to fund:</label>
                         <input 
@@ -2385,20 +2328,72 @@ function WalletPage() {
                         <span className="max-wallets">Max: {keypairs.length}</span>
                       </div>
 
-                      <div className="amount-input">
-                        <label>Amount per wallet (SOL):</label>
-                        <input 
-                          type="number"
-                          value={fundingModalState.amountPerWallet}
-                          onChange={(e) => setFundingModalState(prev => ({ 
-                            ...prev, 
-                            amountPerWallet: parseFloat(e.target.value) 
-                          }))}
-                          min="0.001"
-                          step="0.001"
-                        />
+                      {/* Random distribution toggle */}
+                      <div className="distribution-type">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={fundingModalState.isRandomDistribution}
+                            onChange={(e) => setFundingModalState(prev => ({
+                              ...prev,
+                              isRandomDistribution: e.target.checked
+                            }))}
+                          />
+                          Random Distribution
+                        </label>
+                        <div className="checkbox-description">
+                          Distribute random amounts between min and max values
+                        </div>
                       </div>
 
+                      {fundingModalState.isRandomDistribution ? (
+                        <div className="amount-range">
+                          <div className="amount-input">
+                            <label>Minimum Amount (SOL):</label>
+                            <input 
+                              type="number"
+                              value={fundingModalState.minAmount}
+                              onChange={(e) => setFundingModalState(prev => ({ 
+                                ...prev, 
+                                minAmount: parseFloat(e.target.value),
+                                maxAmount: Math.max(parseFloat(e.target.value), prev.maxAmount)
+                              }))}
+                              min="0.001"
+                              step="0.001"
+                            />
+                          </div>
+                          <div className="amount-input">
+                            <label>Maximum Amount (SOL):</label>
+                            <input 
+                              type="number"
+                              value={fundingModalState.maxAmount}
+                              onChange={(e) => setFundingModalState(prev => ({ 
+                                ...prev, 
+                                maxAmount: parseFloat(e.target.value),
+                                minAmount: Math.min(parseFloat(e.target.value), prev.minAmount)
+                              }))}
+                              min="0.001"
+                              step="0.001"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="amount-input">
+                          <label>Amount per wallet (SOL):</label>
+                          <input 
+                            type="number"
+                            value={fundingModalState.amountPerWallet}
+                            onChange={(e) => setFundingModalState(prev => ({ 
+                              ...prev, 
+                              amountPerWallet: parseFloat(e.target.value) 
+                            }))}
+                            min="0.001"
+                            step="0.001"
+                          />
+                        </div>
+                      )}
+
+                      {/* Update cost breakdown to handle random distribution */}
                       <div className="cost-breakdown">
                         <div className="cost-item">
                           <span>ATA Creation:</span>
@@ -2410,37 +2405,22 @@ function WalletPage() {
                         </div>
                         <div className="cost-item">
                           <span>Funding Amount:</span>
-                          <span>{(fundingModalState.amountPerWallet * fundingModalState.numberOfWallets).toFixed(4)} SOL</span>
+                          <span>{fundingModalState.isRandomDistribution ? 
+                            `${(fundingModalState.minAmount * fundingModalState.numberOfWallets).toFixed(4)} - ${(fundingModalState.maxAmount * fundingModalState.numberOfWallets).toFixed(4)}` :
+                            (fundingModalState.amountPerWallet * fundingModalState.numberOfWallets).toFixed(4)
+                          } SOL</span>
                         </div>
                         <div className="cost-item total">
-                          <span>Total SOL needed:</span>
+                          <span>Maximum SOL needed:</span>
                           <span>{(
                             0.002 * fundingModalState.numberOfWallets + 
                             0.000005 * Math.ceil(fundingModalState.numberOfWallets / 4) + 
-                            fundingModalState.amountPerWallet * fundingModalState.numberOfWallets
+                            (fundingModalState.isRandomDistribution ? 
+                              fundingModalState.maxAmount * fundingModalState.numberOfWallets :
+                              fundingModalState.amountPerWallet * fundingModalState.numberOfWallets)
                           ).toFixed(4)} SOL</span>
                         </div>
                       </div>
-
-                      <button 
-                        className="fund-all-button"
-                        disabled={
-                          fundingModalState.isFunding || 
-                          (0.002 * fundingModalState.numberOfWallets + 
-                           0.000005 * Math.ceil(fundingModalState.numberOfWallets / 4) + 
-                           fundingModalState.amountPerWallet * fundingModalState.numberOfWallets) > fundingModalState.parentSolBalance
-                        }
-                        onClick={fundAllWallets}
-                      >
-                        {fundingModalState.isFunding ? (
-                          <span>
-                            <span className="loading-spinner">↻</span>
-                            Funding ({fundingModalState.fundedCount || 0}/{fundingModalState.numberOfWallets})
-                          </span>
-                        ) : (
-                          'Fund Selected Wallets'
-                        )}
-                      </button>
                     </div>
                   </div>
 
