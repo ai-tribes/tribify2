@@ -2685,14 +2685,150 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   font-weight: 500;
 }
 
+/* Update recovery section spacing */
 .recovery-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.recover-tokens-button,
+.recover-single-button {
+  padding: 12px;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
 }
 
 .recover-tokens-button {
-  padding: 12px 24px;
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid #e74c3c;
+  color: #e74c3c;
+}
+
+.recover-single-button {
+  background: rgba(52, 152, 219, 0.1);
+  border: 1px solid #3498db;
+  color: #3498db;
+}
+
+.single-recovery-modal {
+  max-width: 500px;
+  padding: 24px;
+}
+
+.single-recovery-form {
+  margin-top: 20px;
+}
+
+.single-recovery-form input {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: white;
+  font-family: monospace;
+  margin-bottom: 20px;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.modal-buttons button {
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-buttons .recover-button {
+  background: rgba(52, 152, 219, 0.1);
+  border: 1px solid #3498db;
+  color: #3498db;
+}
+
+.modal-buttons .cancel-button {
+  background: transparent;
+  border: 1px solid #888;
+  color: #888;
+}
+
+.recovery-stats {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);  /* Changed from 2 to 3 columns */
+  gap: 16px;
+}
+
+.stat {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.stat .success { color: #2ecc71; }
+.stat .failed { color: #e74c3c; }
+.stat .amount { color: #f1c40f; }
+
+.close-button {
+  margin-top: 20px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid #888;
+  color: #888;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.close-button:hover {
+  border-color: #fff;
+  color: #fff;
+}
+
+.total-recovered {
+  grid-column: 1 / -1;
+  background: rgba(46, 204, 113, 0.1) !important;
+  border: 1px solid #2ecc71;
+  padding: 12px;  /* Added more padding */
+  margin-top: 8px;  /* Added spacing */
+}
+
+.batch-wallet .wallet-address {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+.status.pending {
+  animation: pulse 1.5s infinite;
+}
+
+.recovery-options {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.recover-tokens-button,
+.recover-single-button {
+  flex: 1;
+  padding: 12px;
   background: rgba(231, 76, 60, 0.1);
   border: 1px solid #e74c3c;
   color: #e74c3c;
@@ -2700,33 +2836,94 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s ease;
-  width: 100%;
 }
 
-.recover-tokens-button:hover {
-  background: rgba(231, 76, 60, 0.2);
+.recover-single-button {
+  background: rgba(52, 152, 219, 0.1);
+  border-color: #3498db;
+  color: #3498db;
+}
+
+.single-recovery-input {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.single-recovery-input input {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: white;
+  font-family: monospace;
+}
+
+.recover-address-button {
+  padding: 8px 16px;
+  background: rgba(52, 152, 219, 0.1);
+  border: 1px solid #3498db;
+  color: #3498db;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.recover-address-button:hover,
+.recover-single-button:hover {
+  background: rgba(52, 152, 219, 0.2);
   transform: translateY(-1px);
 }
 
-.recovery-note {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #888;
-  text-align: center;
+.stat .funded {
+  color: #3498db;  /* Blue for funded wallets */
 }
 
-.wallet-balance {
-  font-family: monospace;
-  color: #2ecc71;
-  min-width: 150px;
-  text-align: right;
-  padding-right: 16px;
+.funding-status {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #3498db;
 }
 
-.wallet-row {
+.modal-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  padding: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 20px;
+}
+
+.close-modal-button {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: all 0.2s ease;
+}
+
+.close-modal-button:hover {
+  color: #fff;
+}
+
+.modal-footer {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.cancel-button {
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid #e74c3c;
+  color: #e74c3c;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-button:hover {
+  background: rgba(231, 76, 60, 0.2);
 }

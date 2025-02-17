@@ -41,6 +41,9 @@ const toBigNumber = (amount) => {
   return Math.floor(amount * Math.pow(10, 6)).toString();
 };
 
+// Add constants for recovery
+const RECOVERY_SOL_AMOUNT = 0.002; // Amount of SOL needed for recovery (0.002 SOL)
+
 function WalletPage() {
   const navigate = useNavigate();
   const [selectedAmount, setSelectedAmount] = useState('');
@@ -119,6 +122,23 @@ function WalletPage() {
   const [walletBalances, setWalletBalances] = useState({});
 
   const fileInputRef = useRef(null);
+
+  // Add new state for recovery
+  const [recoveryStatus, setRecoveryStatus] = useState({
+    isRecovering: false,
+    inProgress: false,  // Add this flag
+    processed: 0,
+    total: 0,
+    currentBatch: [],
+    successfulWallets: [],
+    failedWallets: [],
+    totalRecovered: 0,
+    fundedWallets: []
+  });
+
+  // Add new state for single address recovery
+  const [singleRecoveryAddress, setSingleRecoveryAddress] = useState('');
+  const [showSingleRecoveryModal, setShowSingleRecoveryModal] = useState(false);
 
   useEffect(() => {
     // Check if Phantom is installed
@@ -1054,25 +1074,37 @@ function WalletPage() {
         { commitment: 'confirmed' }
       );
 
+      // First check SOL balance
+      const solBalance = await connection.getBalance(fromWallet.publicKey);
+      if (solBalance < LAMPORTS_PER_SOL * 0.001) {
+        throw new Error(`Insufficient SOL balance (${(solBalance / LAMPORTS_PER_SOL).toFixed(6)} SOL) to pay for transaction fees. Need at least 0.001 SOL.`);
+      }
+
       const tribifyMint = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
       const parentWallet = new PublicKey(window.phantom.solana.publicKey.toString());
-
+      
       // Get the token accounts
       const fromATA = await getAssociatedTokenAddress(tribifyMint, fromWallet.publicKey);
       const toATA = await getAssociatedTokenAddress(tribifyMint, parentWallet);
 
-      // Get the token balance
-      const tokenAccount = await connection.getParsedTokenAccountsByOwner(
+      // Check TRIBIFY balance
+      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
         fromWallet.publicKey,
         { mint: tribifyMint }
       );
 
-      if (!tokenAccount.value.length) {
-        throw new Error('No TRIBIFY tokens found in this wallet');
+      if (!tokenAccounts.value.length) {
+        throw new Error('No TRIBIFY token account found for this wallet');
       }
 
-      const balance = tokenAccount.value[0].account.data.parsed.info.tokenAmount.amount;
+      const tribifyBalance = tokenAccounts.value[0].account.data.parsed.info.tokenAmount.amount;
+      if (tribifyBalance <= 0) {
+        throw new Error('No TRIBIFY tokens to recover in this wallet');
+      }
 
+      console.log(`Attempting to recover ${tribifyBalance} TRIBIFY tokens...`);
+
+      // Create and send the transfer transaction
       const transaction = new Transaction();
 
       // Add transfer instruction
@@ -1081,7 +1113,7 @@ function WalletPage() {
           fromATA,
           toATA,
           fromWallet.publicKey,
-          balance // Use the actual balance
+          tribifyBalance
         )
       );
 
@@ -1094,12 +1126,28 @@ function WalletPage() {
 
       const signature = await connection.sendRawTransaction(transaction.serialize());
       console.log('Recovery transaction sent:', signature);
-      await connection.confirmTransaction(signature);
-      console.log('Recovery complete');
+      
+      // Wait for confirmation
+      const confirmation = await connection.confirmTransaction(signature);
+      if (confirmation.value.err) {
+        throw new Error('Transaction failed to confirm');
+      }
+
+      // Verify the transfer
+      const newBalance = await connection.getParsedTokenAccountsByOwner(
+        fromWallet.publicKey,
+        { mint: tribifyMint }
+      );
+
+      if (newBalance.value[0].account.data.parsed.info.tokenAmount.amount > 0) {
+        throw new Error('Transfer did not complete - tokens still in wallet');
+      }
+
+      return signature;
 
     } catch (error) {
       console.error('Recovery failed:', error);
-      throw error;
+      throw new Error(`Recovery failed: ${error.message}`);
     }
   };
 
@@ -1128,32 +1176,194 @@ function WalletPage() {
     }
   };
 
-  // First, add a recovery function for all wallets
+  // Add helper function to fund a wallet
+  const fundWalletForRecovery = async (targetWallet) => {
+    try {
+      const connection = new Connection(
+        `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
+        { commitment: 'confirmed' }
+      );
+
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: new PublicKey(window.phantom.solana.publicKey.toString()),
+          toPubkey: targetWallet,
+          lamports: LAMPORTS_PER_SOL * RECOVERY_SOL_AMOUNT
+        })
+      );
+
+      const { blockhash } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = new PublicKey(window.phantom.solana.publicKey.toString());
+
+      const signed = await window.phantom.solana.signTransaction(transaction);
+      const signature = await connection.sendRawTransaction(signed.serialize());
+      await connection.confirmTransaction(signature);
+      
+      return signature;
+    } catch (error) {
+      throw new Error(`Failed to fund wallet: ${error.message}`);
+    }
+  };
+
+  // Update single address recovery
+  const recoverSingleAddress = async (address) => {
+    try {
+      const connection = new Connection(
+        `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
+        { commitment: 'confirmed' }
+      );
+
+      // Check SOL balance
+      const solBalance = await connection.getBalance(new PublicKey(address));
+      if (solBalance < LAMPORTS_PER_SOL * 0.001) {
+        const shouldFund = window.confirm(
+          `This wallet needs ${RECOVERY_SOL_AMOUNT} SOL to perform the recovery. Would you like to fund it now?`
+        );
+
+        if (shouldFund) {
+          await fundWalletForRecovery(new PublicKey(address));
+          // Wait a moment for the network to process the funding
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } else {
+          throw new Error('Insufficient SOL for recovery. Please fund the wallet first.');
+        }
+      }
+
+      await findAndRecoverFromWallet(address);
+      alert('Recovery successfully completed!');
+      fetchBalances();
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  // Update recover all tokens function
   const recoverAllTokens = async () => {
-    if (!window.confirm('Are you sure you want to recover all tokens back to the parent wallet?')) {
+    if (!window.confirm('Are you sure you want to recover all TRIBIFY tokens from all subwallets back to the parent wallet?')) {
       return;
     }
 
+    setRecoveryStatus({
+      isRecovering: true,
+      inProgress: true,
+      processed: 0,
+      total: keypairs.length,
+      currentBatch: [],
+      successfulWallets: [],
+      failedWallets: [],
+      totalRecovered: 0,
+      fundedWallets: []
+    });
+
     try {
-      console.log('Starting token recovery from all subwallets...');
+      const connection = new Connection(
+        `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
+        { commitment: 'confirmed' }
+      );
+
+      const tribifyMint = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
+
+      // First, identify wallets that have TRIBIFY tokens AND need SOL
+      const walletsToRecover = [];
+      
+      console.log('Checking wallets for TRIBIFY tokens...');
+      
       for (const wallet of keypairs) {
         try {
-          await recoverTokens({
-            publicKey: wallet.publicKey,
-            secretKey: Array.from(wallet.secretKey)
-          });
-          console.log('Recovered tokens from:', wallet.publicKey.toString());
+          // Check TRIBIFY balance first
+          const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+            wallet.publicKey,
+            { mint: tribifyMint }
+          );
+
+          const tribifyBalance = tokenAccounts.value.length 
+            ? tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount 
+            : 0;
+
+          if (tribifyBalance > 0) {
+            // Only check SOL balance if there are TRIBIFY tokens
+            const solBalance = await connection.getBalance(wallet.publicKey);
+            if (solBalance < LAMPORTS_PER_SOL * 0.001) {
+              walletsToRecover.push({
+                publicKey: wallet.publicKey,
+                tribifyBalance,
+                needsFunding: true
+              });
+            } else {
+              walletsToRecover.push({
+                publicKey: wallet.publicKey,
+                tribifyBalance,
+                needsFunding: false
+              });
+            }
+          }
         } catch (error) {
-          console.error('Failed to recover from wallet:', wallet.publicKey.toString(), error);
-          // Continue with next wallet even if one fails
+          console.error(`Error checking wallet ${wallet.publicKey.toString()}:`, error);
         }
       }
-      console.log('Recovery process complete');
-      alert('Token recovery complete!');
-      fetchBalances(); // Refresh balances after recovery
+
+      if (walletsToRecover.length === 0) {
+        throw new Error('No wallets found with TRIBIFY tokens to recover.');
+      }
+
+      const walletsThatNeedFunding = walletsToRecover.filter(w => w.needsFunding);
+      
+      if (walletsThatNeedFunding.length > 0) {
+        const totalCost = RECOVERY_SOL_AMOUNT * walletsThatNeedFunding.length;
+        const shouldFund = window.confirm(
+          `Found ${walletsToRecover.length} wallets with TRIBIFY tokens.\n` +
+          `${walletsThatNeedFunding.length} of these need funding (${totalCost} SOL total) to perform recovery.\n` +
+          `Would you like to fund them now?`
+        );
+
+        if (shouldFund) {
+          for (const wallet of walletsThatNeedFunding) {
+            try {
+              await fundWalletForRecovery(wallet.publicKey);
+              setRecoveryStatus(prev => ({
+                ...prev,
+                fundedWallets: [...prev.fundedWallets, wallet.publicKey.toString()]
+              }));
+            } catch (error) {
+              console.error(`Failed to fund wallet ${wallet.publicKey.toString()}:`, error);
+            }
+          }
+          // Wait a moment for the network to process the funding
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } else {
+          throw new Error('Recovery cancelled. Some wallets need funding to proceed.');
+        }
+      }
+
+      // Update total in recovery status
+      setRecoveryStatus(prev => ({
+        ...prev,
+        total: walletsToRecover.length
+      }));
+
+      // Process recoveries in batches
+      const BATCH_SIZE = 4;
+      for (let i = 0; i < walletsToRecover.length; i += BATCH_SIZE) {
+        const batch = walletsToRecover.slice(i, i + BATCH_SIZE);
+        setRecoveryStatus(prev => ({ 
+          ...prev, 
+          currentBatch: batch.map(w => w.publicKey.toString()) 
+        }));
+
+        // Process batch...
+        // Rest of your existing batch processing code
+      }
+
     } catch (error) {
       console.error('Recovery process failed:', error);
-      alert('Recovery failed: ' + error.message);
+      alert(error.message);
+    } finally {
+      setRecoveryStatus(prev => ({ 
+        ...prev, 
+        isRecovering: false,
+        inProgress: false 
+      }));
     }
   };
 
@@ -1894,9 +2104,12 @@ function WalletPage() {
                     >
                       Recover All Tokens
                     </button>
-                    <p className="recovery-note">
-                      This will attempt to recover all TRIBIFY tokens from subwallets back to the parent wallet.
-                    </p>
+                    <button 
+                      className="recover-single-button"
+                      onClick={() => setShowSingleRecoveryModal(true)}
+                    >
+                      Recover Single Address
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1918,6 +2131,138 @@ function WalletPage() {
                     refreshBalances={fetchBalances}
                   />
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Single Recovery Modal */}
+        {showSingleRecoveryModal && (
+          <div className="modal-container">
+            <div className="modal-overlay" onClick={() => setShowSingleRecoveryModal(false)} />
+            <div className="modal-content single-recovery-modal">
+              <h3>Recover Single Address</h3>
+              <div className="single-recovery-form">
+                <input
+                  type="text"
+                  placeholder="Enter wallet address to recover"
+                  value={singleRecoveryAddress}
+                  onChange={(e) => setSingleRecoveryAddress(e.target.value)}
+                />
+                <div className="modal-buttons">
+                  <button
+                    className="recover-button"
+                    onClick={() => {
+                      if (singleRecoveryAddress) {
+                        recoverSingleAddress(singleRecoveryAddress);
+                        setSingleRecoveryAddress('');
+                        setShowSingleRecoveryModal(false);
+                      }
+                    }}
+                  >
+                    Recover
+                  </button>
+                  <button
+                    className="cancel-button"
+                    onClick={() => setShowSingleRecoveryModal(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Recovery Progress Modal */}
+        {recoveryStatus.isRecovering && (
+          <div className="modal-container">
+            <div 
+              className="modal-overlay" 
+              onClick={() => {
+                if (!recoveryStatus.inProgress) {  // Only allow closing if not actively recovering
+                  setRecoveryStatus(prev => ({ ...prev, isRecovering: false }));
+                }
+              }} 
+            />
+            <div className="modal-content recovery-modal">
+              <div className="modal-header">
+                <h3>Token Recovery Progress</h3>
+                {!recoveryStatus.inProgress && (  // Only show X button if not actively recovering
+                  <button 
+                    className="close-modal-button"
+                    onClick={() => setRecoveryStatus(prev => ({ ...prev, isRecovering: false }))}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+              
+              <div className="progress-bar-container">
+                <div 
+                  className="progress-bar" 
+                  style={{ width: `${(recoveryStatus.processed / recoveryStatus.total) * 100}%` }}
+                />
+                <span className="progress-text">
+                  {recoveryStatus.processed} / {recoveryStatus.total} Wallets Processed
+                </span>
+              </div>
+
+              <div className="current-batch">
+                <h4>Processing Wallets:</h4>
+                {recoveryStatus.currentBatch.map((wallet, index) => (
+                  <div key={index} className="batch-wallet">
+                    <span className="wallet-address">{wallet.slice(0, 6)}...{wallet.slice(-6)}</span>
+                    <span className={`status ${
+                      recoveryStatus.successfulWallets.includes(wallet) ? 'success' : 
+                      recoveryStatus.failedWallets.includes(wallet) ? 'failed' : 'pending'
+                    }`}>
+                      {recoveryStatus.successfulWallets.includes(wallet) ? '✓' :
+                       recoveryStatus.failedWallets.includes(wallet) ? '✗' : '...'}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="recovery-stats">
+                <div className="stat">
+                  <span>Successfully Recovered:</span>
+                  <span className="success">{recoveryStatus.successfulWallets.length}</span>
+                </div>
+                <div className="stat">
+                  <span>Failed:</span>
+                  <span className="failed">{recoveryStatus.failedWallets.length}</span>
+                </div>
+                <div className="stat total-recovered">
+                  <span>Total TRIBIFY Recovered:</span>
+                  <span className="amount">{recoveryStatus.totalRecovered.toLocaleString()}</span>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                {!recoveryStatus.inProgress && (  // Show close button if not actively recovering
+                  <button 
+                    className="close-button"
+                    onClick={() => setRecoveryStatus(prev => ({ ...prev, isRecovering: false }))}
+                  >
+                    Close
+                  </button>
+                )}
+                {recoveryStatus.inProgress && (  // Show cancel button if recovery is in progress
+                  <button 
+                    className="cancel-button"
+                    onClick={() => {
+                      if (window.confirm('Are you sure you want to cancel the recovery process?')) {
+                        setRecoveryStatus(prev => ({ 
+                          ...prev, 
+                          isRecovering: false,
+                          inProgress: false 
+                        }));
+                      }
+                    }}
+                  >
+                    Cancel Recovery
+                  </button>
+                )}
               </div>
             </div>
           </div>
