@@ -18,6 +18,7 @@ import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { clusterApiUrl } from '@solana/web3.js';
 import HamburgerMenu from './components/HamburgerMenu';
+import TokenHolderGraph from './components/TokenHolderGraph';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -91,98 +92,6 @@ const getHolderColor = (address, tokenBalance) => {
     return '#ffa500';  // Orange/yellow for medium holders
   }
   return '#2ecc71';  // Green for small holders
-};
-
-// Add TokenHolderGraph component definition before App
-const TokenHolderGraph = ({ holders, onNodeClick, isCollapsed, setIsCollapsed }) => {
-  const graphRef = useRef();
-  const [localRandomized, setLocalRandomized] = useState(true);
-  
-  // Find the biggest holder to focus on
-  const biggestHolder = holders.reduce((max, holder) => 
-    holder.tokenBalance > max.tokenBalance ? holder : max
-  , holders[0]);
-
-  // Randomize or sort the data based on the toggle
-  const processedHolders = localRandomized 
-    ? [...holders].sort(() => Math.random() - 0.5)
-    : holders;
-
-  const graphData = {
-    nodes: processedHolders.map(holder => ({
-      id: holder.address,
-      val: Math.sqrt(holder.tokenBalance),
-      color: (holder.tokenBalance / TOTAL_SUPPLY) * 100 > 10 
-        ? '#ff0000' 
-        : (holder.tokenBalance / TOTAL_SUPPLY) * 100 > 1 
-          ? '#ffa500' 
-          : '#2ecc71',
-      label: `${((holder.tokenBalance / TOTAL_SUPPLY) * 100).toFixed(2)}%`,
-      x: holder.address === biggestHolder.address ? 0 : undefined,
-      y: holder.address === biggestHolder.address ? 0 : undefined
-    })),
-    links: processedHolders.map((holder) => ({
-      source: holder.address,
-      target: biggestHolder.address,
-      value: holder.tokenBalance / TOTAL_SUPPLY
-    }))
-  };
-
-  const focusOnWhale = useCallback(() => {
-    if (graphRef.current) {
-      graphRef.current.centerAt(0, 0, 1000);
-      graphRef.current.zoom(1.5, 2000);
-    }
-  }, []);
-
-  if (isCollapsed) {
-    return null; // Don't render anything when collapsed
-  }
-
-  return (
-    <div className="graph-container">
-      <div className="graph-controls">
-        <button onClick={focusOnWhale}>Reset View</button>
-        <label className="randomize-toggle">
-          <input
-            type="checkbox"
-            checked={localRandomized}
-            onChange={(e) => setLocalRandomized(e.target.checked)}
-          />
-          Randomize Order
-        </label>
-        <button 
-          className="collapse-button"
-          onClick={() => setIsCollapsed(true)}
-        >
-          Hide Graph
-        </button>
-      </div>
-      <ForceGraph2D
-        ref={graphRef}
-        graphData={graphData}
-        nodeLabel={node => `${node.id.slice(0, 4)}...${node.id.slice(-4)} (${node.label})`}
-        nodeColor={node => node.color}
-        nodeRelSize={3}
-        linkWidth={link => link.value * 2}
-        linkColor={() => '#ffffff33'}
-        backgroundColor={'#00000000'}
-        width={800}
-        height={600}
-        onNodeClick={node => onNodeClick(node.id)}
-        d3Force={{
-          charge: d3.forceManyBody().strength(-2000),
-          link: d3.forceLink().distance(d => 
-            d.source.id === biggestHolder.address || d.target.id === biggestHolder.address ? 200 : 100
-          ),
-          x: d3.forceX(d => 
-            d.id === biggestHolder.address ? 200 : 600
-          ).strength(0.5),
-          y: d3.forceY(300).strength(0.1)
-        }}
-      />
-    </div>
-  );
 };
 
 // Add this component before the App component
@@ -403,7 +312,7 @@ How can I help you get started?`
   });
 
   // Add state to control views (near other state declarations)
-  const [activeView, setActiveView] = useState('ai'); // Options: 'ai', 'holders'
+  const [activeView, setActiveView] = useState('ai'); // Options: 'ai', 'holders', 'graph'
 
   // Define WalletTable component inside App to access state and functions
   const WalletTable = ({ wallets, onCopy }) => {
@@ -1340,7 +1249,12 @@ Need help setting up distribution? Just ask!`;
             <Backup onClick={backupNicknames} />
             <Restore onClick={() => document.getElementById('restore-input').click()} />
             <button className="docs-button" onClick={() => setShowDocs(!showDocs)}>Docs</button>
-            <button className="graph-toggle-button" onClick={() => setIsCollapsed(!isCollapsed)}>Graph</button>
+            <button 
+              className="graph-toggle-button" 
+              onClick={() => setActiveView('graph')}
+            >
+              Graph
+            </button>
             <button className="status-toggle-button" onClick={() => setShowStatus(!showStatus)}>Connection</button>
             <Disconnect onClick={handleDisconnect} />
           </div>
@@ -1399,6 +1313,21 @@ Need help setting up distribution? Just ask!`;
                   onNodeClick={handleOpenChat}
                   nicknames={nicknames}
                   setNicknames={setNicknames}
+                />
+              </div>
+            )}
+
+            {activeView === 'graph' && (
+              <div className="graph-container">
+                <TokenHolderGraph 
+                  holders={tokenHolders.map(holder => ({
+                    id: holder.address,
+                    value: holder.tokenBalance,
+                    name: nicknames[holder.address] || holder.address,
+                    address: holder.address
+                  }))}
+                  width={window.innerWidth - 40}  // Full width minus margins
+                  height={window.innerHeight - 200}  // Full height minus header space
                 />
               </div>
             )}
