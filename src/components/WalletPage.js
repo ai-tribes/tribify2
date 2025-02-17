@@ -1648,6 +1648,59 @@ function WalletPage() {
     }
   }, [isFundingModalOpen]);
 
+  // Add this function before the return statement
+  const handleMassConversion = async (fromToken, toToken) => {
+    try {
+      // Calculate total amount available for conversion
+      const totalAmount = Object.entries(walletBalances)
+        .filter(([key]) => key !== 'parent')
+        .reduce((sum, [_, balance]) => sum + (balance[fromToken.toLowerCase()] || 0), 0);
+
+      if (totalAmount <= 0) {
+        alert(`No ${fromToken} available to convert`);
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `This will convert all ${fromToken} (${totalAmount.toLocaleString()} ${fromToken}) to ${toToken} ` +
+        `from ${keypairs.length} subwallets.\n\n` +
+        `Continue?`
+      );
+
+      if (!confirmed) return;
+
+      setStatus(`Converting ${fromToken} to ${toToken}...`);
+      
+      // Prepare all conversion transactions
+      const transactions = [];
+      for (const keypair of keypairs) {
+        const balance = walletBalances[keypair.publicKey.toString()]?.[fromToken.toLowerCase()];
+        if (!balance || balance <= 0) continue;
+
+        // Here you would create the appropriate swap transaction
+        // This is a placeholder - you'll need to implement the actual swap logic
+        const transaction = new Transaction();
+        // Add swap instructions here based on fromToken and toToken
+        
+        transaction.feePayer = keypair.publicKey;
+        // Sign transaction with the subwallet's keypair
+        transaction.sign(keypair);
+        transactions.push(transaction);
+      }
+
+      // Use the transaction queue to process all conversions
+      await txQueue.add(transactions, (processed) => {
+        setStatus(`Converted ${processed}/${transactions.length} wallets`);
+      });
+
+      await fetchBalances();
+      setStatus(`Successfully converted all ${fromToken} to ${toToken}`);
+    } catch (error) {
+      console.error('Mass conversion failed:', error);
+      setStatus(`Failed to convert: ${error.message}`);
+    }
+  };
+
   return (
     <div className="wallet-fullscreen">
       {notification && (
@@ -1662,75 +1715,86 @@ function WalletPage() {
       )}
       <div className="wallet-content">
         <div className="wallet-header">
+          {/* First row of buttons */}
           <div className="wallet-controls">
             <div className="left-controls">
               <button onClick={() => navigate(-1)}>Close Wallet</button>
-              <button 
-                onClick={generateHDWallet} 
-                disabled={generating}
-              >
+              <button onClick={generateHDWallet} disabled={generating}>
                 {generating ? 'Generating...' : 'Generate Keys'}
               </button>
-              <button 
-                onClick={downloadKeypairs} 
-                disabled={keypairs.length === 0}
-              >
+              <button onClick={downloadKeypairs} disabled={keypairs.length === 0}>
                 Download Keys
               </button>
-              <button 
-                onClick={() => fileInputRef.current?.click()} 
-              >
+              <button onClick={() => fileInputRef.current?.click()}>
                 Restore Keys
               </button>
-              <button 
-                onClick={fetchBalances}
-                disabled={keypairs.length === 0 || isLoading}
-              >
+              <button onClick={fetchBalances} disabled={keypairs.length === 0 || isLoading}>
                 Refresh
               </button>
-              <button 
-                className="distribute-button"
-                onClick={() => setIsDistributeModalOpen(true)}
-              >
-                Distribute $Tribify
-              </button>
-              <button 
-                className="fund-button"
-                onClick={() => {
-                  setIsFundingModalOpen(true);
-                }}
-              >
+            </div>
+          </div>
+
+          {/* Second row of buttons */}
+          <div className="wallet-controls secondary">
+            <div className="left-controls">
+              <button className="fund-button" onClick={() => setIsFundingModalOpen(true)}>
                 Fund Subwallets
               </button>
+              <button className="distribute-button" onClick={() => setIsDistributeModalOpen(true)}>
+                Distribute $Tribify
+              </button>
               <button onClick={() => setIsBuyModalOpen(true)}>Configure Buy</button>
-              <button 
-                className="sequence-button"
-                onClick={() => {
-                  buyAndDistribute();
-                  setStatus('Buy sequence started');
-                }}
-              >
+              <button className="sequence-button" onClick={() => {
+                buyAndDistribute();
+                setStatus('Buy sequence started');
+              }}>
                 Buy Sequence
               </button>
               <button onClick={() => setIsSellModalOpen(true)}>Configure Sell</button>
-              <button 
-                className="sequence-button sell"
-                onClick={() => {
-                  sellAndDistribute();
-                  setStatus('Sell sequence started');
-                }}
-              >
+              <button className="sequence-button sell" onClick={() => {
+                sellAndDistribute();
+                setStatus('Sell sequence started');
+              }}>
                 Sell Sequence
               </button>
-              <button 
-                className={`toggle-private-keys ${showPrivateKeys ? 'active' : ''}`}
-                onClick={() => setShowPrivateKeys(!showPrivateKeys)}
-              >
-                {showPrivateKeys ? 'Hide Private Keys' : 'Show Private Keys'}
-              </button>
             </div>
-            <div className="right-controls">
-              <button className="sell-all-button">Sell All</button>
+          </div>
+
+          {/* Third row - conversion buttons */}
+          <div className="wallet-controls tertiary">
+            <div className="conversion-buttons">
+              {/* TRIBIFY conversions */}
+              <div className="conversion-group tribify">
+                <span className="group-label">Convert TRIBIFY to:</span>
+                <button className="convert-button tribify-to-sol" onClick={() => handleMassConversion('TRIBIFY', 'SOL')}>
+                  SOL
+                </button>
+                <button className="convert-button tribify-to-usdc" onClick={() => handleMassConversion('TRIBIFY', 'USDC')}>
+                  USDC
+                </button>
+              </div>
+
+              {/* SOL conversions */}
+              <div className="conversion-group sol">
+                <span className="group-label">Convert SOL to:</span>
+                <button className="convert-button sol-to-tribify" onClick={() => handleMassConversion('SOL', 'TRIBIFY')}>
+                  TRIBIFY
+                </button>
+                <button className="convert-button sol-to-usdc" onClick={() => handleMassConversion('SOL', 'USDC')}>
+                  USDC
+                </button>
+              </div>
+
+              {/* USDC conversions */}
+              <div className="conversion-group usdc">
+                <span className="group-label">Convert USDC to:</span>
+                <button className="convert-button usdc-to-tribify" onClick={() => handleMassConversion('USDC', 'TRIBIFY')}>
+                  TRIBIFY
+                </button>
+                <button className="convert-button usdc-to-sol" onClick={() => handleMassConversion('USDC', 'SOL')}>
+                  SOL
+                </button>
+              </div>
             </div>
           </div>
         </div>
