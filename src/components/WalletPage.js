@@ -140,6 +140,19 @@ function WalletPage() {
   const [singleRecoveryAddress, setSingleRecoveryAddress] = useState('');
   const [showSingleRecoveryModal, setShowSingleRecoveryModal] = useState(false);
 
+  // Add new state for button loading
+  const [loadingStates, setLoadingStates] = useState({
+    recoverAll: false,
+    recoverSingle: false
+  });
+
+  const [statusMessage, setStatusMessage] = useState(null);
+
+  const showStatus = (message, duration = 3000) => {
+    setStatusMessage(message);
+    setTimeout(() => setStatusMessage(null), duration);
+  };
+
   useEffect(() => {
     // Check if Phantom is installed
     if (!window.phantom?.solana) {
@@ -1240,6 +1253,7 @@ function WalletPage() {
 
   // Update recover all tokens function
   const recoverAllTokens = async () => {
+    showStatus('Starting recovery process...');
     if (!window.confirm('Are you sure you want to recover all TRIBIFY tokens from all subwallets back to the parent wallet?')) {
       return;
     }
@@ -1390,10 +1404,14 @@ function WalletPage() {
       }
 
       await fetchBalances();
+      showStatus(`Found ${walletsToRecover.length} wallets with tokens...`);
+      showStatus(`Funding ${walletsThatNeedFunding.length} wallets...`);
+      showStatus(`Processing batch ${Math.floor(recoveryStatus.processed / BATCH_SIZE) + 1} of ${Math.ceil(walletsToRecover.length / BATCH_SIZE)}...`);
 
     } catch (error) {
       console.error('Recovery process failed:', error);
       alert(error.message);
+      showStatus(`Error: ${error.message}`, 5000);
     } finally {
       setRecoveryStatus(prev => ({ 
         ...prev, 
@@ -1408,6 +1426,11 @@ function WalletPage() {
       {notification && (
         <div className="copy-notification">
           {notification}
+        </div>
+      )}
+      {statusMessage && (
+        <div className="status-message">
+          {statusMessage}
         </div>
       )}
       <div className="wallet-content">
@@ -1442,7 +1465,7 @@ function WalletPage() {
                 className="distribute-button"
                 onClick={() => setIsDistributeModalOpen(true)}
               >
-                Distribute Tokens
+                Distribute $Tribify
               </button>
               <button 
                 className="fund-button"
@@ -1487,8 +1510,13 @@ function WalletPage() {
           </div>
         </div>
         <div className="parent-wallet-info">
-          <span className="label">Parent Wallet:</span>
-          <span className="address">{parentWalletAddress || 'Not Connected'}</span>
+          <div className="parent-wallet-row">
+            <span className="label">Parent Wallet:</span>
+            <span className="address">{parentWalletAddress || 'Not Connected'}</span>
+            <span className="parent-balance">
+              {walletBalances['parent']?.toLocaleString() || '0'} TRIBIFY
+            </span>
+          </div>
         </div>
         <div className="wallet-table">
           <div className="table-header">
@@ -1502,11 +1530,11 @@ function WalletPage() {
           </div>
           
           <div className="table-row totals-row">
-            <div className="col-index">0</div>
-            <div className="col-private">CUMULATIVE BALANCE</div>
-            <div className="col-public"></div>
+            <div className="col-index">-</div>
+            <div className="col-private">CUMULATIVE SUBWALLETS' BALANCE</div>
+            <div className="col-public">-</div>
             <div className="col-tribify total-value">
-              {calculateTotals().tribify} TRIBIFY
+              {calculateTotals().tribify.toLocaleString()} TRIBIFY
             </div>
             <div className="col-sol total-value">
               {calculateTotals().sol.toFixed(4)} SOL
@@ -1514,9 +1542,7 @@ function WalletPage() {
             <div className="col-usdc total-value">
               ${calculateTotals().usdc.toFixed(2)}
             </div>
-            <div className="col-message">
-              {contractAddress || '-'}
-            </div>
+            <div className="col-message">-</div>
           </div>
 
           {keypairs.map((keypair, i) => (
@@ -2135,14 +2161,23 @@ function WalletPage() {
                   </div>
                   <div className="recovery-section">
                     <button 
-                      className="recover-tokens-button"
-                      onClick={recoverAllTokens}
+                      className={`recover-tokens-button ${loadingStates.recoverAll ? 'loading' : ''}`}
+                      onClick={async () => {
+                        setLoadingStates(prev => ({ ...prev, recoverAll: true }));
+                        await recoverAllTokens();
+                        setLoadingStates(prev => ({ ...prev, recoverAll: false }));
+                      }}
+                      disabled={loadingStates.recoverAll}
                     >
-                      Recover All Tokens
+                      {loadingStates.recoverAll ? (
+                        <span className="loading-spinner">↻</span>
+                      ) : 'Recover All Tokens'}
                     </button>
+                    
                     <button 
-                      className="recover-single-button"
+                      className={`recover-single-button ${loadingStates.recoverSingle ? 'loading' : ''}`}
                       onClick={() => setShowSingleRecoveryModal(true)}
+                      disabled={loadingStates.recoverSingle}
                     >
                       Recover Single Address
                     </button>
@@ -2152,7 +2187,7 @@ function WalletPage() {
 
               <div className="modal-right">
                 <div className="dialog-header">
-                  <h3>Distribute TRIBIFY Tokens</h3>
+                  <h3>Distribute $Tribify</h3>
                   <button onClick={() => setIsDistributeModalOpen(false)}>×</button>
                 </div>
 
