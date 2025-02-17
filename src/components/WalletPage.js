@@ -176,6 +176,9 @@ function WalletPage() {
     fundedCount: 0,
   });
 
+  // Add new state for showing/hiding private keys
+  const [showPrivateKeys, setShowPrivateKeys] = useState(false);
+
   const showStatus = (message, duration = 3000) => {
     setStatusMessage(message);
     setTimeout(() => setStatusMessage(null), duration);
@@ -1646,6 +1649,12 @@ function WalletPage() {
               >
                 Sell Sequence
               </button>
+              <button 
+                className={`toggle-private-keys ${showPrivateKeys ? 'active' : ''}`}
+                onClick={() => setShowPrivateKeys(!showPrivateKeys)}
+              >
+                {showPrivateKeys ? 'Hide Private Keys' : 'Show Private Keys'}
+              </button>
             </div>
             <div className="right-controls">
               <button 
@@ -1679,6 +1688,14 @@ function WalletPage() {
             </div>
           </div>
         </div>
+        <div className="wallet-controls">
+          <button 
+            className={`toggle-private-keys ${showPrivateKeys ? 'active' : ''}`}
+            onClick={() => setShowPrivateKeys(!showPrivateKeys)}
+          >
+            {showPrivateKeys ? 'Hide Private Keys' : 'Show Private Keys'}
+          </button>
+        </div>
         <div className="wallet-table">
           <div className="table-header">
             <div className="col-index">#</div>
@@ -1687,7 +1704,6 @@ function WalletPage() {
             <div className="col-tribify">TRIBIFY</div>
             <div className="col-sol">SOL</div>
             <div className="col-usdc">USDC</div>
-            <div className="col-message">Message</div>
           </div>
           
           <div className="table-row totals-row">
@@ -1703,7 +1719,6 @@ function WalletPage() {
             <div className="col-usdc total-value">
               ${calculateTotals().usdc.toFixed(2)}
             </div>
-            <div className="col-message">-</div>
           </div>
 
           {keypairs.map((keypair, i) => (
@@ -1713,7 +1728,9 @@ function WalletPage() {
                 className={`col-private ${copiedStates[`private-${i}`] ? 'copied' : ''}`}
                 onClick={() => copyToClipboard(Buffer.from(keypair.secretKey).toString('hex'), i, 'private')}
               >
-                {Buffer.from(keypair.secretKey).toString('hex')}
+                {showPrivateKeys 
+                  ? Buffer.from(keypair.secretKey).toString('hex')
+                  : '••••••••••••••••••••••'}
               </div>
               <div 
                 className={`col-public ${copiedStates[`public-${i}`] ? 'copied' : ''}`}
@@ -1729,9 +1746,6 @@ function WalletPage() {
               </div>
               <div className="col-usdc">
                 ${(keypair.usdcBalance || 0).toFixed(2)}
-              </div>
-              <div className="col-message">
-                {contractAddress || '-'}
               </div>
             </div>
           ))}

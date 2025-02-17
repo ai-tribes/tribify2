@@ -2184,10 +2184,9 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 
 .wallet-controls {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  padding: 0 15px;
+  justify-content: flex-start;  /* Change from flex-end to flex-start */
+  margin: 12px 0;  /* Adjust margin for better spacing */
+  padding: 0 4px;  /* Add slight padding */
 }
 
 .left-controls {
@@ -3479,4 +3478,45 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid #fff;
   color: #fff;
+}
+
+.wallet-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.toggle-private-keys {
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid #e74c3c;
+  color: #e74c3c;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-family: monospace;  /* Add monospace font for consistency */
+}
+
+.toggle-private-keys:hover {
+  background: rgba(231, 76, 60, 0.2);
+  transform: translateY(-1px);
+}
+
+.toggle-private-keys.active {
+  background: rgba(231, 76, 60, 0.2);
+  color: #fff;
+  border-color: #c0392b;
+}
+
+.col-private {
+  font-family: monospace;
+  cursor: pointer;
+}
+
+/* Update the existing copied state styling */
+.col-private.copied::after {
+  content: '✓';
+  color: #2ecc71;
+  margin-left: 8px;
 }
