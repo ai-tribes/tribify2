@@ -2584,3 +2584,56 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 .balance-value.sol {
   color: #f1c40f;  /* Yellow for SOL balance */
 }
+
+.distribution-type {
+  margin: 24px 0;
+}
+
+.distribution-options {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.distribution-option {
+  flex: 1;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.distribution-option:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.distribution-option.active {
+  background: rgba(46, 204, 113, 0.1);
+  border-color: #2ecc71;
+}
+
+.option-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.option-header span {
+  font-weight: 500;
+  color: #fff;
+}
+
+.option-description {
+  margin: 0;
+  font-size: 12px;
+  color: #888;
+  line-height: 1.4;
+}
+
+.distribution-option input[type="radio"] {
+  margin: 0;
+  cursor: pointer;
+}

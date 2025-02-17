@@ -252,25 +252,38 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
           />
         </div>
 
-        <div className="form-group checkbox">
-          <label>
-            <input
-              type="checkbox"
-              checked={distributionConfig.isRandomDistribution}
-              onChange={(e) => {
-                setDistributionConfig(prev => ({
-                  ...prev,
-                  isRandomDistribution: e.target.checked
-                }));
-              }}
-            />
-            Distribute tokens randomly
-          </label>
-          <div className="checkbox-description">
-            {distributionConfig.isRandomDistribution 
-              ? "Tokens will be distributed in random amounts while maintaining the total"
-              : "Tokens will be distributed equally to all wallets"
-            }
+        <div className="form-group distribution-type">
+          <label>Distribution Type:</label>
+          <div className="distribution-options">
+            <div 
+              className={`distribution-option ${!distributionConfig.isRandomDistribution ? 'active' : ''}`}
+              onClick={() => setDistributionConfig(prev => ({ ...prev, isRandomDistribution: false }))}
+            >
+              <div className="option-header">
+                <input
+                  type="radio"
+                  checked={!distributionConfig.isRandomDistribution}
+                  onChange={() => setDistributionConfig(prev => ({ ...prev, isRandomDistribution: false }))}
+                />
+                <span>Equal Distribution</span>
+              </div>
+              <p className="option-description">All selected wallets receive the same amount of tokens</p>
+            </div>
+
+            <div 
+              className={`distribution-option ${distributionConfig.isRandomDistribution ? 'active' : ''}`}
+              onClick={() => setDistributionConfig(prev => ({ ...prev, isRandomDistribution: true }))}
+            >
+              <div className="option-header">
+                <input
+                  type="radio"
+                  checked={distributionConfig.isRandomDistribution}
+                  onChange={() => setDistributionConfig(prev => ({ ...prev, isRandomDistribution: true }))}
+                />
+                <span>Random Distribution</span>
+              </div>
+              <p className="option-description">Tokens are distributed in random amounts while maintaining the total</p>
+            </div>
           </div>
         </div>
 
