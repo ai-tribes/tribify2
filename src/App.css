@@ -2253,3 +2253,25 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 .distribute-button:active {
   transform: translateY(0);
 }
+
+/* Distribute modal specific styles */
+.dialog-footer {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dialog-footer .distribute-button {
+  background: #f1c40f !important;
+  border-color: #f1c40f !important;
+  color: #000 !important;
+  font-weight: 600;
+  padding: 12px 24px;
+}
+
+.dialog-footer .distribute-button:hover {
+  background: #f39c12 !important;
+  border-color: #f39c12 !important;
+}
