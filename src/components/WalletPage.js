@@ -1152,27 +1152,27 @@ function WalletPage() {
   };
 
   const findAndRecoverFromWallet = async (targetAddress) => {
-    // Find the keypair with this public key
-    const walletIndex = keypairs.findIndex(kp => 
-      kp.publicKey.toString() === targetAddress
-    );
-
-    if (walletIndex === -1) {
-      console.error('Address not found in subwallets:', targetAddress);
-      return;
-    }
-
-    console.log(`Found wallet at index ${walletIndex}`);
-    const wallet = keypairs[walletIndex];
-
     try {
-      await recoverTokens({
+      // Find the keypair with this public key
+      const wallet = keypairs.find(kp => 
+        kp.publicKey.toString() === targetAddress
+      );
+
+      if (!wallet) {
+        throw new Error('Address not found in subwallets');
+      }
+
+      console.log(`Found wallet, attempting recovery...`);
+      const signature = await recoverTokens({
         publicKey: wallet.publicKey,
         secretKey: Array.from(wallet.secretKey)
       });
-      console.log('Recovery initiated for wallet:', targetAddress);
+
+      console.log('Recovery successful, signature:', signature);
+      return signature;
     } catch (error) {
       console.error('Recovery failed:', error);
+      throw error;
     }
   };
 
@@ -1351,9 +1351,45 @@ function WalletPage() {
           currentBatch: batch.map(w => w.publicKey.toString()) 
         }));
 
-        // Process batch...
-        // Rest of your existing batch processing code
+        // Actually process the batch
+        await Promise.all(batch.map(async (wallet) => {
+          try {
+            // Find the keypair for this wallet
+            const keypair = keypairs.find(kp => 
+              kp.publicKey.toString() === wallet.publicKey.toString()
+            );
+
+            if (!keypair) {
+              throw new Error('Keypair not found');
+            }
+
+            await recoverTokens({
+              publicKey: keypair.publicKey,
+              secretKey: Array.from(keypair.secretKey)
+            });
+
+            setRecoveryStatus(prev => ({
+              ...prev,
+              successfulWallets: [...prev.successfulWallets, wallet.publicKey.toString()],
+              totalRecovered: prev.totalRecovered + wallet.tribifyBalance,
+              processed: prev.processed + 1
+            }));
+
+          } catch (error) {
+            console.error(`Failed to recover from wallet ${wallet.publicKey.toString()}:`, error);
+            setRecoveryStatus(prev => ({
+              ...prev,
+              failedWallets: [...prev.failedWallets, wallet.publicKey.toString()],
+              processed: prev.processed + 1
+            }));
+          }
+        }));
+
+        // Wait between batches
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
+
+      await fetchBalances();
 
     } catch (error) {
       console.error('Recovery process failed:', error);
