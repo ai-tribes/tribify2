@@ -1,8 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Connection, PublicKey, LAMPORTS_PER_SOL, Transaction } from '@solana/web3.js';
+import { 
+  TOKEN_PROGRAM_ID, 
+  createTransferInstruction,
+  getAssociatedTokenAddress,
+  createAssociatedTokenAccountInstruction
+} from '@solana/spl-token';
 
 // Estimated SOL fee per transaction
 const ESTIMATED_SOL_PER_TX = 0.000005;
+
+const toBigNumber = (amount) => {
+  // Convert to integer representation with 6 decimals
+  return Math.floor(amount * Math.pow(10, 6)).toString();
+};
 
 const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
   const [walletInfo, setWalletInfo] = useState({
@@ -81,6 +92,110 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
   useEffect(() => {
     fetchWalletBalances();
   }, []);
+
+  const distributeTokens = async () => {
+    try {
+      const connection = new Connection(
+        `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
+        {
+          commitment: 'confirmed',
+          wsEndpoint: undefined,
+          confirmTransactionInitialTimeout: 60000
+        }
+      );
+
+      const tribifyMint = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
+      const parentPublicKey = new PublicKey(window.phantom.solana.publicKey.toString());
+
+      // Get parent token account
+      const parentTokenAccount = (await connection.getParsedTokenAccountsByOwner(
+        parentPublicKey,
+        { mint: tribifyMint }
+      )).value[0].pubkey;
+
+      // Create a single transaction
+      const transaction = new Transaction();
+
+      // Select wallets and calculate amounts
+      const selectedWallets = subwallets.slice(0, distributionConfig.numberOfWallets);
+      const amounts = distributionConfig.isRandomDistribution 
+        ? generateRandomAmounts(distributionConfig.totalAmount, distributionConfig.numberOfWallets)
+        : Array(distributionConfig.numberOfWallets).fill(distributionConfig.amountPerWallet);
+
+      // Add instructions for each transfer
+      for (let i = 0; i < selectedWallets.length; i++) {
+        const wallet = selectedWallets[i];
+        const amount = amounts[i];
+
+        // Get or create ATA for recipient
+        const recipientATA = await getAssociatedTokenAddress(
+          tribifyMint,
+          new PublicKey(wallet.publicKey)
+        );
+
+        // Check if ATA exists
+        const accountInfo = await connection.getAccountInfo(recipientATA);
+        if (!accountInfo) {
+          // Add create ATA instruction if needed
+          transaction.add(
+            createAssociatedTokenAccountInstruction(
+              parentPublicKey, // payer
+              recipientATA, // ata
+              new PublicKey(wallet.publicKey), // owner
+              tribifyMint // mint
+            )
+          );
+        }
+
+        // Add transfer instruction
+        transaction.add(
+          createTransferInstruction(
+            parentTokenAccount, // source
+            recipientATA, // destination
+            parentPublicKey, // owner
+            toBigNumber(amount) // amount with decimals
+          )
+        );
+      }
+
+      // Get recent blockhash
+      const { blockhash } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = parentPublicKey;
+
+      // Sign and send transaction
+      try {
+        const signed = await window.phantom.solana.signTransaction(transaction);
+        const signature = await connection.sendRawTransaction(signed.serialize());
+        await connection.confirmTransaction(signature);
+
+        console.log('Distribution complete:', signature);
+        onComplete?.();
+      } catch (error) {
+        console.error('Transaction failed:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Distribution failed:', error);
+    }
+  };
+
+  // Helper function to generate random amounts that sum to total
+  const generateRandomAmounts = (total, count) => {
+    const amounts = Array(count).fill(0);
+    let remaining = total;
+
+    // Generate random proportions
+    const proportions = Array(count).fill(0).map(() => Math.random());
+    const sum = proportions.reduce((a, b) => a + b, 0);
+
+    // Normalize proportions to sum to total
+    return proportions.map((p, i) => {
+      const amount = (p / sum) * total;
+      // For last item, use remaining to avoid floating point errors
+      return i === count - 1 ? remaining : amount;
+    });
+  };
 
   return (
     <div className="distribution-container">
@@ -189,9 +304,7 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
             distributionConfig.totalAmount <= 0 ||
             calculateTotalFees() > walletInfo.solBalance
           }
-          onClick={() => {
-            console.log('Distribution config:', distributionConfig);
-          }}
+          onClick={distributeTokens}
         >
           {calculateTotalFees() > walletInfo.solBalance 
             ? 'Insufficient SOL for fees'

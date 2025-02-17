@@ -1737,19 +1737,30 @@ function WalletPage() {
                   <div className="explanation-section">
                     <h3>Distribution Process</h3>
                     <ul>
-                      <li>Check your available TRIBIFY balance</li>
-                      <li>Enter the total amount you want to distribute</li>
-                      <li>Amount will be split equally among all subwallets</li>
-                      <li>Each transaction requires your approval</li>
+                      <li>Enter total TRIBIFY amount to distribute from your balance</li>
+                      <li>Choose number of recipient wallets (1-100)</li>
+                      <li>Select equal or random distribution</li>
+                      <li>Review distribution preview and SOL fees</li>
+                      <li>One signature to distribute to all wallets</li>
                     </ul>
                   </div>
                   <div className="explanation-section">
                     <h3>Requirements</h3>
                     <ul>
                       <li>Connected Phantom Wallet</li>
+                      <li>Generated Subwallets ({keypairs.length ? `${keypairs.length} ready` : 'none yet'})</li>
                       <li>Sufficient TRIBIFY balance</li>
                       <li>SOL for transaction fees</li>
                     </ul>
+                    {!keypairs.length && (
+                      <button 
+                        className="generate-keys-button"
+                        onClick={generateHDWallet}
+                        disabled={generating}
+                      >
+                        {generating ? 'Generating...' : 'Generate Subwallets'}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
