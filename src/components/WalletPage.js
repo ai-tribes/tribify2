@@ -166,7 +166,8 @@ function WalletPage() {
     selectedWallets: [], // For selective funding
     parentSolBalance: 0,
     isRecovering: false,
-    recoveredAmount: 0
+    recoveredAmount: 0,
+    numberOfWallets: 1 // Added this line
   });
 
   const showStatus = (message, duration = 3000) => {
@@ -1590,6 +1591,28 @@ function WalletPage() {
     )}
   </button>
 
+  // Add useEffect to fetch parent SOL balance when modal opens
+  useEffect(() => {
+    if (isFundingModalOpen) {
+      const fetchParentSOLBalance = async () => {
+        try {
+          const connection = getConnection();
+          const balance = await connection.getBalance(
+            new PublicKey(window.phantom.solana.publicKey.toString())
+          );
+          setFundingModalState(prev => ({ 
+            ...prev, 
+            parentSolBalance: balance / LAMPORTS_PER_SOL 
+          }));
+        } catch (error) {
+          console.error('Error fetching parent SOL balance:', error);
+        }
+      };
+
+      fetchParentSOLBalance();
+    }
+  }, [isFundingModalOpen]);
+
   return (
     <div className="wallet-fullscreen">
       {notification && (
@@ -1638,7 +1661,9 @@ function WalletPage() {
               </button>
               <button 
                 className="fund-button"
-                onClick={() => setIsFundingModalOpen(true)}
+                onClick={() => {
+                  setIsFundingModalOpen(true);
+                }}
               >
                 Fund Subwallets
               </button>
@@ -2232,10 +2257,86 @@ function WalletPage() {
                       Recommended minimum is 0.01 SOL per wallet for active trading.
                     </p>
                   </div>
+
+                  <div className="explanation-section">
+                    <h3>Cost Breakdown</h3>
+                    <ul>
+                      <li>ATA Creation: 0.002 SOL per wallet</li>
+                      <li>Transaction Fee: 0.000005 SOL per operation</li>
+                      <li>Funding Amount: Your chosen amount per wallet</li>
+                    </ul>
+                    <div className="cost-example">
+                      <p>Example for 10 wallets with 0.01 SOL each:</p>
+                      <ul>
+                        <li>ATAs: 10 × 0.002 = 0.02 SOL</li>
+                        <li>TX Fees: ≈ 0.0001 SOL</li>
+                        <li>Funding: 10 × 0.01 = 0.1 SOL</li>
+                        <li>Total: ≈ 0.1201 SOL</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Add wallet selection */}
+                  <div className="funding-controls">
+                    <div className="wallet-selection">
+                      <label>Number of wallets to fund:</label>
+                      <input 
+                        type="number"
+                        value={fundingModalState.numberOfWallets}
+                        onChange={(e) => {
+                          const value = Math.min(Math.max(1, parseInt(e.target.value)), keypairs.length);
+                          setFundingModalState(prev => ({ 
+                            ...prev, 
+                            numberOfWallets: value 
+                          }));
+                        }}
+                        min="1"
+                        max={keypairs.length}
+                      />
+                      <span className="max-wallets">Max: {keypairs.length}</span>
+                    </div>
+
+                    <div className="amount-input">
+                      <label>Amount per wallet (SOL):</label>
+                      <input 
+                        type="number"
+                        value={fundingModalState.amountPerWallet}
+                        onChange={(e) => setFundingModalState(prev => ({ 
+                          ...prev, 
+                          amountPerWallet: parseFloat(e.target.value) 
+                        }))}
+                        min="0.001"
+                        step="0.001"
+                      />
+                    </div>
+
+                    <div className="cost-breakdown">
+                      <div className="cost-item">
+                        <span>ATA Creation:</span>
+                        <span>{(0.002 * fundingModalState.numberOfWallets).toFixed(4)} SOL</span>
+                      </div>
+                      <div className="cost-item">
+                        <span>Transaction Fees:</span>
+                        <span>{(0.000005 * Math.ceil(fundingModalState.numberOfWallets / 4)).toFixed(6)} SOL</span>
+                      </div>
+                      <div className="cost-item">
+                        <span>Funding Amount:</span>
+                        <span>{(fundingModalState.amountPerWallet * fundingModalState.numberOfWallets).toFixed(4)} SOL</span>
+                      </div>
+                      <div className="cost-item total">
+                        <span>Total SOL needed:</span>
+                        <span>{(
+                          0.002 * fundingModalState.numberOfWallets + 
+                          0.000005 * Math.ceil(fundingModalState.numberOfWallets / 4) + 
+                          fundingModalState.amountPerWallet * fundingModalState.numberOfWallets
+                        ).toFixed(4)} SOL</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Right side - existing funding controls */}
+              {/* Right side - funding controls */}
               <div className="modal-right">
                 <div className="funding-container">
                   <div className="parent-sol-balance">
@@ -2266,6 +2367,24 @@ function WalletPage() {
                   <div className="funding-section">
                     <h4>Fund Subwallets</h4>
                     <div className="funding-controls">
+                      <div className="wallet-selection">
+                        <label>Number of wallets to fund:</label>
+                        <input 
+                          type="number"
+                          value={fundingModalState.numberOfWallets}
+                          onChange={(e) => {
+                            const value = Math.min(Math.max(1, parseInt(e.target.value)), keypairs.length);
+                            setFundingModalState(prev => ({ 
+                              ...prev, 
+                              numberOfWallets: value 
+                            }));
+                          }}
+                          min="1"
+                          max={keypairs.length}
+                        />
+                        <span className="max-wallets">Max: {keypairs.length}</span>
+                      </div>
+
                       <div className="amount-input">
                         <label>Amount per wallet (SOL):</label>
                         <input 
@@ -2279,24 +2398,47 @@ function WalletPage() {
                           step="0.001"
                         />
                       </div>
-                      <div className="total-needed">
-                        Total SOL needed: {(fundingModalState.amountPerWallet * keypairs.length).toFixed(4)} SOL
+
+                      <div className="cost-breakdown">
+                        <div className="cost-item">
+                          <span>ATA Creation:</span>
+                          <span>{(0.002 * fundingModalState.numberOfWallets).toFixed(4)} SOL</span>
+                        </div>
+                        <div className="cost-item">
+                          <span>Transaction Fees:</span>
+                          <span>{(0.000005 * Math.ceil(fundingModalState.numberOfWallets / 4)).toFixed(6)} SOL</span>
+                        </div>
+                        <div className="cost-item">
+                          <span>Funding Amount:</span>
+                          <span>{(fundingModalState.amountPerWallet * fundingModalState.numberOfWallets).toFixed(4)} SOL</span>
+                        </div>
+                        <div className="cost-item total">
+                          <span>Total SOL needed:</span>
+                          <span>{(
+                            0.002 * fundingModalState.numberOfWallets + 
+                            0.000005 * Math.ceil(fundingModalState.numberOfWallets / 4) + 
+                            fundingModalState.amountPerWallet * fundingModalState.numberOfWallets
+                          ).toFixed(4)} SOL</span>
+                        </div>
                       </div>
+
                       <button 
                         className="fund-all-button"
                         disabled={
                           fundingModalState.isFunding || 
-                          fundingModalState.amountPerWallet * keypairs.length > fundingModalState.parentSolBalance
+                          (0.002 * fundingModalState.numberOfWallets + 
+                           0.000005 * Math.ceil(fundingModalState.numberOfWallets / 4) + 
+                           fundingModalState.amountPerWallet * fundingModalState.numberOfWallets) > fundingModalState.parentSolBalance
                         }
                         onClick={fundAllWallets}
                       >
                         {fundingModalState.isFunding ? (
                           <span>
                             <span className="loading-spinner">↻</span>
-                            Funding ({fundingModalState.fundedCount || 0}/{keypairs.length})
+                            Funding ({fundingModalState.fundedCount || 0}/{fundingModalState.numberOfWallets})
                           </span>
                         ) : (
-                          'Fund All Subwallets'
+                          'Fund Selected Wallets'
                         )}
                       </button>
                     </div>
