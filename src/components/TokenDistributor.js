@@ -208,7 +208,7 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
           </div>
           <div className="balance-item">
             <span className="balance-label">SOL Balance:</span>
-            <span className="balance-value">{walletInfo.solBalance.toFixed(4)} SOL</span>
+            <span className="balance-value sol">{walletInfo.solBalance.toFixed(4)} SOL</span>
           </div>
         </div>
       </div>

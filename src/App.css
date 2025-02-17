@@ -2537,3 +2537,50 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   opacity: 0.5;
   cursor: wait;
 }
+
+.wallet-info-section {
+  background: rgba(46, 204, 113, 0.05);
+  padding: 24px;
+  border-radius: 8px;
+  border: 1px solid rgba(46, 204, 113, 0.1);
+  margin-bottom: 24px;
+}
+
+.wallet-info-section h4 {
+  color: #2ecc71;
+  font-size: 18px;
+  margin: 0 0 16px 0;
+  font-family: monospace;
+  font-weight: 500;
+}
+
+.balance-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.balance-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  font-family: monospace;
+}
+
+.balance-label {
+  color: #888;
+  font-size: 14px;
+}
+
+.balance-value {
+  color: #2ecc71;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.balance-value.sol {
+  color: #f1c40f;  /* Yellow for SOL balance */
+}
