@@ -368,9 +368,6 @@ function App() {
   // Move isCollapsed state from TokenHolderGraph to App
   const [isCollapsed, setIsCollapsed] = useState(true);
 
-  // Add new state for holders list
-  const [showHolders, setShowHolders] = useState(true);
-
   // Add new state near the top with other states
   const [showStatus, setShowStatus] = useState(false);
 
@@ -379,6 +376,9 @@ function App() {
     isOpen: false, 
     recipient: null 
   });
+
+  // Add state to control views (near other state declarations)
+  const [activeView, setActiveView] = useState('ai'); // Options: 'ai', 'holders'
 
   // Define WalletTable component inside App to access state and functions
   const WalletTable = ({ wallets, onCopy }) => {
@@ -1088,9 +1088,15 @@ function App() {
           <div className="desktop-nav">
             <button 
               className="tribify-button" 
-              onClick={() => setShowTribifyPrompt(true)}
+              onClick={() => setActiveView('ai')}
             >
-              Tribify AI
+              /tribify.ai
+            </button>
+            <button 
+              className="holders-button"
+              onClick={() => setActiveView('holders')}
+            >
+              Shareholders
             </button>
             <button 
               className="wallet-button"
@@ -1232,7 +1238,6 @@ function App() {
             <Restore onClick={() => document.getElementById('restore-input').click()} />
             <button className="docs-button" onClick={() => setShowDocs(!showDocs)}>Docs</button>
             <button className="graph-toggle-button" onClick={() => setIsCollapsed(!isCollapsed)}>Graph</button>
-            <button className="holders-toggle-button" onClick={() => setShowHolders(!showHolders)}>Holders</button>
             <button className="status-toggle-button" onClick={() => setShowStatus(!showStatus)}>Connection</button>
             <Disconnect onClick={handleDisconnect} />
           </div>
@@ -1257,7 +1262,33 @@ function App() {
           </div>
 
           <div className="main-layout">
-            {showHolders && (
+            {activeView === 'ai' && (
+              <div className="ai-terminal">
+                <div className="terminal-header">
+                  <span>/tribify.ai</span>
+                  <button onClick={() => setShowTribifyPrompt(false)}>×</button>
+                </div>
+                <div className="terminal-content">
+                  {tribifyResponses.map((response, i) => (
+                    <div key={i} className={`terminal-message ${response.type}`}>
+                      {response.type === 'input' && '> '}
+                      {response.text}
+                    </div>
+                  ))}
+                </div>
+                <form className="terminal-input" onSubmit={handleTribifyPrompt}>
+                  <input 
+                    type="text"
+                    value={tribifyInput}
+                    onChange={(e) => setTribifyInput(e.target.value)}
+                    placeholder="Enter a prompt..."
+                    autoFocus
+                  />
+                </form>
+              </div>
+            )}
+
+            {activeView === 'holders' && (
               <div className="token-holders">
                 <h3>$Tribify Shareholders</h3>
                 <HoldersList 
@@ -1375,33 +1406,6 @@ function App() {
               }}>Cancel</button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* AI Terminal */}
-      {showTribifyPrompt && (
-        <div className="ai-terminal">
-          <div className="terminal-header">
-            <span>/tribify.ai</span>
-            <button onClick={() => setShowTribifyPrompt(false)}>×</button>
-          </div>
-          <div className="terminal-content">
-            {tribifyResponses.map((response, i) => (
-              <div key={i} className={`terminal-message ${response.type}`}>
-                {response.type === 'input' && '> '}
-                {response.text}
-              </div>
-            ))}
-          </div>
-          <form className="terminal-input" onSubmit={handleTribifyPrompt}>
-            <input 
-              type="text"
-              value={tribifyInput}
-              onChange={(e) => setTribifyInput(e.target.value)}
-              placeholder="Enter a prompt..."
-              autoFocus
-            />
-          </form>
         </div>
       )}
 
