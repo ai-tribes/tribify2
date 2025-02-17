@@ -1418,6 +1418,49 @@ Need help setting up distribution? Just ask!`;
         </div>
       )}
 
+      {showStatus && (
+        <div className="connection-status-panel">
+          <div className="status-details">
+            <div className="status-item">
+              <span className="status-label">Connection State:</span>
+              <span className={`status-value ${debugState.connectionState}`}>
+                {debugState.connectionState}
+              </span>
+            </div>
+            <div className="status-item">
+              <span className="status-label">Socket ID:</span>
+              <span className="status-value">{debugState.socketId || 'Not connected'}</span>
+            </div>
+            <div className="status-item">
+              <span className="status-label">Auth Attempts:</span>
+              <span className="status-value">{debugState.authAttempts}</span>
+            </div>
+            {debugState.lastAuthError && (
+              <div className="status-item error">
+                <span className="status-label">Last Error:</span>
+                <span className="status-value error">{debugState.lastAuthError}</span>
+              </div>
+            )}
+            <div className="status-item">
+              <span className="status-label">Online Users:</span>
+              <span className="status-value">
+                {Array.from(onlineUsers).join(', ') || 'None'}
+              </span>
+            </div>
+            <div className="status-actions">
+              <button onClick={() => {
+                if (socket) {
+                  socket.disconnect();
+                  socket.connect();
+                }
+              }}>
+                Reconnect
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {dialogConfig.show && (
         <div className="dialog-overlay">
           <div className="dialog-box">
