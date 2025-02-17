@@ -7,7 +7,8 @@ import CryptoJS from 'crypto-js';
 import bs58 from 'bs58';
 import { 
   getAssociatedTokenAddress, 
-  createAssociatedTokenAccountInstruction, 
+  createAssociatedTokenAccountInstruction,
+  createTransferInstruction,
   transfer,
   TOKEN_PROGRAM_ID 
 } from '@solana/spl-token';
@@ -32,6 +33,12 @@ const getHolderColor = (address, tokenBalance) => {
     return '#ffa500';  // Orange/yellow for medium holders
   }
   return '#2ecc71';  // Green for small holders
+};
+
+// Add toBigNumber utility function
+const toBigNumber = (amount) => {
+  // Convert to integer representation with 6 decimals
+  return Math.floor(amount * Math.pow(10, 6)).toString();
 };
 
 function WalletPage() {
@@ -109,6 +116,7 @@ function WalletPage() {
   });
   const [publicKey, setPublicKey] = useState(null);
   const [showDistributeModal, setShowDistributeModal] = useState(false);
+  const [walletBalances, setWalletBalances] = useState({});
 
   const fileInputRef = useRef(null);
 
@@ -727,44 +735,51 @@ function WalletPage() {
   };
 
   const fetchBalances = async () => {
-    if (keypairs.length === 0) return;
-    
-    setIsLoading(true);
     try {
-      const updatedKeypairs = await Promise.all(keypairs.map(async (keypair) => {
-        try {
-          // Fetch SOL balance
-          const solBalance = await connection.getBalance(keypair.publicKey);
-          
-          // Fetch USDC balance
-          let usdcBalance = 0;
-          try {
-            const ata = await getAssociatedTokenAddress(
-              new PublicKey(USDC_MINT),
-              keypair.publicKey
-            );
-            const account = await connection.getTokenAccountBalance(ata);
-            usdcBalance = account.value.uiAmount || 0;
-          } catch (e) {
-            console.log('No USDC account for:', keypair.publicKey.toString());
-          }
+      const connection = new Connection(
+        `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
+        { commitment: 'confirmed' }
+      );
 
-          return {
-            ...keypair,
-            solBalance: solBalance / LAMPORTS_PER_SOL,
-            usdcBalance
-          };
-        } catch (e) {
-          console.error('Error fetching balances:', e);
-          return keypair;
+      const tribifyMint = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
+      const newBalances = {};
+
+      // Fetch parent wallet balance
+      if (window.phantom?.solana?.publicKey) {
+        const parentPubkey = window.phantom.solana.publicKey;
+        const parentTokenAccounts = await connection.getParsedTokenAccountsByOwner(
+          parentPubkey,
+          { mint: tribifyMint }
+        );
+        
+        newBalances['parent'] = parentTokenAccounts.value.length 
+          ? parentTokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount 
+          : 0;
+      }
+
+      // Fetch all subwallet balances
+      await Promise.all(keypairs.map(async (kp, index) => {
+        try {
+          const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+            kp.publicKey,
+            { mint: tribifyMint }
+          );
+
+          newBalances[kp.publicKey.toString()] = tokenAccounts.value.length 
+            ? tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount 
+            : 0;
+
+        } catch (error) {
+          console.error(`Error fetching balance for wallet ${index}:`, error);
+          newBalances[kp.publicKey.toString()] = 0;
         }
       }));
-      
-      setKeypairs(updatedKeypairs);
+
+      setWalletBalances(newBalances);
+      console.log('Updated balances:', newBalances);
+
     } catch (error) {
-      console.error('Failed to fetch balances:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('Error fetching balances:', error);
     }
   };
 
@@ -772,7 +787,7 @@ function WalletPage() {
     if (keypairs.length > 0) {
       fetchBalances();
     }
-  }, [keypairs.length]);
+  }, [keypairs]);
 
   useEffect(() => {
     const getParentWallet = async () => {
@@ -1032,6 +1047,116 @@ function WalletPage() {
     setShowDistributeModal(true);
   };
 
+  const recoverTokens = async (fromWallet) => {
+    try {
+      const connection = new Connection(
+        `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
+        { commitment: 'confirmed' }
+      );
+
+      const tribifyMint = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
+      const parentWallet = new PublicKey(window.phantom.solana.publicKey.toString());
+
+      // Get the token accounts
+      const fromATA = await getAssociatedTokenAddress(tribifyMint, fromWallet.publicKey);
+      const toATA = await getAssociatedTokenAddress(tribifyMint, parentWallet);
+
+      // Get the token balance
+      const tokenAccount = await connection.getParsedTokenAccountsByOwner(
+        fromWallet.publicKey,
+        { mint: tribifyMint }
+      );
+
+      if (!tokenAccount.value.length) {
+        throw new Error('No TRIBIFY tokens found in this wallet');
+      }
+
+      const balance = tokenAccount.value[0].account.data.parsed.info.tokenAmount.amount;
+
+      const transaction = new Transaction();
+
+      // Add transfer instruction
+      transaction.add(
+        createTransferInstruction(
+          fromATA,
+          toATA,
+          fromWallet.publicKey,
+          balance // Use the actual balance
+        )
+      );
+
+      transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      transaction.feePayer = fromWallet.publicKey;
+
+      // Sign with the subwallet's private key
+      const keypair = Keypair.fromSecretKey(new Uint8Array(fromWallet.secretKey));
+      transaction.sign(keypair);
+
+      const signature = await connection.sendRawTransaction(transaction.serialize());
+      console.log('Recovery transaction sent:', signature);
+      await connection.confirmTransaction(signature);
+      console.log('Recovery complete');
+
+    } catch (error) {
+      console.error('Recovery failed:', error);
+      throw error;
+    }
+  };
+
+  const findAndRecoverFromWallet = async (targetAddress) => {
+    // Find the keypair with this public key
+    const walletIndex = keypairs.findIndex(kp => 
+      kp.publicKey.toString() === targetAddress
+    );
+
+    if (walletIndex === -1) {
+      console.error('Address not found in subwallets:', targetAddress);
+      return;
+    }
+
+    console.log(`Found wallet at index ${walletIndex}`);
+    const wallet = keypairs[walletIndex];
+
+    try {
+      await recoverTokens({
+        publicKey: wallet.publicKey,
+        secretKey: Array.from(wallet.secretKey)
+      });
+      console.log('Recovery initiated for wallet:', targetAddress);
+    } catch (error) {
+      console.error('Recovery failed:', error);
+    }
+  };
+
+  // First, add a recovery function for all wallets
+  const recoverAllTokens = async () => {
+    if (!window.confirm('Are you sure you want to recover all tokens back to the parent wallet?')) {
+      return;
+    }
+
+    try {
+      console.log('Starting token recovery from all subwallets...');
+      for (const wallet of keypairs) {
+        try {
+          await recoverTokens({
+            publicKey: wallet.publicKey,
+            secretKey: Array.from(wallet.secretKey)
+          });
+          console.log('Recovered tokens from:', wallet.publicKey.toString());
+        } catch (error) {
+          console.error('Failed to recover from wallet:', wallet.publicKey.toString(), error);
+          // Continue with next wallet even if one fails
+        }
+      }
+      console.log('Recovery process complete');
+      alert('Token recovery complete!');
+      fetchBalances(); // Refresh balances after recovery
+    } catch (error) {
+      console.error('Recovery process failed:', error);
+      alert('Recovery failed: ' + error.message);
+    }
+  };
+
   return (
     <div className="wallet-fullscreen">
       {notification && (
@@ -1164,7 +1289,7 @@ function WalletPage() {
                 {keypair.publicKey.toString()}
               </div>
               <div className="col-tribify">
-                {keypair.tribifyBalance || 0} TRIBIFY
+                {walletBalances[keypair.publicKey.toString()]?.toLocaleString() || '0'} TRIBIFY
               </div>
               <div className="col-sol">
                 {(keypair.solBalance || 0).toFixed(4)} SOL
@@ -1762,6 +1887,17 @@ function WalletPage() {
                       </button>
                     )}
                   </div>
+                  <div className="recovery-section">
+                    <button 
+                      className="recover-tokens-button"
+                      onClick={recoverAllTokens}
+                    >
+                      Recover All Tokens
+                    </button>
+                    <p className="recovery-note">
+                      This will attempt to recover all TRIBIFY tokens from subwallets back to the parent wallet.
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -1779,6 +1915,7 @@ function WalletPage() {
                       setIsDistributeModalOpen(false);
                       fetchBalances();
                     }}
+                    refreshBalances={fetchBalances}
                   />
                 </div>
               </div>

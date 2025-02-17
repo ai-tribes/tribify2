@@ -8,21 +8,27 @@ import {
 } from '@solana/spl-token';
 
 // Estimated SOL fee per transaction
-const ESTIMATED_SOL_PER_TX = 0.000005;
+const ESTIMATED_SOL_PER_TX = 0.00001;
 
 const LAMPORTS_FOR_ATA = 0.002 * LAMPORTS_PER_SOL; // Amount needed to create an ATA
+
+const BATCH_SIZE = 4; // Number of operations per batch
 
 const toBigNumber = (amount) => {
   // Convert to integer representation with 6 decimals
   return Math.floor(amount * Math.pow(10, 6)).toString();
 };
 
-const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
+const TokenDistributor = ({ parentWallet, subwallets, onComplete, refreshBalances }) => {
   const [walletInfo, setWalletInfo] = useState({
     tribifyBalance: 0,
     solBalance: 0
   });
-  const [estimatedFees, setEstimatedFees] = useState(0);
+  const [estimatedFees, setEstimatedFees] = useState({
+    ataCreation: 0,
+    transaction: 0,
+    total: 0
+  });
   const [distributionConfig, setDistributionConfig] = useState({
     totalAmount: '',
     numberOfWallets: 10,
@@ -82,30 +88,53 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
       );
 
       const tribifyMint = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
-      let totalFees = 0;
+      let ataCreationFees = 0;
+      let ataCount = 0;
 
-      // Check which wallets need ATAs and calculate total cost
-      for (let i = 0; i < distributionConfig.numberOfWallets && i < subwallets.length; i++) {
+      // Check which wallets need ATAs
+      for (let i = 0; i < Math.min(distributionConfig.numberOfWallets, subwallets.length); i++) {
         const wallet = subwallets[i];
         const recipientATA = await getAssociatedTokenAddress(
           tribifyMint,
-          wallet.publicKey
+          new PublicKey(wallet.publicKey)
         );
 
         const accountInfo = await connection.getAccountInfo(recipientATA);
         if (!accountInfo) {
-          totalFees += LAMPORTS_FOR_ATA / LAMPORTS_PER_SOL;
+          ataCount++;
         }
       }
 
-      // Add transaction fees for both funding and transfer transactions
-      const batchCount = Math.ceil(distributionConfig.numberOfWallets / 4);
-      totalFees += batchCount * 2 * ESTIMATED_SOL_PER_TX;
+      // Calculate ATA creation fees
+      ataCreationFees = ataCount * (LAMPORTS_FOR_ATA / LAMPORTS_PER_SOL);
 
-      setEstimatedFees(totalFees);
+      // Calculate transaction fees
+      const numBatches = Math.ceil(distributionConfig.numberOfWallets / BATCH_SIZE);
+      const fundingBatchFees = ataCount > 0 ? numBatches * ESTIMATED_SOL_PER_TX : 0;
+      const transferBatchFees = numBatches * ESTIMATED_SOL_PER_TX;
+      const totalTransactionFees = fundingBatchFees + transferBatchFees;
+
+      console.log('Fee Calculation:', {
+        ataCount,
+        ataCreationFees,
+        numBatches,
+        fundingBatchFees,
+        transferBatchFees,
+        totalTransactionFees
+      });
+
+      setEstimatedFees({
+        ataCreation: ataCreationFees,
+        transaction: totalTransactionFees,
+        total: ataCreationFees + totalTransactionFees
+      });
     } catch (error) {
       console.error('Error calculating fees:', error);
-      setEstimatedFees(0);
+      setEstimatedFees({
+        ataCreation: 0,
+        transaction: 0,
+        total: 0
+      });
     }
   };
 
@@ -134,6 +163,32 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
 
   const distributeTokens = async () => {
     try {
+      // First, verify all recipient addresses are in our subwallets list
+      const selectedWallets = subwallets.slice(0, distributionConfig.numberOfWallets);
+      const validRecipients = new Set(selectedWallets.map(w => w.publicKey.toString()));
+
+      // Add strict validation
+      const confirmMessage = `Please verify:\n\n` +
+        `Total Amount: ${distributionConfig.totalAmount.toLocaleString()} TRIBIFY\n` +
+        `Number of Recipients: ${distributionConfig.numberOfWallets}\n` +
+        `First Recipient: ${selectedWallets[0].publicKey.toString()}\n` +
+        `Last Recipient: ${selectedWallets[selectedWallets.length - 1].publicKey.toString()}\n\n` +
+        `Estimated fees: ${estimatedFees.total.toFixed(4)} SOL\n\n` +
+        `Are you sure you want to proceed?`;
+
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
+
+      // Double check the amounts
+      const totalAmount = distributionConfig.isRandomDistribution
+        ? distributionConfig.totalAmount
+        : distributionConfig.amountPerWallet * distributionConfig.numberOfWallets;
+
+      if (totalAmount > walletInfo.tribifyBalance) {
+        throw new Error('Insufficient TRIBIFY balance');
+      }
+
       console.log('Starting distribution...');
       const connection = new Connection(
         `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
@@ -160,7 +215,6 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
       const parentTokenAccount = parentTokenAccounts.value[0].pubkey;
       
       // Select wallets and calculate amounts
-      const selectedWallets = subwallets.slice(0, distributionConfig.numberOfWallets);
       const amounts = distributionConfig.isRandomDistribution 
         ? generateRandomAmounts(distributionConfig.totalAmount, distributionConfig.numberOfWallets)
         : Array(distributionConfig.numberOfWallets).fill(distributionConfig.amountPerWallet);
@@ -267,6 +321,7 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
       onComplete?.();
     } catch (error) {
       console.error('Distribution failed:', error);
+      alert(`Distribution failed: ${error.message}`);
     }
   };
 
@@ -294,7 +349,7 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
           <h4>Parent Wallet Balances</h4>
           <button 
             className="refresh-button"
-            onClick={fetchWalletBalances}
+            onClick={refreshBalances}
           >
             Refresh Balances
           </button>
@@ -404,9 +459,9 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
             <div className="preview-item fee-estimate">
               <span>Estimated SOL fees:</span>
               <div className="fee-breakdown">
-                <div>ATA Creation: ~{((LAMPORTS_FOR_ATA / LAMPORTS_PER_SOL) * distributionConfig.numberOfWallets).toFixed(4)} SOL</div>
-                <div>Transaction Fees: ~{(estimatedFees - ((LAMPORTS_FOR_ATA / LAMPORTS_PER_SOL) * distributionConfig.numberOfWallets)).toFixed(6)} SOL</div>
-                <div className="total-fees">Total: ~{estimatedFees.toFixed(4)} SOL</div>
+                <div>ATA Creation: ~{estimatedFees.ataCreation.toFixed(4)} SOL</div>
+                <div>Transaction Fees: ~{estimatedFees.transaction.toFixed(6)} SOL</div>
+                <div className="total-fees">Total: ~{estimatedFees.total.toFixed(4)} SOL</div>
               </div>
             </div>
           </div>
@@ -417,11 +472,11 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
           disabled={
             !distributionConfig.totalAmount || 
             distributionConfig.totalAmount <= 0 ||
-            estimatedFees > walletInfo.solBalance
+            estimatedFees.total > walletInfo.solBalance
           }
           onClick={distributeTokens}
         >
-          {estimatedFees > walletInfo.solBalance 
+          {estimatedFees.total > walletInfo.solBalance 
             ? 'Insufficient SOL for fees'
             : 'Start Distribution'
           }
