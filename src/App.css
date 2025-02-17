@@ -398,16 +398,18 @@ body.light .restore-button {
 .holder-item {
   display: grid;
   grid-template-columns: 
-    minmax(200px, 1.5fr)  /* Address - reduced min width */
-    minmax(80px, 0.4fr)   /* Share - reduced min width */
-    minmax(100px, 0.6fr)  /* Name - reduced min width */
-    minmax(120px, 0.8fr)  /* TRIBIFY - reduced min width */
-    minmax(80px, 0.4fr)   /* SOL - reduced min width */
-    minmax(80px, 0.4fr)   /* USDC - reduced min width */
-    minmax(80px, 0.4fr);  /* Message - adjusted ratio */
-  gap: 8px;               /* Reduced gap */
-  padding: 12px;
+    minmax(200px, 1.5fr)  /* Address */
+    minmax(80px, 0.4fr)   /* Share */
+    minmax(100px, 0.6fr)  /* Name */
+    minmax(120px, 0.8fr)  /* TRIBIFY */
+    minmax(80px, 0.4fr)   /* SOL */
+    minmax(80px, 0.4fr)   /* USDC */
+    minmax(80px, 0.4fr);  /* Message */
+  gap: 8px;
+  padding: 8px 12px;      /* Reduced padding */
   width: 100%;
+  align-items: center;
+  min-height: 40px;       /* Set specific row height */
 }
 
 /* Style the header specifically */
@@ -448,6 +450,10 @@ body.light .restore-button {
   overflow: hidden;
   text-overflow: ellipsis;
   padding: 0 8px;
+  display: flex;
+  align-items: center;
+  min-height: 24px;       /* Match content height */
+  line-height: 1;         /* Reduce line height */
 }
 
 .holder-col.address { text-align: left; }
@@ -457,6 +463,16 @@ body.light .restore-button {
 .holder-col.sol { text-align: right; }
 .holder-col.usdc { text-align: right; }
 .holder-col.message { text-align: center; }
+
+.holder-col.message button {
+  padding: 4px 8px;       /* Reduced padding */
+  font-size: 12px;        /* Smaller font */
+  min-width: unset;       /* Remove minimum width */
+  height: 24px;           /* Set specific height */
+  line-height: 1;         /* Reduce line height */
+  margin: 0;              /* Remove margins */
+  white-space: nowrap;    /* Prevent text wrapping */
+}
 
 .user-search form {
   width: 100%;
