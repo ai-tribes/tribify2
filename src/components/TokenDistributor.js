@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Connection, PublicKey, LAMPORTS_PER_SOL, Transaction } from '@solana/web3.js';
+import { Connection, PublicKey, LAMPORTS_PER_SOL, Transaction, SystemProgram } from '@solana/web3.js';
 import { 
   TOKEN_PROGRAM_ID, 
   createTransferInstruction,
@@ -9,6 +9,8 @@ import {
 
 // Estimated SOL fee per transaction
 const ESTIMATED_SOL_PER_TX = 0.000005;
+
+const LAMPORTS_FOR_ATA = 0.002 * LAMPORTS_PER_SOL; // Amount needed to create an ATA
 
 const toBigNumber = (amount) => {
   // Convert to integer representation with 6 decimals
@@ -20,6 +22,7 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
     tribifyBalance: 0,
     solBalance: 0
   });
+  const [estimatedFees, setEstimatedFees] = useState(0);
   const [distributionConfig, setDistributionConfig] = useState({
     totalAmount: '',
     numberOfWallets: 10,
@@ -71,9 +74,45 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
   };
 
   // Calculate total SOL fees
-  const calculateTotalFees = () => {
-    return distributionConfig.numberOfWallets * ESTIMATED_SOL_PER_TX;
+  const calculateTotalFees = async () => {
+    try {
+      const connection = new Connection(
+        `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
+        { commitment: 'confirmed' }
+      );
+
+      const tribifyMint = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
+      let totalFees = 0;
+
+      // Check which wallets need ATAs and calculate total cost
+      for (let i = 0; i < distributionConfig.numberOfWallets && i < subwallets.length; i++) {
+        const wallet = subwallets[i];
+        const recipientATA = await getAssociatedTokenAddress(
+          tribifyMint,
+          wallet.publicKey
+        );
+
+        const accountInfo = await connection.getAccountInfo(recipientATA);
+        if (!accountInfo) {
+          totalFees += LAMPORTS_FOR_ATA / LAMPORTS_PER_SOL;
+        }
+      }
+
+      // Add transaction fees for both funding and transfer transactions
+      const batchCount = Math.ceil(distributionConfig.numberOfWallets / 4);
+      totalFees += batchCount * 2 * ESTIMATED_SOL_PER_TX;
+
+      setEstimatedFees(totalFees);
+    } catch (error) {
+      console.error('Error calculating fees:', error);
+      setEstimatedFees(0);
+    }
   };
+
+  // Update fees when config changes
+  useEffect(() => {
+    calculateTotalFees();
+  }, [distributionConfig.numberOfWallets]);
 
   // Calculate per wallet amount
   useEffect(() => {
@@ -95,6 +134,7 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
 
   const distributeTokens = async () => {
     try {
+      console.log('Starting distribution...');
       const connection = new Connection(
         `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
         {
@@ -106,75 +146,125 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
 
       const tribifyMint = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
       const parentPublicKey = new PublicKey(window.phantom.solana.publicKey.toString());
-
+      
       // Get parent token account
-      const parentTokenAccount = (await connection.getParsedTokenAccountsByOwner(
+      const parentTokenAccounts = await connection.getParsedTokenAccountsByOwner(
         parentPublicKey,
         { mint: tribifyMint }
-      )).value[0].pubkey;
+      );
 
-      // Create a single transaction
-      const transaction = new Transaction();
+      if (!parentTokenAccounts.value.length) {
+        throw new Error('No TRIBIFY token account found for parent wallet');
+      }
 
+      const parentTokenAccount = parentTokenAccounts.value[0].pubkey;
+      
       // Select wallets and calculate amounts
       const selectedWallets = subwallets.slice(0, distributionConfig.numberOfWallets);
       const amounts = distributionConfig.isRandomDistribution 
         ? generateRandomAmounts(distributionConfig.totalAmount, distributionConfig.numberOfWallets)
         : Array(distributionConfig.numberOfWallets).fill(distributionConfig.amountPerWallet);
 
-      // Add instructions for each transfer
-      for (let i = 0; i < selectedWallets.length; i++) {
-        const wallet = selectedWallets[i];
-        const amount = amounts[i];
+      // First, fund wallets that need ATAs
+      const BATCH_SIZE = 4;
+      for (let i = 0; i < selectedWallets.length; i += BATCH_SIZE) {
+        const batchWallets = selectedWallets.slice(i, i + BATCH_SIZE);
+        const transaction = new Transaction();
 
-        // Get or create ATA for recipient
-        const recipientATA = await getAssociatedTokenAddress(
-          tribifyMint,
-          new PublicKey(wallet.publicKey)
-        );
+        // Check which wallets need funding for ATAs
+        for (let j = 0; j < batchWallets.length; j++) {
+          const wallet = batchWallets[j];
+          const recipientATA = await getAssociatedTokenAddress(
+            tribifyMint,
+            wallet.publicKey
+          );
 
-        // Check if ATA exists
-        const accountInfo = await connection.getAccountInfo(recipientATA);
-        if (!accountInfo) {
-          // Add create ATA instruction if needed
+          const accountInfo = await connection.getAccountInfo(recipientATA);
+          if (!accountInfo) {
+            // Add SOL transfer instruction
+            transaction.add(
+              SystemProgram.transfer({
+                fromPubkey: parentPublicKey,
+                toPubkey: wallet.publicKey,
+                lamports: LAMPORTS_FOR_ATA
+              })
+            );
+          }
+        }
+
+        if (transaction.instructions.length > 0) {
+          const { blockhash } = await connection.getLatestBlockhash();
+          transaction.recentBlockhash = blockhash;
+          transaction.feePayer = parentPublicKey;
+
+          try {
+            const signed = await window.phantom.solana.signTransaction(transaction);
+            const signature = await connection.sendRawTransaction(signed.serialize());
+            console.log(`Funding batch ${Math.floor(i/BATCH_SIZE) + 1} sent:`, signature);
+            await connection.confirmTransaction(signature);
+          } catch (error) {
+            console.error('Funding transaction failed:', error);
+            throw error;
+          }
+        }
+      }
+
+      // Now do token transfers in batches
+      for (let i = 0; i < selectedWallets.length; i += BATCH_SIZE) {
+        const batchWallets = selectedWallets.slice(i, i + BATCH_SIZE);
+        const batchAmounts = amounts.slice(i, i + BATCH_SIZE);
+        const transaction = new Transaction();
+
+        for (let j = 0; j < batchWallets.length; j++) {
+          const wallet = batchWallets[j];
+          const amount = batchAmounts[j];
+          
+          const recipientATA = await getAssociatedTokenAddress(
+            tribifyMint,
+            wallet.publicKey
+          );
+
+          // Create ATA if needed
+          const accountInfo = await connection.getAccountInfo(recipientATA);
+          if (!accountInfo) {
+            transaction.add(
+              createAssociatedTokenAccountInstruction(
+                parentPublicKey,
+                recipientATA,
+                wallet.publicKey,
+                tribifyMint
+              )
+            );
+          }
+
+          // Add transfer instruction
           transaction.add(
-            createAssociatedTokenAccountInstruction(
-              parentPublicKey, // payer
-              recipientATA, // ata
-              new PublicKey(wallet.publicKey), // owner
-              tribifyMint // mint
+            createTransferInstruction(
+              parentTokenAccount,
+              recipientATA,
+              parentPublicKey,
+              toBigNumber(amount)
             )
           );
         }
 
-        // Add transfer instruction
-        transaction.add(
-          createTransferInstruction(
-            parentTokenAccount, // source
-            recipientATA, // destination
-            parentPublicKey, // owner
-            toBigNumber(amount) // amount with decimals
-          )
-        );
+        const { blockhash } = await connection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = parentPublicKey;
+
+        try {
+          const signed = await window.phantom.solana.signTransaction(transaction);
+          const signature = await connection.sendRawTransaction(signed.serialize());
+          console.log(`Transfer batch ${Math.floor(i/BATCH_SIZE) + 1} sent:`, signature);
+          await connection.confirmTransaction(signature);
+        } catch (error) {
+          console.error('Transfer transaction failed:', error);
+          throw error;
+        }
       }
 
-      // Get recent blockhash
-      const { blockhash } = await connection.getLatestBlockhash();
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = parentPublicKey;
-
-      // Sign and send transaction
-      try {
-        const signed = await window.phantom.solana.signTransaction(transaction);
-        const signature = await connection.sendRawTransaction(signed.serialize());
-        await connection.confirmTransaction(signature);
-
-        console.log('Distribution complete:', signature);
-        onComplete?.();
-      } catch (error) {
-        console.error('Transaction failed:', error);
-        throw error;
-      }
+      console.log('All distributions complete');
+      onComplete?.();
     } catch (error) {
       console.error('Distribution failed:', error);
     }
@@ -312,8 +402,12 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
               <span>{distributionConfig.totalAmount.toLocaleString()} TRIBIFY</span>
             </div>
             <div className="preview-item fee-estimate">
-              <span>Estimated SOL fee:</span>
-              <span>{calculateTotalFees().toFixed(6)} SOL</span>
+              <span>Estimated SOL fees:</span>
+              <div className="fee-breakdown">
+                <div>ATA Creation: ~{((LAMPORTS_FOR_ATA / LAMPORTS_PER_SOL) * distributionConfig.numberOfWallets).toFixed(4)} SOL</div>
+                <div>Transaction Fees: ~{(estimatedFees - ((LAMPORTS_FOR_ATA / LAMPORTS_PER_SOL) * distributionConfig.numberOfWallets)).toFixed(6)} SOL</div>
+                <div className="total-fees">Total: ~{estimatedFees.toFixed(4)} SOL</div>
+              </div>
             </div>
           </div>
         )}
@@ -323,11 +417,11 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete }) => {
           disabled={
             !distributionConfig.totalAmount || 
             distributionConfig.totalAmount <= 0 ||
-            calculateTotalFees() > walletInfo.solBalance
+            estimatedFees > walletInfo.solBalance
           }
           onClick={distributeTokens}
         >
-          {calculateTotalFees() > walletInfo.solBalance 
+          {estimatedFees > walletInfo.solBalance 
             ? 'Insufficient SOL for fees'
             : 'Start Distribution'
           }

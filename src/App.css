@@ -2664,3 +2664,23 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   background: rgba(46, 204, 113, 0.1);
   transform: translateY(-1px);
 }
+
+.fee-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.fee-breakdown div {
+  color: #888;
+}
+
+.total-fees {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f1c40f !important;
+  font-weight: 500;
+}
