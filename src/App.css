@@ -2219,3 +2219,19 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   margin: 20px;
   border-radius: 4px;
 }
+
+/* Style for the cumulative balance row */
+.table-row.totals-row {
+  background: rgba(52, 152, 219, 0.1);  /* Light blue background */
+  border-bottom: 1px solid rgba(52, 152, 219, 0.3);  /* Blue border */
+}
+
+.table-row.totals-row .col-private {
+  color: #3498db;  /* Blue text */
+  font-weight: bold;
+}
+
+.table-row.totals-row .total-value {
+  color: #3498db;  /* Blue text for the values */
+  font-weight: 500;
+}
