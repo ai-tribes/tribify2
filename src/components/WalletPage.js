@@ -1696,6 +1696,8 @@ function WalletPage() {
             {showPrivateKeys ? 'Hide Private Keys' : 'Show Private Keys'}
           </button>
         </div>
+        {/* Add title for subwallets table */}
+        <h3 className="subwallets-title">Sub Wallets</h3>
         <div className="wallet-table">
           <div className="table-header">
             <div className="col-index">#</div>

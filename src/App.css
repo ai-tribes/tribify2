@@ -3520,3 +3520,13 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   color: #2ecc71;
   margin-left: 8px;
 }
+
+.subwallets-title {
+  font-size: 18px;
+  color: #fff;
+  margin: 24px 0 16px;
+  padding: 0 4px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  font-family: monospace;
+}
