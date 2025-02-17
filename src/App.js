@@ -1086,7 +1086,18 @@ function App() {
       {isConnected && (
         <>
           <div className="desktop-nav">
-            <Connected onClick={() => console.log('Already connected')} />
+            <button 
+              className="tribify-button" 
+              onClick={() => setShowTribifyPrompt(true)}
+            >
+              Tribify AI
+            </button>
+            <button 
+              className="wallet-button"
+              onClick={() => navigate('/wallet')}
+            >
+              Wallet
+            </button>
             <Refresh onClick={fetchTokenHolders} />
             <Password onClick={() => {
               if (friendPassword) {
@@ -1219,8 +1230,6 @@ function App() {
             <Messages onClick={() => setShowAllMessages(true)} />
             <Backup onClick={backupNicknames} />
             <Restore onClick={() => document.getElementById('restore-input').click()} />
-            <button onClick={() => navigate('/wallet')}>Wallet</button>
-            <button className="tribify-button" onClick={() => setShowTribifyPrompt(true)}>AI</button>
             <button className="docs-button" onClick={() => setShowDocs(!showDocs)}>Docs</button>
             <button className="graph-toggle-button" onClick={() => setIsCollapsed(!isCollapsed)}>Graph</button>
             <button className="holders-toggle-button" onClick={() => setShowHolders(!showHolders)}>Holders</button>

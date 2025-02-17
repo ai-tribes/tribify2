@@ -2275,3 +2275,57 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   background: #f39c12 !important;
   border-color: #f39c12 !important;
 }
+
+/* Add mauve wallet button style */
+.wallet-button {
+  background: rgba(221, 160, 221, 0.2) !important;  /* Mauve with transparency */
+  border: 1px solid #DDA0DD !important;             /* Solid mauve border */
+  color: #DDA0DD !important;                        /* Mauve text */
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.wallet-button:hover {
+  background: rgba(221, 160, 221, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+.wallet-button:active {
+  transform: translateY(0);
+}
+
+/* Add green AI button style */
+.tribify-button {
+  background: rgba(46, 204, 113, 0.1) !important;  /* Light green with transparency */
+  border: 1px solid #2ecc71 !important;            /* Solid green border */
+  color: #2ecc71 !important;                       /* Green text */
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.tribify-button:hover {
+  background: rgba(46, 204, 113, 0.2) !important;
+  transform: translateY(-1px);
+}
+
+.tribify-button:active {
+  transform: translateY(0);
+}
+
+/* Add welcome button style */
+.welcome-button {
+  background: rgba(255, 255, 255, 0.1) !important;  /* White with transparency */
+  border: 1px solid #ffffff !important;             /* Solid white border */
+  color: #ffffff !important;                        /* White text */
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.welcome-button:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1px);
+}
+
+.welcome-button:active {
+  transform: translateY(0);
+}
