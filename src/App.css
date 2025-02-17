@@ -2235,3 +2235,21 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   color: #3498db;  /* Blue text for the values */
   font-weight: 500;
 }
+
+/* Add the distribute button style */
+.distribute-button {
+  background: rgba(241, 196, 15, 0.1) !important;
+  border: 1px solid #f1c40f !important;
+  color: #f1c40f !important;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.distribute-button:hover {
+  background: rgba(241, 196, 15, 0.2) !important;
+  transform: translateY(-1px);
+}
+
+.distribute-button:active {
+  transform: translateY(0);
+}

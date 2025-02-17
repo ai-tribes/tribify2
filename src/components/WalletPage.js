@@ -1035,6 +1035,15 @@ function WalletPage() {
                 Refresh
               </button>
               <button 
+                className="distribute-button"
+                onClick={() => {
+                  // Add distribute tokens logic here
+                  console.log('Distributing tokens...');
+                }}
+              >
+                Distribute Tokens
+              </button>
+              <button 
                 className="fund-button"
                 onClick={() => setIsFundingModalOpen(true)}
               >
