@@ -11,6 +11,7 @@ import {
   transfer,
   TOKEN_PROGRAM_ID 
 } from '@solana/spl-token';
+import TokenDistributor from './TokenDistributor';
 
 const TOTAL_SUPPLY = 1_000_000_000; // 1 Billion tokens
 
@@ -107,6 +108,7 @@ function WalletPage() {
     maxAmount: 0
   });
   const [publicKey, setPublicKey] = useState(null);
+  const [showDistributeModal, setShowDistributeModal] = useState(false);
 
   const fileInputRef = useRef(null);
 
@@ -1014,6 +1016,10 @@ function WalletPage() {
     }
   };
 
+  const handleDistribute = () => {
+    setShowDistributeModal(true);
+  };
+
   return (
     <div className="wallet-fullscreen">
       {notification && (
@@ -1717,18 +1723,20 @@ function WalletPage() {
                 <div className="config-explanation">
                   <h2>Token Distribution Guide</h2>
                   <div className="explanation-section">
-                    <h3>Source Options</h3>
+                    <h3>Distribution Process</h3>
                     <ul>
-                      <li>Parent Wallet: Use your connected Phantom wallet</li>
-                      <li>External Wallet: Use any other wallet's keypair</li>
+                      <li>Check your available TRIBIFY balance</li>
+                      <li>Enter the total amount you want to distribute</li>
+                      <li>Amount will be split equally among all subwallets</li>
+                      <li>Each transaction requires your approval</li>
                     </ul>
                   </div>
                   <div className="explanation-section">
-                    <h3>Distribution Settings</h3>
+                    <h3>Requirements</h3>
                     <ul>
-                      <li>Fixed Amount: Send same amount to all wallets</li>
-                      <li>Random Amount: Distribute random amounts between min/max</li>
-                      <li>Target: All generated wallets will receive tokens</li>
+                      <li>Connected Phantom Wallet</li>
+                      <li>Sufficient TRIBIFY balance</li>
+                      <li>SOL for transaction fees</li>
                     </ul>
                   </div>
                 </div>
@@ -1736,168 +1744,19 @@ function WalletPage() {
 
               <div className="modal-right">
                 <div className="dialog-header">
-                  <h3>Configure Token Distribution</h3>
+                  <h3>Distribute TRIBIFY Tokens</h3>
                   <button onClick={() => setIsDistributeModalOpen(false)}>×</button>
                 </div>
 
-                <div className="settings-grid">
-                  {/* Source Settings */}
-                  <div className="form-section">
-                    <div className="form-section-title">Source Settings</div>
-                    <div className="form-field">
-                      <label>Source Wallet</label>
-                      <div className="radio-group">
-                        <label>
-                          <input 
-                            type="radio"
-                            checked={distributeConfig.sourceType === 'parent'}
-                            onChange={() => setDistributeConfig({
-                              ...distributeConfig,
-                              sourceType: 'parent'
-                            })}
-                          />
-                          Parent Wallet
-                        </label>
-                        <label>
-                          <input 
-                            type="radio"
-                            checked={distributeConfig.sourceType === 'external'}
-                            onChange={() => setDistributeConfig({
-                              ...distributeConfig,
-                              sourceType: 'external'
-                            })}
-                          />
-                          External Wallet
-                        </label>
-                      </div>
-                    </div>
-
-                    {distributeConfig.sourceType === 'external' && (
-                      <>
-                        <div className="form-field">
-                          <label>External Wallet Public Key</label>
-                          <input 
-                            type="text"
-                            placeholder="Enter public key"
-                            value={distributeConfig.externalWallet.publicKey}
-                            onChange={(e) => setDistributeConfig({
-                              ...distributeConfig,
-                              externalWallet: {
-                                ...distributeConfig.externalWallet,
-                                publicKey: e.target.value
-                              }
-                            })}
-                          />
-                        </div>
-                        <div className="form-field">
-                          <label>External Wallet Private Key</label>
-                          <input 
-                            type="password"
-                            placeholder="Enter private key"
-                            value={distributeConfig.externalWallet.privateKey}
-                            onChange={(e) => setDistributeConfig({
-                              ...distributeConfig,
-                              externalWallet: {
-                                ...distributeConfig.externalWallet,
-                                privateKey: e.target.value
-                              }
-                            })}
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Token Settings */}
-                  <div className="form-section">
-                    <div className="form-section-title">Token Settings</div>
-                    <div className="form-field">
-                      <label>Token Address</label>
-                      <input 
-                        type="text"
-                        placeholder="Token mint address"
-                        value={distributeConfig.tokenAddress}
-                        onChange={(e) => setDistributeConfig({
-                          ...distributeConfig,
-                          tokenAddress: e.target.value
-                        })}
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label className="checkbox-label">
-                        <input 
-                          type="checkbox"
-                          checked={distributeConfig.randomize}
-                          onChange={(e) => setDistributeConfig({
-                            ...distributeConfig,
-                            randomize: e.target.checked
-                          })}
-                        />
-                        Randomize Amounts
-                      </label>
-                    </div>
-                    {!distributeConfig.randomize ? (
-                      <div className="form-field">
-                        <label>Amount Per Wallet</label>
-                        <input 
-                          type="number"
-                          min="0"
-                          step="0.000001"
-                          value={distributeConfig.amountPerWallet}
-                          onChange={(e) => setDistributeConfig({
-                            ...distributeConfig,
-                            amountPerWallet: parseFloat(e.target.value)
-                          })}
-                        />
-                      </div>
-                    ) : (
-                      <>
-                        <div className="form-field">
-                          <label>Minimum Amount</label>
-                          <input 
-                            type="number"
-                            min="0"
-                            step="0.000001"
-                            value={distributeConfig.minAmount}
-                            onChange={(e) => setDistributeConfig({
-                              ...distributeConfig,
-                              minAmount: parseFloat(e.target.value)
-                            })}
-                          />
-                        </div>
-                        <div className="form-field">
-                          <label>Maximum Amount</label>
-                          <input 
-                            type="number"
-                            min="0"
-                            step="0.000001"
-                            value={distributeConfig.maxAmount}
-                            onChange={(e) => setDistributeConfig({
-                              ...distributeConfig,
-                              maxAmount: parseFloat(e.target.value)
-                            })}
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div className="dialog-footer">
-                  <button 
-                    className="distribute-button"
-                    onClick={async () => {
-                      // Implement distribution logic here
-                      const sourceWallet = distributeConfig.sourceType === 'parent' 
-                        ? publicKey
-                        : distributeConfig.externalWallet.publicKey;
-                      
-                      console.log(`Distributing tokens from ${sourceWallet} to ${keypairs.length} wallets`);
+                <div className="distribution-container">
+                  <TokenDistributor 
+                    parentWallet={window.phantom?.solana}
+                    subwallets={keypairs}
+                    onComplete={() => {
                       setIsDistributeModalOpen(false);
+                      fetchBalances();
                     }}
-                  >
-                    Start Distribution
-                  </button>
+                  />
                 </div>
               </div>
             </div>
