@@ -58,6 +58,78 @@ const getConnection = () => {
   );
 };
 
+// Add these near the top of the file, after imports
+const RPC_ENDPOINTS = [
+  `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
+  `https://api.mainnet-beta.solana.com`,
+  `https://solana-api.projectserum.com`
+];
+
+class TransactionQueue {
+  constructor() {
+    this.queue = [];
+    this.processing = false;
+    this.currentEndpointIndex = 0;
+  }
+
+  getNextEndpoint() {
+    this.currentEndpointIndex = (this.currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
+    return RPC_ENDPOINTS[this.currentEndpointIndex];
+  }
+
+  async add(transactions, onProgress) {
+    this.queue.push(...transactions);
+    if (!this.processing) {
+      this.processing = true;
+      await this.process(onProgress);
+    }
+  }
+
+  async process(onProgress) {
+    const BATCH_SIZE = 8;
+    let processed = 0;
+
+    while (this.queue.length > 0) {
+      const endpoint = this.getNextEndpoint();
+      const connection = new Connection(endpoint, {
+        commitment: 'confirmed',
+        confirmTransactionInitialTimeout: 60000
+      });
+
+      const batch = this.queue.splice(0, BATCH_SIZE);
+      try {
+        const { blockhash } = await connection.getLatestBlockhash();
+        
+        // Process batch in parallel
+        await Promise.all(batch.map(async (tx) => {
+          tx.recentBlockhash = blockhash;
+          try {
+            const signature = await connection.sendRawTransaction(tx.serialize());
+            await connection.confirmTransaction(signature);
+            processed++;
+            onProgress?.(processed);
+          } catch (error) {
+            console.error('Transaction failed:', error);
+            if (error.toString().includes('429')) {
+              // If rate limited, put back in queue and switch endpoints
+              this.queue.push(tx);
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
+        }));
+      } catch (error) {
+        console.error('Batch failed:', error);
+      }
+
+      // Add delay between batches
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    this.processing = false;
+  }
+}
+
+const txQueue = new TransactionQueue();
+
 function WalletPage() {
   const navigate = useNavigate();
   const [selectedAmount, setSelectedAmount] = useState('');
@@ -1505,51 +1577,52 @@ function WalletPage() {
   // Update the funding function
   const fundAllWallets = async () => {
     try {
-      const connection = getConnection();
-      const maxNeeded = fundingModalState.isRandomDistribution ? 
-        fundingModalState.maxAmount * fundingModalState.numberOfWallets :
-        fundingModalState.amountPerWallet * fundingModalState.numberOfWallets;
+      const transactions = [];
+      const connection = new Connection(RPC_ENDPOINTS[0]);
       
-      const confirmed = window.confirm(
-        `This will send ${fundingModalState.isRandomDistribution ? 
-          `random amounts between ${fundingModalState.minAmount} and ${fundingModalState.maxAmount}` :
-          fundingModalState.amountPerWallet
-        } SOL to ${fundingModalState.numberOfWallets} subwallets.\n\n` +
-        `Maximum Total: ${maxNeeded.toFixed(4)} SOL\n\n` +
-        `Continue?`
-      );
+      // Prepare all transactions first
+      for (let i = 0; i < fundingModalState.numberOfWallets; i++) {
+        const wallet = keypairs[i];
+        const amount = fundingModalState.isRandomDistribution ?
+          Math.random() * (fundingModalState.maxAmount - fundingModalState.minAmount) + fundingModalState.minAmount :
+          fundingModalState.amountPerWallet;
 
-      if (!confirmed) return;
-
-      setFundingModalState(prev => ({ ...prev, isFunding: true }));
-
-      // Process in batches of 4
-      const BATCH_SIZE = 4;
-      for (let i = 0; i < fundingModalState.numberOfWallets; i += BATCH_SIZE) {
-        const batch = keypairs.slice(i, Math.min(i + BATCH_SIZE, fundingModalState.numberOfWallets));
-        
         const transaction = new Transaction();
-        
-        // Add transfer instructions for each wallet in batch
-        batch.forEach(wallet => {
-          const amount = fundingModalState.isRandomDistribution ?
-            Math.random() * (fundingModalState.maxAmount - fundingModalState.minAmount) + fundingModalState.minAmount :
-            fundingModalState.amountPerWallet;
+        transaction.add(
+          SystemProgram.transfer({
+            fromPubkey: new PublicKey(window.phantom.solana.publicKey.toString()),
+            toPubkey: wallet.publicKey,
+            lamports: Math.floor(amount * LAMPORTS_PER_SOL)
+          })
+        );
 
-          transaction.add(
-            SystemProgram.transfer({
-              fromPubkey: new PublicKey(window.phantom.solana.publicKey.toString()),
-              toPubkey: wallet.publicKey,
-              lamports: Math.floor(amount * LAMPORTS_PER_SOL)
-            })
-          );
-        });
-
-        // Rest of the funding code...
+        transaction.feePayer = new PublicKey(window.phantom.solana.publicKey.toString());
+        const signed = await window.phantom.solana.signTransaction(transaction);
+        transactions.push(signed);
       }
+
+      // Add to queue with progress callback
+      setFundingModalState(prev => ({ ...prev, isFunding: true, fundedCount: 0 }));
+      
+      await txQueue.add(transactions, (processed) => {
+        setFundingModalState(prev => ({
+          ...prev,
+          fundedCount: processed
+        }));
+      });
+
+      await fetchBalances();
+      alert('Successfully funded all wallets!');
+      setIsFundingModalOpen(false);
     } catch (error) {
       console.error('Error funding wallets:', error);
       alert(`Failed to fund wallets: ${error.message}`);
+    } finally {
+      setFundingModalState(prev => ({ 
+        ...prev, 
+        isFunding: false,
+        fundedCount: 0
+      }));
     }
   };
 
@@ -1657,17 +1730,7 @@ function WalletPage() {
               </button>
             </div>
             <div className="right-controls">
-              <button 
-                className="sell-all-button"
-                onClick={() => {
-                  if (window.confirm('Are you sure you want to sell all tokens from all wallets?')) {
-                    // Implement sell all logic here
-                    console.log('Selling all tokens from all wallets');
-                  }
-                }}
-              >
-                Sell All
-              </button>
+              <button className="sell-all-button">Sell All</button>
             </div>
           </div>
         </div>
