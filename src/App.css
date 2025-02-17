@@ -3089,40 +3089,67 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 }
 
 .parent-wallet-info {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
-  margin-bottom: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
 }
 
 .parent-wallet-row {
   display: flex;
-  align-items: center;
-  width: 100%;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .parent-wallet-row .label {
   color: #888;
   font-size: 14px;
-  margin-right: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .parent-wallet-row .address {
   font-family: monospace;
+  font-size: 16px;
   color: #fff;
-  flex: 1;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.parent-wallet-row .parent-balance {
-  color: #2ecc71;
+.parent-balances {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.parent-balance {
+  padding: 12px;
+  border-radius: 6px;
   font-family: monospace;
-  font-weight: 500;
-  padding: 6px 12px;
-  background: rgba(46, 204, 113, 0.1);
-  border-radius: 4px;
-  border: 1px solid rgba(46, 204, 113, 0.2);
+  font-size: 15px;
+  text-align: center;
+}
+
+.parent-balance.tribify {
+  background: rgba(241, 196, 15, 0.1);
+  border: 1px solid #f1c40f;
+  color: #f1c40f;
+}
+
+.parent-balance.sol {
+  background: rgba(52, 152, 219, 0.1);
+  border: 1px solid #3498db;
+  color: #3498db;
+}
+
+.parent-balance.usdc {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid #fff;
+  color: #fff;
 }
 
 /* Fix distribute button */
@@ -3286,4 +3313,170 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   border-top: 1px solid rgba(255, 255, 255, 0.2);
   font-weight: 500;
   color: #f1c40f;
+}
+
+/* Update input styling for wallet selection */
+.wallet-selection input {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  width: 80px;
+  font-family: monospace;
+}
+
+.wallet-selection input:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+/* Update amount input styling */
+.amount-input input {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  width: 120px;
+  font-family: monospace;
+}
+
+.amount-input input:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.fund-all-button {
+  width: 100%;
+  padding: 12px;
+  background: rgba(46, 204, 113, 0.1);
+  border: 1px solid #2ecc71;
+  color: #2ecc71;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.fund-all-button:hover:not(:disabled) {
+  background: rgba(46, 204, 113, 0.2);
+  transform: translateY(-1px);
+}
+
+.fund-all-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.execute-funding-button {
+  width: 100%;
+  padding: 12px;
+  background: rgba(46, 204, 113, 0.1);
+  border: 1px solid #2ecc71;
+  color: #2ecc71;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.execute-funding-button:hover:not(:disabled) {
+  background: rgba(46, 204, 113, 0.2);
+  transform: translateY(-1px);
+}
+
+.execute-funding-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.funding-progress {
+  margin-top: 20px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.current-batch {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.batch-wallet {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.batch-wallet.processing {
+  border: 1px solid #f1c40f;
+  background: rgba(241, 196, 15, 0.1);
+}
+
+.batch-wallet.success {
+  border: 1px solid #2ecc71;
+  background: rgba(46, 204, 113, 0.1);
+}
+
+.batch-wallet.failed {
+  border: 1px solid #e74c3c;
+  background: rgba(231, 76, 60, 0.1);
+}
+
+.funding-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 14px;
+  color: #888;
+}
+
+.parent-balances {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.parent-balance {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.parent-balance.tribify {
+  background: rgba(241, 196, 15, 0.1);
+  border: 1px solid #f1c40f;
+  color: #f1c40f;
+}
+
+.parent-balance.sol {
+  background: rgba(52, 152, 219, 0.1);
+  border: 1px solid #3498db;
+  color: #3498db;
+}
+
+.parent-balance.usdc {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid #fff;
+  color: #fff;
 }
