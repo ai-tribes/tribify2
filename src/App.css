@@ -3596,3 +3596,19 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   transform: translateY(-1px);
   filter: brightness(1.1);
 }
+
+.message-all-button {
+  background: #2ecc71;
+  color: white;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.message-all-button:hover {
+  background: #27ae60;
+  transform: translateY(-1px);
+}

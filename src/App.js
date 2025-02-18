@@ -154,10 +154,28 @@ const HoldersList = ({ holders, onNodeClick, nicknames, setNicknames, setActiveV
             $ {holder.usdcBalance?.toFixed(2) || '0.00'}
           </div>
           <div className="holder-col message">
-            {holder.address !== '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' && (
-              <button onClick={() => setActiveView('messages')}>
-                Message
+            {holder.address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' ? (
+              <button 
+                className="message-all-button"
+                onClick={() => {
+                  // Get all holders except LP
+                  const nonLpHolders = holders.filter(h => 
+                    h.address !== '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' && 
+                    h.tokenBalance > 0
+                  );
+                  setActiveView('messages');
+                  // You'll need to implement the broadcast message functionality
+                  // This could open a special message modal for broadcasting
+                }}
+              >
+                Message All
               </button>
+            ) : (
+              holder.address !== '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' && (
+                <button onClick={() => setActiveView('messages')}>
+                  Message
+                </button>
+              )
             )}
           </div>
         </div>
