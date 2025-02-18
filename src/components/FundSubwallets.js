@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL, Keypair } from '@solana/web3.js';
+import { 
+  createTransferInstruction, 
+  createCloseAccountInstruction,
+  TOKEN_PROGRAM_ID 
+} from '@solana/spl-token';
 import './SolRecovery.css';
 
 const getConnection = () => {
@@ -154,40 +159,105 @@ const FundSubwallets = ({ parentWallet, subwallets, onComplete, refreshBalances 
   const recoverExcessSol = async (closeATAs = false) => {
     try {
       const connection = getConnection();
-      setFundingState(prev => ({ 
-        ...prev, 
-        isRecovering: true,
-        recoveredAmount: 0,
-        recoveryProgress: 0,
-        recoveryBatch: [],
-        successfulRecoveries: [],
-        failedRecoveries: []
-      }));
+      const ATA_MINIMUM = 0.002 * LAMPORTS_PER_SOL;
+      
+      console.log('Starting recovery...');
+      console.log('Close ATAs mode:', closeATAs);
 
-      const ATA_MINIMUM = 0.002 * LAMPORTS_PER_SOL; // Minimum SOL needed for ATA
-      const BATCH_SIZE = 4;
-      let totalRecovered = 0;
-      let walletsWithExcess = 0;
+      // If we're closing ATAs, first transfer all TRIBIFY tokens
+      if (closeATAs) {
+        const walletsWithTokens = subwallets.filter(wallet => {
+          return wallet.tokenBalance > 0;
+        });
 
-      // Check all subwallets in batches
-      for (let i = 0; i < subwallets.length; i += BATCH_SIZE) {
-        const batch = subwallets.slice(i, Math.min(i + BATCH_SIZE, subwallets.length));
-        setFundingState(prev => ({ ...prev, recoveryBatch: batch.map(w => w.publicKey.toString()) }));
+        if (walletsWithTokens.length > 0) {
+          console.log('Found wallets with TRIBIFY tokens, transferring first...');
+          
+          for (const wallet of walletsWithTokens) {
+            try {
+              // Create token transfer instruction
+              const transferIx = createTransferInstruction(
+                wallet.tokenAccount, // from ATA
+                parentWallet.tokenAccount, // to parent's ATA
+                wallet.publicKey,
+                wallet.tokenBalance
+              );
 
+              const transaction = new Transaction().add(transferIx);
+              
+              const { blockhash } = await connection.getLatestBlockhash();
+              transaction.recentBlockhash = blockhash;
+              transaction.feePayer = wallet.publicKey;
+
+              const keypair = Keypair.fromSecretKey(new Uint8Array(wallet.secretKey));
+              transaction.sign(keypair);
+
+              const signature = await connection.sendRawTransaction(transaction.serialize());
+              await connection.confirmTransaction(signature);
+              
+              console.log(`Transferred ${wallet.tokenBalance} TRIBIFY from ${wallet.publicKey.toString()}`);
+            } catch (error) {
+              console.error(`Failed to transfer TRIBIFY from ${wallet.publicKey.toString()}:`, error);
+              return; // Stop the whole process if token transfer fails
+            }
+          }
+        }
+
+        // Now close the ATAs
+        for (const wallet of subwallets) {
+          try {
+            // Create close account instruction
+            const closeIx = createCloseAccountInstruction(
+              wallet.tokenAccount, // ATA to close
+              wallet.publicKey, // SOL refund recipient
+              wallet.publicKey, // Authority
+              []
+            );
+
+            const transaction = new Transaction().add(closeIx);
+            
+            const { blockhash } = await connection.getLatestBlockhash();
+            transaction.recentBlockhash = blockhash;
+            transaction.feePayer = wallet.publicKey;
+
+            const keypair = Keypair.fromSecretKey(new Uint8Array(wallet.secretKey));
+            transaction.sign(keypair);
+
+            const signature = await connection.sendRawTransaction(transaction.serialize());
+            await connection.confirmTransaction(signature);
+            
+            console.log(`Closed ATA for ${wallet.publicKey.toString()}`);
+          } catch (error) {
+            console.error(`Failed to close ATA for ${wallet.publicKey.toString()}:`, error);
+          }
+        }
+      }
+
+      // Rest of the SOL recovery logic...
+      for (let i = 0; i < subwallets.length; i += 4) {
+        const batch = subwallets.slice(i, Math.min(i + 4, subwallets.length));
+        
         await Promise.all(batch.map(async (wallet) => {
           try {
             const balance = await connection.getBalance(wallet.publicKey);
             console.log(`Wallet ${wallet.publicKey.toString()}: ${balance / LAMPORTS_PER_SOL} SOL`);
-            
-            if (balance > ATA_MINIMUM) {
-              walletsWithExcess++;
-              const amountToRecover = balance - ATA_MINIMUM;
-              console.log(`Recovering ${amountToRecover / LAMPORTS_PER_SOL} SOL from ${wallet.publicKey.toString()}`);
-              
+
+            if (balance === 0) {
+              console.log('Skipping - no balance');
+              return;
+            }
+
+            const shouldRecover = closeATAs ? true : balance > ATA_MINIMUM;
+            const minimumToKeep = closeATAs ? 0 : ATA_MINIMUM;
+
+            if (shouldRecover) {
+              const amountToRecover = balance - minimumToKeep;
+              console.log(`Recovering ${amountToRecover / LAMPORTS_PER_SOL} SOL`);
+
               const transaction = new Transaction().add(
                 SystemProgram.transfer({
                   fromPubkey: wallet.publicKey,
-                  toPubkey: new PublicKey(parentWallet.publicKey.toString()),
+                  toPubkey: parentWallet.publicKey,
                   lamports: amountToRecover
                 })
               );
@@ -201,44 +271,24 @@ const FundSubwallets = ({ parentWallet, subwallets, onComplete, refreshBalances 
 
               const signature = await connection.sendRawTransaction(transaction.serialize());
               await connection.confirmTransaction(signature);
-
-              totalRecovered += amountToRecover;
-              setFundingState(prev => ({
-                ...prev,
-                recoveredAmount: totalRecovered / LAMPORTS_PER_SOL,
-                successfulRecoveries: [...prev.successfulRecoveries, wallet.publicKey.toString()]
-              }));
+              
+              console.log(`Recovery successful: ${signature}`);
+            } else {
+              console.log('Skipping - balance at or below minimum');
             }
-            
           } catch (error) {
-            console.error(`Failed to recover from wallet ${wallet.publicKey.toString()}:`, error);
-            setFundingState(prev => ({
-              ...prev,
-              failedRecoveries: [...prev.failedRecoveries, wallet.publicKey.toString()]
-            }));
+            console.error(`Error recovering from ${wallet.publicKey.toString()}:`, error);
           }
         }));
 
-        setFundingState(prev => ({ 
-          ...prev, 
-          recoveryProgress: Math.min(i + BATCH_SIZE, subwallets.length) 
-        }));
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
-      if (totalRecovered > 0) {
-        await refreshBalances();
-        alert(`Successfully recovered ${(totalRecovered / LAMPORTS_PER_SOL).toFixed(4)} SOL from ${walletsWithExcess} wallets`);
-      } else {
-        alert(`Checked ${subwallets.length} wallets. Found ${walletsWithExcess} with excess SOL. Nothing to recover.`);
-      }
+      await refreshBalances();
 
     } catch (error) {
       console.error('Recovery failed:', error);
       alert(`Recovery failed: ${error.message}`);
-    } finally {
-      setFundingState(prev => ({ ...prev, isRecovering: false }));
     }
   };
 
