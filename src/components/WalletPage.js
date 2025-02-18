@@ -1728,8 +1728,11 @@ function WalletPage() {
               <button onClick={() => fileInputRef.current?.click()}>
                 Restore Keys
               </button>
-              <button onClick={fetchBalances} disabled={keypairs.length === 0 || isLoading}>
-                Refresh
+              <button 
+                onClick={fetchBalances} 
+                disabled={keypairs.length === 0 || isLoading}
+              >
+                ↻ Refresh Wallets
               </button>
             </div>
           </div>

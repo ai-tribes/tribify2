@@ -7,7 +7,6 @@ import * as d3 from 'd3-force';
 import Pusher from 'pusher-js';
 import { encrypt, decrypt } from './lib/encryption';
 import Connected from './components/Connected';
-import Refresh from './components/Refresh';
 import Password from './components/Password';
 import Messages from './components/Messages';
 import Backup from './components/Backup';
@@ -1116,7 +1115,6 @@ Need help setting up distribution? Just ask!`;
             >
               Wallet
             </button>
-            <Refresh onClick={fetchTokenHolders} />
             <Password onClick={() => {
               if (friendPassword) {
                 // Has password - show change form
