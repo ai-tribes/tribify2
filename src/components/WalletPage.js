@@ -18,6 +18,8 @@ import FundSubwallets from './FundSubwallets';
 // Add these imports at the top
 import { Jupiter, QuoteCalculator } from '@jup-ag/sdk';
 import { NATIVE_MINT } from '@solana/spl-token';
+import './ConversionModal.css';
+import ConversionModal from './ConversionModal';
 
 const TOTAL_SUPPLY = 1_000_000_000; // 1 Billion tokens
 
@@ -1730,73 +1732,12 @@ function WalletPage() {
   };
 
   // Update the handleMassConversion function
-  const handleMassConversion = async (fromToken, toToken) => {
-    try {
-      const totalAmount = Object.entries(walletBalances)
-        .filter(([key]) => key !== 'parent')
-        .reduce((sum, [_, balance]) => sum + (balance[fromToken.toLowerCase()] || 0), 0);
-
-      if (totalAmount <= 0) {
-        alert(`No ${fromToken} available to convert`);
-        return;
-      }
-
-      // Show appropriate dialog based on conversion type
-      if (fromToken === 'TRIBIFY' && toToken === 'SOL') {
-        const confirmed = window.confirm(
-          `This will convert all TRIBIFY (${totalAmount.toLocaleString()} TRIBIFY) to SOL using ` +
-          `the Pump.fun liquidity pool at ${PUMP_LP_ADDRESS}.\n\n` +
-          `Continue?`
-        );
-        if (!confirmed) return;
-
-        // Initialize conversion status
-        setConversionStatus({
-          isConverting: true,
-          processed: 0,
-          total: keypairs.length,
-          currentBatch: [],
-          successfulWallets: [],
-          failedWallets: [],
-          totalConverted: 0,
-          fromToken,
-          toToken
-        });
-
-        // Process in batches
-        const BATCH_SIZE = 4;
-        for (let i = 0; i < keypairs.length; i += BATCH_SIZE) {
-          // ... rest of the batching logic
-        }
-      } 
-      else if (fromToken === 'SOL' && toToken === 'TRIBIFY') {
-        const confirmed = window.confirm(
-          `This will convert all SOL (${totalAmount.toLocaleString()} SOL) to TRIBIFY using ` +
-          `the Pump.fun liquidity pool at 6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7.\n\n` +
-          `Continue?`
-        );
-        if (!confirmed) return;
-        // TODO: Implement Pump.fun swap logic
-        alert('Pump.fun swap implementation coming soon!');
-      }
-      else {
-        alert(
-          `$TRIBIFY is currently only tradeable on Pump.fun against SOL.\n\n` +
-          `Additional trading pairs will become available when the token graduates to Raydium.`
-        );
-        return;
-      }
-
-      // ... rest of the conversion logic ...
-
-    } catch (error) {
-      console.error('Mass conversion failed:', error);
-      setConversionStatus(prev => ({
-        ...prev,
-        isConverting: false
-      }));
-      setStatus(`Failed to convert: ${error.message}`);
-    }
+  const handleMassConversion = (fromToken, toToken) => {
+    setConversionStatus({
+      isConverting: true,
+      fromToken,
+      toToken
+    });
   };
 
   // Add retry handler
@@ -2706,61 +2647,14 @@ function WalletPage() {
 
         {/* Conversion Progress Modal */}
         {conversionStatus.isConverting && (
-          <div className="modal-container">
-            <div 
-              className="modal-overlay" 
-              onClick={() => {
-                if (!conversionStatus.inProgress) {
-                  setConversionStatus(prev => ({ ...prev, isConverting: false }));
-                }
-              }}
-            />
-            <div className="modal-content conversion-modal">
-              <div className="modal-header">
-                <h3>
-                  Converting {conversionStatus.fromToken} to {conversionStatus.toToken}
-                  {conversionStatus.inProgress && <span className="loading-dot">...</span>}
-                </h3>
-                {!conversionStatus.inProgress && (
-                  <button 
-                    className="close-modal-button"
-                    onClick={() => setConversionStatus(prev => ({ ...prev, isConverting: false }))}
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-
-              {conversionStatus.error && (
-                <div className="error-message">
-                  {conversionStatus.error}
-                  {conversionStatus.error.includes('insufficient') && (
-                    <button 
-                      className="retry-button"
-                      onClick={() => handleRetryConversion()}
-                    >
-                      Retry with Lower Amount
-                    </button>
-                  )}
-                </div>
-              )}
-              
-              <div className="progress-bar-container">
-                <div 
-                  className="progress-bar" 
-                  style={{ 
-                    width: `${(conversionStatus.processed / conversionStatus.total) * 100}%`,
-                    transition: 'width 0.3s ease'
-                  }}
-                />
-                <span className="progress-text">
-                  {conversionStatus.processed} / {conversionStatus.total} Wallets Processed
-                </span>
-              </div>
-
-              {/* Rest of the modal content... */}
-            </div>
-          </div>
+          <ConversionModal 
+            keypairs={keypairs}
+            walletBalances={walletBalances}
+            fromToken={conversionStatus.fromToken}
+            toToken={conversionStatus.toToken}
+            onClose={() => setConversionStatus(prev => ({ ...prev, isConverting: false }))}
+            onComplete={fetchBalances}
+          />
         )}
       </div>
     </div>
