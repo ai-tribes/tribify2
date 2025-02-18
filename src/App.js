@@ -1122,7 +1122,7 @@ Need help setting up distribution? Just ask!`;
                   show: true,
                   message: (
                     <>
-                      <h3>Password</h3>
+                      <h3>Change Password</h3>
                       <div className="password-form">
                         <div className="password-field">
                           <label>Username</label>
@@ -1198,7 +1198,7 @@ Need help setting up distribution? Just ask!`;
                       setStatus('Failed to change password: ' + error.message);
                     }
                   },
-                  confirmText: 'Buy New Password ($1)'
+                  confirmText: 'Change Password'
                 });
               } else {
                 // No password - offer to create
@@ -1239,7 +1239,9 @@ Need help setting up distribution? Just ask!`;
                     } catch (error) {
                       setStatus('Failed to create password: ' + error.message);
                     }
-                  }
+                  },
+                  confirmText: 'Yes, Create Password',
+                  cancelText: 'No, Cancel'
                 });
               }
             }} />
@@ -1470,13 +1472,14 @@ Need help setting up distribution? Just ask!`;
                 dialogConfig.onConfirm?.();
                 setDialogConfig({ show: false });
               }}>
-                {/* Check if we're in a login form */}
-                {document.getElementById('loginForm') ? 'Login' : 'Save'}
+                {dialogConfig.confirmText || 'Save'}
               </button>
               <button onClick={() => {
                 setDialogConfig({ show: false });
                 setEditingNickname(null);
-              }}>Cancel</button>
+              }}>
+                {dialogConfig.cancelText || 'Cancel'}
+              </button>
             </div>
           </div>
         </div>
