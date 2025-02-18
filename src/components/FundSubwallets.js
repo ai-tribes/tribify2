@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL, Keypair } from '@solana/web3.js';
+import './SolRecovery.css';
 
 const getConnection = () => {
   return new Connection(
@@ -26,7 +27,15 @@ const FundSubwallets = ({ parentWallet, subwallets, onComplete, refreshBalances 
     fundedCount: 0,
     currentBatch: [],
     successfulWallets: [],
-    failedWallets: []
+    failedWallets: [],
+    recoveryProgress: 0,
+    recoveryBatch: [],
+    successfulRecoveries: [],
+    failedRecoveries: [],
+    showRecoveryModal: false,
+    walletStates: {},
+    scanProgress: 0,
+    isScanning: false
   });
 
   useEffect(() => {
@@ -142,12 +151,150 @@ const FundSubwallets = ({ parentWallet, subwallets, onComplete, refreshBalances 
     }
   };
 
+  const recoverExcessSol = async (closeATAs = false) => {
+    try {
+      const connection = getConnection();
+      setFundingState(prev => ({ 
+        ...prev, 
+        isRecovering: true,
+        recoveredAmount: 0,
+        recoveryProgress: 0,
+        recoveryBatch: [],
+        successfulRecoveries: [],
+        failedRecoveries: []
+      }));
+
+      const ATA_MINIMUM = 0.002 * LAMPORTS_PER_SOL; // Minimum SOL needed for ATA
+      const BATCH_SIZE = 4;
+      let totalRecovered = 0;
+      let walletsWithExcess = 0;
+
+      // Check all subwallets in batches
+      for (let i = 0; i < subwallets.length; i += BATCH_SIZE) {
+        const batch = subwallets.slice(i, Math.min(i + BATCH_SIZE, subwallets.length));
+        setFundingState(prev => ({ ...prev, recoveryBatch: batch.map(w => w.publicKey.toString()) }));
+
+        await Promise.all(batch.map(async (wallet) => {
+          try {
+            const balance = await connection.getBalance(wallet.publicKey);
+            console.log(`Wallet ${wallet.publicKey.toString()}: ${balance / LAMPORTS_PER_SOL} SOL`);
+            
+            if (balance > ATA_MINIMUM) {
+              walletsWithExcess++;
+              const amountToRecover = balance - ATA_MINIMUM;
+              console.log(`Recovering ${amountToRecover / LAMPORTS_PER_SOL} SOL from ${wallet.publicKey.toString()}`);
+              
+              const transaction = new Transaction().add(
+                SystemProgram.transfer({
+                  fromPubkey: wallet.publicKey,
+                  toPubkey: new PublicKey(parentWallet.publicKey.toString()),
+                  lamports: amountToRecover
+                })
+              );
+
+              const { blockhash } = await connection.getLatestBlockhash();
+              transaction.recentBlockhash = blockhash;
+              transaction.feePayer = wallet.publicKey;
+
+              const keypair = Keypair.fromSecretKey(new Uint8Array(wallet.secretKey));
+              transaction.sign(keypair);
+
+              const signature = await connection.sendRawTransaction(transaction.serialize());
+              await connection.confirmTransaction(signature);
+
+              totalRecovered += amountToRecover;
+              setFundingState(prev => ({
+                ...prev,
+                recoveredAmount: totalRecovered / LAMPORTS_PER_SOL,
+                successfulRecoveries: [...prev.successfulRecoveries, wallet.publicKey.toString()]
+              }));
+            }
+            
+          } catch (error) {
+            console.error(`Failed to recover from wallet ${wallet.publicKey.toString()}:`, error);
+            setFundingState(prev => ({
+              ...prev,
+              failedRecoveries: [...prev.failedRecoveries, wallet.publicKey.toString()]
+            }));
+          }
+        }));
+
+        setFundingState(prev => ({ 
+          ...prev, 
+          recoveryProgress: Math.min(i + BATCH_SIZE, subwallets.length) 
+        }));
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      if (totalRecovered > 0) {
+        await refreshBalances();
+        alert(`Successfully recovered ${(totalRecovered / LAMPORTS_PER_SOL).toFixed(4)} SOL from ${walletsWithExcess} wallets`);
+      } else {
+        alert(`Checked ${subwallets.length} wallets. Found ${walletsWithExcess} with excess SOL. Nothing to recover.`);
+      }
+
+    } catch (error) {
+      console.error('Recovery failed:', error);
+      alert(`Recovery failed: ${error.message}`);
+    } finally {
+      setFundingState(prev => ({ ...prev, isRecovering: false }));
+    }
+  };
+
+  const scanWalletBalances = async () => {
+    const connection = getConnection();
+    const ATA_MINIMUM = 0.002 * LAMPORTS_PER_SOL;
+    
+    setFundingState(prev => ({ 
+      ...prev, 
+      isScanning: true,
+      scanProgress: 0,
+      walletStates: {}
+    }));
+
+    for (let i = 0; i < subwallets.length; i++) {
+      const wallet = subwallets[i];
+      try {
+        const balance = await connection.getBalance(wallet.publicKey);
+        
+        let state = 'empty';
+        if (balance === 0) {
+          state = 'empty';
+        } else if (balance === ATA_MINIMUM) {
+          state = 'ata';
+        } else if (balance > ATA_MINIMUM) {
+          state = 'excess';
+        }
+
+        setFundingState(prev => ({
+          ...prev,
+          walletStates: {
+            ...prev.walletStates,
+            [wallet.publicKey.toString()]: {
+              state,
+              balance: balance / LAMPORTS_PER_SOL
+            }
+          },
+          scanProgress: (i + 1)
+        }));
+
+      } catch (error) {
+        console.error(`Error scanning wallet ${wallet.publicKey.toString()}:`, error);
+      }
+      
+      // Small delay to avoid rate limits
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    setFundingState(prev => ({ ...prev, isScanning: false }));
+  };
+
   return (
     <>
       <div className="modal-left">
+        <h2 className="fund-modal-title">Fund SubWallets</h2>
         <div className="config-explanation">
-          <h2>Subwallet SOL Management</h2>
-          
           <div className="explanation-section">
             <h3>Funding Process</h3>
             <ul>
@@ -337,6 +484,13 @@ const FundSubwallets = ({ parentWallet, subwallets, onComplete, refreshBalances 
                   'Fund with SOL'
                 )}
               </button>
+
+              <button 
+                className="recover-sol-button"
+                onClick={() => setFundingState(prev => ({ ...prev, showRecoveryModal: true }))}
+              >
+                Recover SOL
+              </button>
             </div>
 
             {fundingState.isFunding && (
@@ -361,9 +515,101 @@ const FundSubwallets = ({ parentWallet, subwallets, onComplete, refreshBalances 
                 </div>
               </div>
             )}
+
+            {fundingState.isRecovering && (
+              <div className="funding-progress">
+                <h4>Recovery Progress</h4>
+                <div className="current-batch">
+                  {fundingState.recoveryBatch.map((wallet, index) => (
+                    <div key={index} className={`batch-wallet ${
+                      fundingState.successfulRecoveries.includes(wallet) ? 'success' :
+                      fundingState.failedRecoveries.includes(wallet) ? 'failed' : 'processing'
+                    }`}>
+                      <span className="wallet-address">{wallet.slice(0, 6)}...{wallet.slice(-6)}</span>
+                      <span className="status">
+                        {fundingState.successfulRecoveries.includes(wallet) ? '✓' :
+                         fundingState.failedRecoveries.includes(wallet) ? '✗' : '...'}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="funding-stats">
+                  <div>Successfully Processed: {fundingState.successfulRecoveries.length}</div>
+                  <div>Failed: {fundingState.failedRecoveries.length}</div>
+                  <div>Total Recovered: {fundingState.recoveredAmount.toFixed(4)} SOL</div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {fundingState.showRecoveryModal && (
+        <div className="modal-overlay">
+          <div className="sol-recovery-modal">
+            <div className="sol-recovery-header">
+              <h2>SOL Recovery</h2>
+              <button 
+                className="sol-recovery-close"
+                onClick={() => setFundingState(prev => ({ ...prev, showRecoveryModal: false }))}
+              >×</button>
+            </div>
+
+            <div className="sol-recovery-actions">
+              <button 
+                className="scan-button"
+                disabled={fundingState.isScanning}
+                onClick={scanWalletBalances}
+              >
+                {fundingState.isScanning ? 'Scanning...' : 'Scan Wallets'}
+              </button>
+              
+              <div className="recovery-buttons">
+                <button 
+                  className="recover-excess-button"
+                  disabled={!Object.values(fundingState.walletStates).some(w => w.state === 'excess')}
+                  onClick={() => recoverExcessSol(false)}
+                >
+                  Recover Excess SOL
+                </button>
+                <button 
+                  className="close-atas-button"
+                  disabled={!Object.values(fundingState.walletStates).some(w => w.state === 'ata' || w.state === 'excess')}
+                  onClick={() => recoverExcessSol(true)}
+                >
+                  Close ATAs & Recover All
+                </button>
+              </div>
+            </div>
+
+            <div className="wallets-grid">
+              {subwallets.map((wallet) => {
+                const walletState = fundingState.walletStates[wallet.publicKey.toString()];
+                return (
+                  <div 
+                    key={wallet.publicKey.toString()}
+                    className={`wallet-cell ${walletState?.state || 'unscanned'}`}
+                  >
+                    <div className="address">
+                      {wallet.publicKey.toString().slice(0, 4)}...{wallet.publicKey.toString().slice(-4)}
+                    </div>
+                    {walletState && (
+                      <div className="balance">
+                        {walletState.balance.toFixed(4)} SOL
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {fundingState.isScanning && (
+              <div className="scan-progress">
+                Scanning: {fundingState.scanProgress} / {subwallets.length}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 };
