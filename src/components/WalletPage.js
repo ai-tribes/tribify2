@@ -15,6 +15,9 @@ import {
 import TokenDistributor from './TokenDistributor';
 // Import the new component
 import FundSubwallets from './FundSubwallets';
+// Add these imports at the top
+import { Jupiter, QuoteCalculator } from '@jup-ag/sdk';
+import { NATIVE_MINT } from '@solana/spl-token';
 
 const TOTAL_SUPPLY = 1_000_000_000; // 1 Billion tokens
 
@@ -1648,7 +1651,65 @@ function WalletPage() {
     }
   }, [isFundingModalOpen]);
 
-  // Add this function before the return statement
+  // Add these helper functions before the WalletPage component
+  const getJupiter = async (connection, keypair) => {
+    const calculator = new QuoteCalculator({
+      connection,
+      cluster: 'mainnet-beta',
+      routeCacheDuration: 10, // 10 second cache
+      wrapUnwrapSOL: true,
+      enableSwapModeV2: true
+    });
+    
+    return calculator;
+  };
+
+  const createSwapTransaction = async (
+    calculator,
+    fromToken,
+    toToken,
+    amount,
+    keypair,
+    slippage = 1
+  ) => {
+    const inputMint = fromToken === 'SOL' ? NATIVE_MINT : 
+                      fromToken === 'USDC' ? new PublicKey(USDC_MINT) :
+                      new PublicKey(TRIBIFY_TOKEN_MINT);
+    
+    const outputMint = toToken === 'SOL' ? NATIVE_MINT :
+                       toToken === 'USDC' ? new PublicKey(USDC_MINT) :
+                       new PublicKey(TRIBIFY_TOKEN_MINT);
+
+    // Get quote
+    const quote = await calculator.getQuote({
+      sourceMint: inputMint,
+      destinationMint: outputMint,
+      amount: toBigNumber(amount),
+      slippageBps: slippage * 100,
+    });
+
+    if (!quote) {
+      throw new Error('No routes found for swap');
+    }
+
+    // Create the swap transaction
+    const swapTx = new Transaction();
+    
+    // Add swap instructions from quote
+    quote.instructions.forEach(instruction => {
+      swapTx.add(instruction);
+    });
+
+    // Add recent blockhash and sign
+    const { blockhash } = await connection.getLatestBlockhash();
+    swapTx.recentBlockhash = blockhash;
+    swapTx.feePayer = keypair.publicKey;
+    swapTx.sign(keypair);
+
+    return swapTx;
+  };
+
+  // Update the handleMassConversion function
   const handleMassConversion = async (fromToken, toToken) => {
     try {
       // Calculate total amount available for conversion
@@ -1671,30 +1732,54 @@ function WalletPage() {
 
       setStatus(`Converting ${fromToken} to ${toToken}...`);
       
-      // Prepare all conversion transactions
+      const connection = new Connection(
+        `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
+        { commitment: 'confirmed' }
+      );
+
       const transactions = [];
+      let processedAmount = 0;
+
       for (const keypair of keypairs) {
         const balance = walletBalances[keypair.publicKey.toString()]?.[fromToken.toLowerCase()];
         if (!balance || balance <= 0) continue;
 
-        // Here you would create the appropriate swap transaction
-        // This is a placeholder - you'll need to implement the actual swap logic
-        const transaction = new Transaction();
-        // Add swap instructions here based on fromToken and toToken
-        
-        transaction.feePayer = keypair.publicKey;
-        // Sign transaction with the subwallet's keypair
-        transaction.sign(keypair);
-        transactions.push(transaction);
+        try {
+          // Initialize Jupiter calculator for this wallet
+          const calculator = await getJupiter(connection, keypair);
+
+          // Create swap transaction
+          const swapTx = await createSwapTransaction(
+            calculator,
+            fromToken,
+            toToken,
+            balance,
+            keypair,
+            1 // 1% slippage
+          );
+
+          // Add to transaction queue
+          transactions.push(swapTx);
+          processedAmount += balance;
+
+          setStatus(`Prepared swap for wallet ${processedAmount}/${totalAmount} ${fromToken}`);
+        } catch (err) {
+          console.error(`Failed to prepare swap for wallet ${keypair.publicKey.toString()}:`, err);
+        }
       }
 
-      // Use the transaction queue to process all conversions
+      if (transactions.length === 0) {
+        throw new Error('No valid swaps could be prepared');
+      }
+
+      // Process all swaps
       await txQueue.add(transactions, (processed) => {
-        setStatus(`Converted ${processed}/${transactions.length} wallets`);
+        setStatus(`Processed ${processed}/${transactions.length} swaps`);
       });
 
       await fetchBalances();
-      setStatus(`Successfully converted all ${fromToken} to ${toToken}`);
+      setStatus(`Successfully converted ${processedAmount} ${fromToken} to ${toToken}`);
+
     } catch (error) {
       console.error('Mass conversion failed:', error);
       setStatus(`Failed to convert: ${error.message}`);
@@ -1769,10 +1854,16 @@ function WalletPage() {
               {/* TRIBIFY conversions */}
               <div className="conversion-group tribify">
                 <span className="group-label">Convert TRIBIFY to:</span>
-                <button className="convert-button tribify-to-sol" onClick={() => handleMassConversion('TRIBIFY', 'SOL')}>
+                <button 
+                  className="convert-button tribify-to-sol"
+                  onClick={() => handleMassConversion('TRIBIFY', 'SOL')}
+                >
                   SOL
                 </button>
-                <button className="convert-button tribify-to-usdc" onClick={() => handleMassConversion('TRIBIFY', 'USDC')}>
+                <button 
+                  className="convert-button tribify-to-usdc"
+                  onClick={() => handleMassConversion('TRIBIFY', 'USDC')}
+                >
                   USDC
                 </button>
               </div>
@@ -1780,10 +1871,16 @@ function WalletPage() {
               {/* SOL conversions */}
               <div className="conversion-group sol">
                 <span className="group-label">Convert SOL to:</span>
-                <button className="convert-button sol-to-tribify" onClick={() => handleMassConversion('SOL', 'TRIBIFY')}>
+                <button 
+                  className="convert-button sol-to-tribify"
+                  onClick={() => handleMassConversion('SOL', 'TRIBIFY')}
+                >
                   TRIBIFY
                 </button>
-                <button className="convert-button sol-to-usdc" onClick={() => handleMassConversion('SOL', 'USDC')}>
+                <button 
+                  className="convert-button sol-to-usdc"
+                  onClick={() => handleMassConversion('SOL', 'USDC')}
+                >
                   USDC
                 </button>
               </div>
@@ -1791,10 +1888,16 @@ function WalletPage() {
               {/* USDC conversions */}
               <div className="conversion-group usdc">
                 <span className="group-label">Convert USDC to:</span>
-                <button className="convert-button usdc-to-tribify" onClick={() => handleMassConversion('USDC', 'TRIBIFY')}>
+                <button 
+                  className="convert-button usdc-to-tribify"
+                  onClick={() => handleMassConversion('USDC', 'TRIBIFY')}
+                >
                   TRIBIFY
                 </button>
-                <button className="convert-button usdc-to-sol" onClick={() => handleMassConversion('USDC', 'SOL')}>
+                <button 
+                  className="convert-button usdc-to-sol"
+                  onClick={() => handleMassConversion('USDC', 'SOL')}
+                >
                   SOL
                 </button>
               </div>

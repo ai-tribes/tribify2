@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@jup-ag/sdk": "^0.2.0",
     "@prisma/client": "^6.3.1",
     "@solana/spl-token": "^0.4.12",
     "@solana/web3.js": "^1.98.0",

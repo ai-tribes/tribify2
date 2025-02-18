@@ -40,41 +40,101 @@
   transform: translateY(-1px);
 }
 
-/* Conversion Section */
+/* Conversion Buttons */
+.conversion-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  width: 100%;
+}
+
 .conversion-group {
   display: flex;
-  gap: 24px;
-  margin: 24px 0;
-  padding: 16px;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
   background: rgba(0, 0, 0, 0.3);
-  border-radius: 12px;
+  border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.group-label {
+  min-width: 150px;
+  color: #888;
+  font-weight: 500;
+}
+
 .convert-button {
-  padding: 8px 16px;
+  padding: 8px 24px;
   border-radius: 6px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-width: 100px;
+  text-align: center;
 }
 
-.convert-button.tribify {
-  background: rgba(241, 196, 15, 0.1);
-  border: 1px solid #f1c40f;
-  color: #f1c40f;
+/* TRIBIFY conversion buttons */
+.conversion-group.tribify {
+  border-color: rgba(241, 196, 15, 0.3);
 }
 
-.convert-button.sol {
+.convert-button.tribify-to-sol {
   background: rgba(52, 152, 219, 0.1);
   border: 1px solid #3498db;
   color: #3498db;
 }
 
-.convert-button.usdc {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid #fff;
-  color: #fff;
+.convert-button.tribify-to-usdc {
+  background: rgba(39, 174, 96, 0.1);
+  border: 1px solid #27ae60;
+  color: #27ae60;
+}
+
+/* SOL conversion buttons */
+.conversion-group.sol {
+  border-color: rgba(52, 152, 219, 0.3);
+}
+
+.convert-button.sol-to-tribify {
+  background: rgba(241, 196, 15, 0.1);
+  border: 1px solid #f1c40f;
+  color: #f1c40f;
+}
+
+.convert-button.sol-to-usdc {
+  background: rgba(39, 174, 96, 0.1);
+  border: 1px solid #27ae60;
+  color: #27ae60;
+}
+
+/* USDC conversion buttons */
+.conversion-group.usdc {
+  border-color: rgba(39, 174, 96, 0.3);
+}
+
+.convert-button.usdc-to-tribify {
+  background: rgba(241, 196, 15, 0.1);
+  border: 1px solid #f1c40f;
+  color: #f1c40f;
+}
+
+.convert-button.usdc-to-sol {
+  background: rgba(52, 152, 219, 0.1);
+  border: 1px solid #3498db;
+  color: #3498db;
+}
+
+.convert-button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.2);
+}
+
+.convert-button:active {
+  transform: translateY(0);
 }
 
 /* Parent Wallet Section */
