@@ -18,6 +18,7 @@ import bs58 from 'bs58';
 import { clusterApiUrl } from '@solana/web3.js';
 import HamburgerMenu from './components/HamburgerMenu';
 import TokenHolderGraph from './components/TokenHolderGraph';
+import MessagesPage from './components/MessagesPage';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -311,7 +312,7 @@ How can I help you get started?`
   });
 
   // Add state to control views (near other state declarations)
-  const [activeView, setActiveView] = useState('ai'); // Options: 'ai', 'holders', 'graph'
+  const [activeView, setActiveView] = useState('ai'); // Options: 'ai', 'holders', 'graph', 'messages'
 
   // Define WalletTable component inside App to access state and functions
   const WalletTable = ({ wallets, onCopy }) => {
@@ -1245,7 +1246,9 @@ Need help setting up distribution? Just ask!`;
                 });
               }
             }} />
-            <Messages onClick={() => setShowAllMessages(true)} />
+            <Messages onClick={() => {
+              setActiveView('messages');
+            }} />
             <Backup onClick={backupNicknames} />
             <Restore onClick={() => document.getElementById('restore-input').click()} />
             <button className="docs-button" onClick={() => setShowDocs(!showDocs)}>Docs</button>
@@ -1332,49 +1335,16 @@ Need help setting up distribution? Just ask!`;
               </div>
             )}
 
-            {(activeChat || showInbox) && (
-              <div className="chat-box">
-                <div className="chat-header">
-                  <div>
-                    {showInbox ? (
-                      <>Inbox: {nicknames[activeChat] || activeChat}</>
-                    ) : (
-                      <>Chat with: {nicknames[activeChat] || activeChat}</>
-                    )}
-                  </div>
-                  <button onClick={() => {
-                    setActiveChat(null);
-                    setShowInbox(false);
-                  }}>×</button>
-                </div>
-                <div className="chat-messages">
-                  {(messages[activeChat] || []).map((msg, i) => (
-                    <div 
-                      key={i} 
-                      className={`message ${msg.from === publicKey ? 'sent' : 'received'} ${
-                        msg.delivered ? 'delivered' : ''
-                      } ${msg.encrypted ? 'encrypted' : ''} ${msg.decrypted ? 'decrypted' : ''}`}
-                    >
-                      {msg.text}
-                      {msg.encrypted && !msg.decrypted && (
-                        <span className="encryption-status">🔒</span>
-                      )}
-                      {msg.decrypted && (
-                        <span className="encryption-status">🔓</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <form className="chat-input" onSubmit={(e) => handleSendMessage(e, activeChat)}>
-                  <input 
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    placeholder="Type a message..."
-                    autoFocus
-                  />
-                  <button type="submit">Send</button>
-                </form>
-              </div>
+            {activeView === 'messages' && (
+              <MessagesPage 
+                tokenHolders={tokenHolders}
+                publicKey={publicKey}
+                messages={messages}
+                nicknames={nicknames}
+                unreadCounts={unreadCounts}
+                onSendMessage={handleSendMessage}
+                onClose={() => setActiveView('ai')}
+              />
             )}
           </div>
 
