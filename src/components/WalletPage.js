@@ -1853,7 +1853,7 @@ function WalletPage() {
             <div className="conversion-buttons">
               {/* TRIBIFY conversions */}
               <div className="conversion-group tribify">
-                <span className="group-label">Convert TRIBIFY to:</span>
+                <span className="group-label">Convert ALL TRIBIFY to:</span>
                 <button 
                   className="convert-button tribify-to-sol"
                   onClick={() => handleMassConversion('TRIBIFY', 'SOL')}
@@ -1870,7 +1870,7 @@ function WalletPage() {
 
               {/* SOL conversions */}
               <div className="conversion-group sol">
-                <span className="group-label">Convert SOL to:</span>
+                <span className="group-label">Convert ALL SOL to:</span>
                 <button 
                   className="convert-button sol-to-tribify"
                   onClick={() => handleMassConversion('SOL', 'TRIBIFY')}
@@ -1887,7 +1887,7 @@ function WalletPage() {
 
               {/* USDC conversions */}
               <div className="conversion-group usdc">
-                <span className="group-label">Convert USDC to:</span>
+                <span className="group-label">Convert ALL USDC to:</span>
                 <button 
                   className="convert-button usdc-to-tribify"
                   onClick={() => handleMassConversion('USDC', 'TRIBIFY')}
