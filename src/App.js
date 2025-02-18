@@ -95,7 +95,7 @@ const getHolderColor = (address, tokenBalance) => {
 };
 
 // Add this component before the App component
-const HoldersList = ({ holders, onNodeClick, nicknames, setNicknames }) => {
+const HoldersList = ({ holders, onNodeClick, nicknames, setNicknames, setActiveView }) => {
   const [editingNickname, setEditingNickname] = useState(null);
 
   // Sort holders by token balance in descending order
@@ -155,7 +155,7 @@ const HoldersList = ({ holders, onNodeClick, nicknames, setNicknames }) => {
           </div>
           <div className="holder-col message">
             {holder.address !== '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' && (
-              <button onClick={() => onNodeClick(holder.address)}>
+              <button onClick={() => setActiveView('messages')}>
                 Message
               </button>
             )}
@@ -1313,9 +1313,9 @@ Need help setting up distribution? Just ask!`;
                 <h3>$Tribify Shareholders</h3>
                 <HoldersList 
                   holders={tokenHolders}
-                  onNodeClick={handleOpenChat}
                   nicknames={nicknames}
                   setNicknames={setNicknames}
+                  setActiveView={setActiveView}
                 />
               </div>
             )}
