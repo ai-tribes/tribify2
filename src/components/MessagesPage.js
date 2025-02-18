@@ -145,14 +145,6 @@ const MessagesPage = ({
         
         <div className="messages-layout">
           <div className="chats-sidebar">
-            {/* Message All Button */}
-            <button 
-              className="message-all-button"
-              onClick={() => setActiveChat('all')}
-            >
-              Message All Shareholders
-            </button>
-
             {/* Unread Messages Section */}
             {unreadChats.length > 0 && (
               <div className="unread-section">
