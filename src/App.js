@@ -21,6 +21,7 @@ import TokenHolderGraph from './components/TokenHolderGraph';
 import MessagesPage from './components/MessagesPage';
 import StakeView from './components/StakeView';
 import WalletPage from './components/WalletPage';
+import Shareholders from './components/Shareholders';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -98,13 +99,16 @@ const getHolderColor = (address, tokenBalance) => {
 
 // Add this component before the App component
 const HoldersList = ({ holders, nicknames, setNicknames, setActiveView, publicKey, subwallets }) => {
+  console.log('Subwallets received:', subwallets);
+  console.log('Parent wallet:', publicKey);
+
   const [editingNickname, setEditingNickname] = useState(null);
   const [editingPublicName, setEditingPublicName] = useState(null);
-  // Load public names from localStorage on init
   const [publicNames, setPublicNames] = useState(() => {
     const saved = localStorage.getItem('publicNames');
     return saved ? JSON.parse(saved) : {};
   });
+  const [notification, setNotification] = useState(null);
 
   // Save public names whenever they change
   useEffect(() => {
@@ -120,6 +124,8 @@ const HoldersList = ({ holders, nicknames, setNicknames, setActiveView, publicKe
     ...subwallets.map(wallet => wallet.publicKey.toString())  // Make sure we convert to string
   ]);
 
+  console.log('User wallets set:', Array.from(userWallets));
+
   // Debug each holder
   const isUserWallet = (address) => {
     const isOwned = userWallets.has(address);
@@ -129,6 +135,23 @@ const HoldersList = ({ holders, nicknames, setNicknames, setActiveView, publicKe
 
   // Sort holders by token balance in descending order
   const sortedHolders = [...holders].sort((a, b) => b.tokenBalance - a.tokenBalance);
+
+  // Add copy function
+  const copyAddress = async (address) => {
+    try {
+      await navigator.clipboard.writeText(address);
+      setNotification({
+        message: 'Address copied to clipboard!',
+        type: 'success'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      setNotification({
+        message: 'Failed to copy address',
+        type: 'error'
+      });
+    }
+  };
 
   // Function to handle public name verification
   const handlePublicNameVerification = async (address, newName) => {
@@ -161,6 +184,12 @@ const HoldersList = ({ holders, nicknames, setNicknames, setActiveView, publicKe
 
   return (
     <div className="holders-list">
+      {notification && (
+        <div className={`notification ${notification.type}`}>
+          {notification.message}
+        </div>
+      )}
+
       <div className="holder-header">
         <div className="holder-col address">Address</div>
         <div className="holder-col percent">Share</div>
@@ -176,7 +205,11 @@ const HoldersList = ({ holders, nicknames, setNicknames, setActiveView, publicKe
           key={holder.address} 
           className={`holder-item ${isUserWallet(holder.address) ? 'user-owned' : ''}`}
         >
-          <div className="holder-col address">
+          <div 
+            className="holder-col address clickable"
+            onClick={() => copyAddress(holder.address)}
+            title="Click to copy address"
+          >
             {isUserWallet(holder.address) ? '🔑' : '◈'} {holder.address}
           </div>
           <div className="holder-col percent" style={{
@@ -415,16 +448,26 @@ What would you like to explore first? You can:
   const [activeView, setActiveView] = useState('ai'); // Options: 'ai', 'holders', 'graph', 'messages'
 
   // Add subwallets state at App level
-  const [subwallets, setSubwallets] = useState([]);
-
-  // Add effect to load subwallets on mount
-  useEffect(() => {
-    // Initialize with empty array if no wallets exist
-    const storedWallets = localStorage.getItem('subwallets');
-    if (storedWallets) {
-      setSubwallets(JSON.parse(storedWallets));
+  const [subwallets, setSubwallets] = useState(() => {
+    // Instead of scraping DOM, get from localStorage or state
+    const stored = localStorage.getItem('subwallets');
+    try {
+      const parsed = stored ? JSON.parse(stored) : [];
+      console.log('Loading subwallets:', parsed);
+      return parsed;
+    } catch (err) {
+      console.error('Error loading subwallets:', err);
+      return [];
     }
-  }, []);
+  });
+
+  // Debug log when subwallets change
+  useEffect(() => {
+    console.log('Current subwallets:', {
+      count: subwallets?.length,
+      wallets: subwallets?.map(w => w.publicKey)
+    });
+  }, [subwallets]);
 
   // When WalletPage updates subwallets, it will call setSubwallets
   const handleSubwalletsUpdate = (newWallets) => {
@@ -1466,12 +1509,12 @@ Try asking about one of these topics or use /help to see all commands!`;
             {activeView === 'holders' && (
               <div className="token-holders">
                 <h3>$TRIBIFY Shareholders</h3>
-                <HoldersList 
+                <Shareholders 
                   holders={tokenHolders}
                   nicknames={nicknames}
                   setNicknames={setNicknames}
                   setActiveView={setActiveView}
-                  publicKey={publicKey}
+                  publicKey={publicKey?.toString()} // Ensure string format
                   subwallets={subwallets}
                 />
               </div>

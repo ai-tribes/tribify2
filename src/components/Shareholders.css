@@ -1,1 +1,8 @@
- 
+.holder-item.user-owned {
+  background-color: rgba(0, 255, 0, 0.1);
+  border-left: 4px solid #00ff00;
+}
+
+.holder-item.user-owned:hover {
+  background-color: rgba(0, 255, 0, 0.2);
+} 
