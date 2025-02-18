@@ -262,27 +262,19 @@ function App() {
   const [tribifyResponses, setTribifyResponses] = useState([
     {
       type: 'response',
-      text: `Welcome to /tribify.ai! 👋
+      text: `Welcome to /tribify.ai! 👋 
 
-I'm your AI assistant for navigating the Tribify platform. Here's a quick guide:
+I'm your AI assistant for managing TRIBIFY tokens and wallets. I can help you:
+• Create and manage up to 100 wallets
+• Distribute TRIBIFY tokens strategically
+• Convert between TRIBIFY, SOL, and USDC
+• Monitor your token holder community
 
-Navigation:
-• Use the buttons at the top to switch between views
-• /tribify.ai (current view) - Chat with AI for help and information
-• Shareholders - View all token holders and their balances
-• Wallet - Manage your wallets and transactions
-
-Commands you can try:
-• /help - Show this message again
-• /holders - Get information about shareholders
-• /wallet - Learn about wallet features
-• /buy - Understand how to buy tokens
-• /sell - Learn about selling tokens
-• /distribute - Learn about token distribution
-
-You can also ask me questions in natural language about any aspect of Tribify.
-
-How can I help you get started?`
+What would you like to explore first? You can:
+• Type /help to see all commands
+• Ask about any feature
+• Start with a quick tutorial
+• Learn about wallet management`
     }
   ]);
   const [tribifyInput, setTribifyInput] = useState('');
@@ -340,7 +332,7 @@ How can I help you get started?`
           <div className="table-header">
             <div className="col-index">#</div>
             <div className="col-private">Address</div>
-            <div className="col-public">$Tribify Shareholders</div>
+            <div className="col-public">$TRIBIFY Shareholders</div>
             <div className="col-tribify">Share</div>
             <div className="col-sol">SOL</div>
             <div className="col-usdc">USDC</div>
@@ -902,7 +894,7 @@ How can I help you get started?`
     autoConnect();
   }, []);
 
-  // Add tribify prompt handler
+  // Update the tribify prompt handler
   const handleTribifyPrompt = async (e) => {
     e.preventDefault();
     
@@ -913,9 +905,32 @@ How can I help you get started?`
     
     // Process the command
     const input = tribifyInput.toLowerCase().trim();
+
+    // Handle greetings
+    if (['hi', 'hey', 'hello', 'hel', 'sup'].includes(input)) {
+      setTribifyResponses(prev => [...prev, {
+        type: 'response',
+        text: `Hey there! 👋 Welcome to Tribify.ai!
+
+I'm your AI assistant for managing TRIBIFY tokens and wallets. I can help you:
+• Create and manage up to 100 wallets
+• Distribute TRIBIFY tokens strategically
+• Convert between TRIBIFY, SOL, and USDC
+• Monitor your token holder community
+
+What would you like to explore first? You can:
+• Type /help to see all commands
+• Ask about any feature
+• Start with a quick tutorial
+• Learn about wallet management`
+      }]);
+      setTribifyInput('');
+      return;
+    }
+
+    // Rest of your existing command handling...
     let response = '';
 
-    // Handle commands
     if (input.startsWith('/')) {
       switch (input) {
         case '/help':
@@ -1009,8 +1024,16 @@ Need help setting up distribution? Just ask!`;
           response = "I don't recognize that command. Try /help to see available commands.";
       }
     } else {
-      // Handle natural language queries
-      if (input.includes('buy') || input.includes('purchase')) {
+      // Enhanced natural language handling
+      if (input.includes('help') || input.includes('how')) {
+        response = `I can help you with:
+• Managing wallets and tokens
+• Distributing TRIBIFY
+• Converting between currencies
+• Monitoring holders
+
+Try asking about one of these topics or use /help to see all commands!`;
+      } else if (input.includes('buy') || input.includes('purchase')) {
         response = "To buy tokens, you can use the Configure Buy button to set up your purchase parameters, or use /buy for more details.";
       } else if (input.includes('sell')) {
         response = "To sell tokens, you can use the Configure Sell button to set up your sale parameters, or use /sell for more details.";
@@ -1019,7 +1042,7 @@ Need help setting up distribution? Just ask!`;
       } else if (input.includes('holder') || input.includes('shareholder')) {
         response = "You can view all shareholders and their balances using the Shareholders button. Use /holders for statistics.";
       } else {
-        response = "I'm not sure about that. Try asking about buying, selling, wallets, or shareholders, or use /help to see available commands.";
+        response = "I can help you with managing wallets, distributing tokens, converting currencies, or monitoring holders. What would you like to know more about?";
       }
     }
 
@@ -1310,7 +1333,7 @@ Need help setting up distribution? Just ask!`;
 
             {activeView === 'holders' && (
               <div className="token-holders">
-                <h3>$Tribify Shareholders</h3>
+                <h3>$TRIBIFY Shareholders</h3>
                 <HoldersList 
                   holders={tokenHolders}
                   nicknames={nicknames}
