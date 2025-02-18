@@ -400,18 +400,17 @@ body.light .restore-button {
 .holder-item {
   display: grid;
   grid-template-columns: 
-    minmax(200px, 1.5fr)  /* Address */
+    minmax(120px, 1fr)    /* Address - reduced from 200px */
     minmax(80px, 0.4fr)   /* Share */
     minmax(100px, 0.6fr)  /* Name */
-    minmax(120px, 0.8fr)  /* TRIBIFY */
-    minmax(80px, 0.4fr)   /* SOL */
-    minmax(80px, 0.4fr)   /* USDC */
-    minmax(80px, 0.4fr);  /* Message */
+    minmax(120px, 0.6fr)  /* Public Name - reduced from 150px */
+    minmax(100px, 0.6fr)  /* TRIBIFY - reduced from 120px */
+    minmax(70px, 0.3fr)   /* SOL - reduced from 80px */
+    minmax(70px, 0.3fr)   /* USDC - reduced from 80px */
+    minmax(90px, 0.4fr);  /* Message - slightly reduced */
   gap: 8px;
-  padding: 8px 12px;      /* Reduced padding */
-  width: 100%;
+  padding: 8px 12px;
   align-items: center;
-  min-height: 40px;       /* Set specific row height */
 }
 
 /* Style the header specifically */
@@ -458,22 +457,22 @@ body.light .restore-button {
   line-height: 1;         /* Reduce line height */
 }
 
-.holder-col.address { text-align: left; }
+.holder-col.address {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .holder-col.percent { text-align: right; }
 .holder-col.name { text-align: left; }
 .holder-col.balance { text-align: right; }
 .holder-col.sol { text-align: right; }
 .holder-col.usdc { text-align: right; }
-.holder-col.message { text-align: center; }
+.holder-col.message { justify-self: end; text-align: right; }
 
 .holder-col.message button {
-  padding: 4px 8px;       /* Reduced padding */
-  font-size: 12px;        /* Smaller font */
-  min-width: unset;       /* Remove minimum width */
-  height: 24px;           /* Set specific height */
-  line-height: 1;         /* Reduce line height */
-  margin: 0;              /* Remove margins */
-  white-space: nowrap;    /* Prevent text wrapping */
+  min-width: 80px;
+  white-space: nowrap;
 }
 
 .user-search form {
@@ -3611,4 +3610,90 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 .message-all-button:hover {
   background: #27ae60;
   transform: translateY(-1px);
+}
+
+/* Add with other button styles */
+.stake-button {
+  background: rgba(155, 89, 182, 0.1);  /* Purple theme */
+  border: 1px solid #9b59b6;
+  color: #9b59b6;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.stake-button:hover {
+  background: rgba(155, 89, 182, 0.2);
+  transform: translateY(-1px);
+}
+
+.stake-button:active {
+  transform: translateY(0);
+}
+
+.holder-item.user-owned {
+  background: rgba(155, 89, 182, 0.15);  /* Purple tint for owned wallets */
+  border: 1px solid rgba(155, 89, 182, 0.3);
+}
+
+.holder-item.user-owned:hover {
+  background: rgba(155, 89, 182, 0.25);
+}
+
+.holder-item.user-owned .holder-col.address {
+  color: #9b59b6;  /* Purple for owned addresses */
+  font-weight: 500;
+}
+
+/* Notification styles */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 24px;
+  border-radius: 4px;
+  color: white;
+  font-size: 14px;
+  z-index: 1000;
+  animation: slideIn 0.3s ease;
+}
+
+.notification.success {
+  background: rgba(46, 204, 113, 0.9);
+}
+
+.notification.error {
+  background: rgba(231, 76, 60, 0.9);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Clickable address styles */
+.holder-col.address.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.holder-col.address.clickable:hover {
+  color: #00ff9d;
+}
+
+.holder-col.address.clickable::after {
+  content: '📋';
+  margin-left: 8px;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.holder-col.address.clickable:hover::after {
+  opacity: 0.7;
 }

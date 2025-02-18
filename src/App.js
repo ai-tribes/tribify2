@@ -12,13 +12,15 @@ import Messages from './components/Messages';
 import Backup from './components/Backup';
 import Restore from './components/Restore';
 import Disconnect from './components/Disconnect';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Route, Routes } from 'react-router-dom';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { clusterApiUrl } from '@solana/web3.js';
 import HamburgerMenu from './components/HamburgerMenu';
 import TokenHolderGraph from './components/TokenHolderGraph';
 import MessagesPage from './components/MessagesPage';
+import StakeView from './components/StakeView';
+import WalletPage from './components/WalletPage';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -95,11 +97,67 @@ const getHolderColor = (address, tokenBalance) => {
 };
 
 // Add this component before the App component
-const HoldersList = ({ holders, onNodeClick, nicknames, setNicknames, setActiveView }) => {
+const HoldersList = ({ holders, nicknames, setNicknames, setActiveView, publicKey, subwallets }) => {
   const [editingNickname, setEditingNickname] = useState(null);
+  const [editingPublicName, setEditingPublicName] = useState(null);
+  // Load public names from localStorage on init
+  const [publicNames, setPublicNames] = useState(() => {
+    const saved = localStorage.getItem('publicNames');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  // Save public names whenever they change
+  useEffect(() => {
+    localStorage.setItem('publicNames', JSON.stringify(publicNames));
+  }, [publicNames]);
+
+  // Debug logging
+  console.log('Parent wallet:', publicKey);
+  
+  // Get the subwallets from WalletPage's data
+  const userWallets = new Set([
+    publicKey,
+    ...subwallets.map(wallet => wallet.publicKey.toString())  // Make sure we convert to string
+  ]);
+
+  // Debug each holder
+  const isUserWallet = (address) => {
+    const isOwned = userWallets.has(address);
+    console.log(`Checking ${address}: ${isOwned}`);
+    return isOwned;
+  };
 
   // Sort holders by token balance in descending order
   const sortedHolders = [...holders].sort((a, b) => b.tokenBalance - a.tokenBalance);
+
+  // Function to handle public name verification
+  const handlePublicNameVerification = async (address, newName) => {
+    try {
+      const message = `I am verifying that I own wallet ${address} and want to be known as "${newName}"`;
+      const encodedMessage = new TextEncoder().encode(message);
+      const signedMessage = await window.phantom.solana.signMessage(
+        encodedMessage,
+        'utf8'
+      );
+
+      if (signedMessage) {
+        const updatedNames = {
+          ...publicNames,
+          [address]: {
+            name: newName,
+            signature: signedMessage,
+            timestamp: Date.now() // Add timestamp for verification
+          }
+        };
+        setPublicNames(updatedNames);
+        localStorage.setItem('publicNames', JSON.stringify(updatedNames));
+        setEditingPublicName(null);
+      }
+    } catch (error) {
+      console.error('Verification failed:', error);
+      alert('You must sign the message to verify ownership');
+    }
+  };
 
   return (
     <div className="holders-list">
@@ -107,15 +165,19 @@ const HoldersList = ({ holders, onNodeClick, nicknames, setNicknames, setActiveV
         <div className="holder-col address">Address</div>
         <div className="holder-col percent">Share</div>
         <div className="holder-col name">Name</div>
+        <div className="holder-col public-name">Public Name</div>
         <div className="holder-col balance">$TRIBIFY</div>
         <div className="holder-col sol">SOL</div>
         <div className="holder-col usdc">USDC</div>
         <div className="holder-col message">Message</div>
       </div>
       {sortedHolders.map((holder) => (
-        <div key={holder.address} className="holder-item">
+        <div 
+          key={holder.address} 
+          className={`holder-item ${isUserWallet(holder.address) ? 'user-owned' : ''}`}
+        >
           <div className="holder-col address">
-            ◈ {holder.address}
+            {isUserWallet(holder.address) ? '🔑' : '◈'} {holder.address}
           </div>
           <div className="holder-col percent" style={{
             color: getHolderColor(holder.address, holder.tokenBalance)
@@ -141,6 +203,34 @@ const HoldersList = ({ holders, onNodeClick, nicknames, setNicknames, setActiveV
             ) : (
               <span onClick={() => setEditingNickname(holder.address)}>
                 {nicknames[holder.address] || '+ Add name'}
+              </span>
+            )}
+          </div>
+          <div className="holder-col public-name">
+            {editingPublicName === holder.address ? (
+              <input
+                autoFocus
+                defaultValue={publicNames[holder.address]?.name || ''}
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter') {
+                    await handlePublicNameVerification(holder.address, e.target.value);
+                  }
+                }}
+                onBlur={() => setEditingPublicName(null)}
+                placeholder="Enter & sign to verify"
+              />
+            ) : (
+              <span 
+                onClick={() => {
+                  // Only allow editing if it's user's wallet
+                  if (isUserWallet(holder.address)) {
+                    setEditingPublicName(holder.address);
+                  }
+                }}
+                className={isUserWallet(holder.address) ? 'editable' : ''}
+              >
+                {publicNames[holder.address]?.name || 
+                  (isUserWallet(holder.address) ? '+ Add public name' : '')}
               </span>
             )}
           </div>
@@ -323,6 +413,24 @@ What would you like to explore first? You can:
 
   // Add state to control views (near other state declarations)
   const [activeView, setActiveView] = useState('ai'); // Options: 'ai', 'holders', 'graph', 'messages'
+
+  // Add subwallets state at App level
+  const [subwallets, setSubwallets] = useState([]);
+
+  // Add effect to load subwallets on mount
+  useEffect(() => {
+    // Initialize with empty array if no wallets exist
+    const storedWallets = localStorage.getItem('subwallets');
+    if (storedWallets) {
+      setSubwallets(JSON.parse(storedWallets));
+    }
+  }, []);
+
+  // When WalletPage updates subwallets, it will call setSubwallets
+  const handleSubwalletsUpdate = (newWallets) => {
+    setSubwallets(newWallets);
+    localStorage.setItem('subwallets', JSON.stringify(newWallets));
+  };
 
   // Define WalletTable component inside App to access state and functions
   const WalletTable = ({ wallets, onCopy }) => {
@@ -1157,6 +1265,12 @@ Try asking about one of these topics or use /help to see all commands!`;
             >
               Wallet
             </button>
+            <button 
+              className="stake-button"
+              onClick={() => setActiveView('stake')}
+            >
+              Stake
+            </button>
             <Password onClick={() => {
               if (friendPassword) {
                 // Has password - show change form
@@ -1357,6 +1471,8 @@ Try asking about one of these topics or use /help to see all commands!`;
                   nicknames={nicknames}
                   setNicknames={setNicknames}
                   setActiveView={setActiveView}
+                  publicKey={publicKey}
+                  subwallets={subwallets}
                 />
               </div>
             )}
@@ -1385,6 +1501,20 @@ Try asking about one of these topics or use /help to see all commands!`;
                 unreadCounts={unreadCounts}
                 onSendMessage={handleSendMessage}
                 onClose={() => setActiveView('ai')}
+              />
+            )}
+
+            {activeView === 'stake' && (
+              <StakeView 
+                parentWallet={{
+                  publicKey: publicKey,
+                  tribifyBalance: tokenHolders.find(h => h.address === publicKey)?.tokenBalance || 0
+                }}
+                subwallets={subwallets}
+                tokenHolders={tokenHolders}
+                onStake={async (walletPublicKey, amount) => {
+                  console.log('Staking', amount, 'from', walletPublicKey);
+                }}
               />
             )}
           </div>
@@ -1504,6 +1634,15 @@ Try asking about one of these topics or use /help to see all commands!`;
         messages={messageModal.recipient ? messages[messageModal.recipient] : []}
         onSendMessage={handleSendMessage}
       />
+
+      <Routes>
+        <Route path="/wallet" element={
+          <WalletPage 
+            subwallets={subwallets} 
+            setSubwallets={handleSubwalletsUpdate}
+          />
+        }/>
+      </Routes>
     </div>
   );
 }
