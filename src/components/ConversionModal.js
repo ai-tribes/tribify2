@@ -6,7 +6,9 @@ import {
   SystemProgram, 
   TransactionInstruction, 
   SYSVAR_RENT_PUBKEY,
-  LAMPORTS_PER_SOL 
+  LAMPORTS_PER_SOL,
+  ComputeBudgetProgram,
+  SYSVAR_CLOCK_PUBKEY
 } from '@solana/web3.js';
 import { 
   getAssociatedTokenAddress, 
@@ -23,7 +25,7 @@ import BN from 'bn.js';
 
 const TRIBIFY_TOKEN_MINT = new PublicKey("672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump");
 const PUMP_LP_ADDRESS = new PublicKey('6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7');
-const PUMP_PROGRAM_ID = new PublicKey('PuMpFhQoAMRPFhQoAMRPFhQoAMRPFhQoAMRP'); // Need actual Pump.fun program ID
+const PUMP_PROGRAM_ID = new PublicKey('675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8'); // Correct Pump.fun program ID
 
 const SWAP_INSTRUCTION_LAYOUT = {
   SWAP: 9, // Raydium swap instruction discriminator
@@ -150,23 +152,40 @@ const ConversionModal = ({
         toTokenAccount = wsolAccount;
       }
 
-      // Create Pump.fun swap instruction
-      const swapInstruction = new TransactionInstruction({
+      // Add compute budget instructions
+      transaction.add(
+        ComputeBudgetProgram.setComputeUnitLimit({
+          units: 400000
+        })
+      );
+      
+      transaction.add(
+        ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: 1
+        })
+      );
+
+      // Convert amount to proper format (assuming 9 decimals for TRIBIFY)
+      const amountIn = new BN(totalAmount * 1e9).toArrayLike(Buffer, 'le', 8);
+      
+      // Add the swap instruction with updated format
+      transaction.add(new TransactionInstruction({
         programId: PUMP_PROGRAM_ID,
         keys: [
-          { pubkey: userPublicKey, isSigner: true, isWritable: true },
           { pubkey: PUMP_LP_ADDRESS, isSigner: false, isWritable: true },
+          { pubkey: userPublicKey, isSigner: true, isWritable: true },
           { pubkey: fromTokenAccount, isSigner: false, isWritable: true },
           { pubkey: toTokenAccount, isSigner: false, isWritable: true },
           { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+          { pubkey: SYSVAR_CLOCK_PUBKEY, isSigner: false, isWritable: false },
+          { pubkey: TRIBIFY_TOKEN_MINT, isSigner: false, isWritable: false },
         ],
         data: Buffer.from([
-          1, // Swap instruction
-          ...Buffer.from(totalAmount.toString()) // Amount as string bytes
+          0x01,  // Swap instruction discriminator
+          ...amountIn,
+          ...new BN(0).toArrayLike(Buffer, 'le', 8), // Minimum output amount (0 for now, add slippage later)
         ])
-      });
-
-      transaction.add(swapInstruction);
+      }));
 
       // If swapping to SOL, add unwrap instruction
       if (toToken === 'SOL') {
@@ -181,11 +200,21 @@ const ConversionModal = ({
       const signed = await window.phantom.solana.signTransaction(transaction);
       
       setStatus({ step: 'processing', inProgress: true });
-      const signature = await connection.sendRawTransaction(signed.serialize());
-      
-      setStatus({ step: 'complete', inProgress: false });
-      onComplete();
-      setTimeout(onClose, 2000);
+      try {
+        const signature = await connection.sendRawTransaction(signed.serialize());
+        console.log('Transaction sent:', signature);
+        
+        const confirmation = await connection.confirmTransaction(signature);
+        console.log('Transaction confirmed:', confirmation);
+        
+        setStatus({ step: 'complete', inProgress: false });
+        onComplete();
+        setTimeout(onClose, 2000);
+      } catch (txError) {
+        console.error('Transaction failed:', txError);
+        console.error('Error logs:', txError.logs);
+        throw new Error(`Transaction failed: ${txError.message}`);
+      }
 
     } catch (error) {
       console.error('Swap failed:', error);
