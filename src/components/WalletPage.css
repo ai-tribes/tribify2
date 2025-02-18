@@ -59,12 +59,14 @@
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
 }
 
 .group-label {
   min-width: 150px;
   color: #888;
   font-weight: 500;
+  flex-shrink: 0;
 }
 
 .convert-button {
@@ -75,6 +77,8 @@
   transition: all 0.2s ease;
   min-width: 100px;
   text-align: center;
+  display: inline-block;
+  margin-right: 8px;
 }
 
 /* TRIBIFY conversion buttons */
@@ -135,6 +139,14 @@
 
 .convert-button:active {
   transform: translateY(0);
+}
+
+/* Make sure all groups are visible */
+.conversion-group.tribify,
+.conversion-group.sol,
+.conversion-group.usdc {
+  display: flex;
+  margin-bottom: 8px;
 }
 
 /* Parent Wallet Section */
@@ -237,4 +249,201 @@
 .cumulative-row td {
   background: rgba(52, 152, 219, 0.1);
   font-weight: 600;
+}
+
+/* Conversion Modal Styles */
+.conversion-modal {
+  max-width: 600px;
+  width: 90%;
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.conversion-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.conversion-modal .modal-header h3 {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.conversion-modal .close-modal-button {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.conversion-modal .close-modal-button:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.conversion-modal .progress-bar-container {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  height: 8px;
+  margin: 20px 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.conversion-modal .progress-bar {
+  background: linear-gradient(90deg, #3498db, #2ecc71);
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.conversion-modal .progress-text {
+  text-align: center;
+  display: block;
+  color: #888;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.conversion-modal .current-batch {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 20px 0;
+}
+
+.conversion-modal .current-batch h4 {
+  color: #888;
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.conversion-modal .batch-wallet {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  margin-bottom: 8px;
+}
+
+.conversion-modal .wallet-address {
+  font-family: monospace;
+  color: #666;
+}
+
+.conversion-modal .status {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.conversion-modal .status.success {
+  background: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+}
+
+.conversion-modal .status.failed {
+  background: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+}
+
+.conversion-modal .status.pending {
+  background: rgba(241, 196, 15, 0.2);
+  color: #f1c40f;
+}
+
+.conversion-modal .conversion-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.conversion-modal .stat {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.conversion-modal .stat span {
+  display: block;
+}
+
+.conversion-modal .stat span:first-child {
+  color: #888;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.conversion-modal .stat .success {
+  color: #2ecc71;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.conversion-modal .stat .failed {
+  color: #e74c3c;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.conversion-modal .stat .amount {
+  color: #3498db;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.conversion-modal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.conversion-modal .close-button,
+.conversion-modal .cancel-button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.conversion-modal .close-button {
+  background: rgba(52, 152, 219, 0.1);
+  border: 1px solid #3498db;
+  color: #3498db;
+}
+
+.conversion-modal .cancel-button {
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid #e74c3c;
+  color: #e74c3c;
+}
+
+.conversion-modal .error-message {
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  color: #e74c3c;
+  padding: 12px;
+  border-radius: 6px;
+  margin: 16px 0;
+  font-size: 14px;
 } 

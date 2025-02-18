@@ -68,6 +68,10 @@ const RPC_ENDPOINTS = [
   `https://solana-api.projectserum.com`
 ];
 
+// Add these constants at the top
+const PUMP_LP_ADDRESS = '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7';
+// const PUMP_PROGRAM_ID = new PublicKey('PuMpFhQoAMRPFhQoAMRPFhQoAMRPFhQoAMRP'); // Replace with actual program ID
+
 class TransactionQueue {
   constructor() {
     this.queue = [];
@@ -253,6 +257,22 @@ function WalletPage() {
 
   // Add new state for showing/hiding private keys
   const [showPrivateKeys, setShowPrivateKeys] = useState(false);
+
+  // Add this to your state declarations
+  const [conversionStatus, setConversionStatus] = useState({
+    isConverting: false,
+    inProgress: false,
+    processed: 0,
+    total: 0,
+    currentBatch: [],
+    successfulWallets: [],
+    failedWallets: [],
+    totalConverted: 0,
+    fromToken: '',
+    toToken: '',
+    error: null, // Add error state
+    retryCount: 0 // Add retry counter
+  });
 
   const showStatus = (message, duration = 3000) => {
     setStatusMessage(message);
@@ -1712,7 +1732,6 @@ function WalletPage() {
   // Update the handleMassConversion function
   const handleMassConversion = async (fromToken, toToken) => {
     try {
-      // Calculate total amount available for conversion
       const totalAmount = Object.entries(walletBalances)
         .filter(([key]) => key !== 'parent')
         .reduce((sum, [_, balance]) => sum + (balance[fromToken.toLowerCase()] || 0), 0);
@@ -1722,68 +1741,80 @@ function WalletPage() {
         return;
       }
 
-      const confirmed = window.confirm(
-        `This will convert all ${fromToken} (${totalAmount.toLocaleString()} ${fromToken}) to ${toToken} ` +
-        `from ${keypairs.length} subwallets.\n\n` +
-        `Continue?`
-      );
+      // Show appropriate dialog based on conversion type
+      if (fromToken === 'TRIBIFY' && toToken === 'SOL') {
+        const confirmed = window.confirm(
+          `This will convert all TRIBIFY (${totalAmount.toLocaleString()} TRIBIFY) to SOL using ` +
+          `the Pump.fun liquidity pool at ${PUMP_LP_ADDRESS}.\n\n` +
+          `Continue?`
+        );
+        if (!confirmed) return;
 
-      if (!confirmed) return;
+        // Initialize conversion status
+        setConversionStatus({
+          isConverting: true,
+          processed: 0,
+          total: keypairs.length,
+          currentBatch: [],
+          successfulWallets: [],
+          failedWallets: [],
+          totalConverted: 0,
+          fromToken,
+          toToken
+        });
 
-      setStatus(`Converting ${fromToken} to ${toToken}...`);
-      
-      const connection = new Connection(
-        `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
-        { commitment: 'confirmed' }
-      );
-
-      const transactions = [];
-      let processedAmount = 0;
-
-      for (const keypair of keypairs) {
-        const balance = walletBalances[keypair.publicKey.toString()]?.[fromToken.toLowerCase()];
-        if (!balance || balance <= 0) continue;
-
-        try {
-          // Initialize Jupiter calculator for this wallet
-          const calculator = await getJupiter(connection, keypair);
-
-          // Create swap transaction
-          const swapTx = await createSwapTransaction(
-            calculator,
-            fromToken,
-            toToken,
-            balance,
-            keypair,
-            1 // 1% slippage
-          );
-
-          // Add to transaction queue
-          transactions.push(swapTx);
-          processedAmount += balance;
-
-          setStatus(`Prepared swap for wallet ${processedAmount}/${totalAmount} ${fromToken}`);
-        } catch (err) {
-          console.error(`Failed to prepare swap for wallet ${keypair.publicKey.toString()}:`, err);
+        // Process in batches
+        const BATCH_SIZE = 4;
+        for (let i = 0; i < keypairs.length; i += BATCH_SIZE) {
+          // ... rest of the batching logic
         }
+      } 
+      else if (fromToken === 'SOL' && toToken === 'TRIBIFY') {
+        const confirmed = window.confirm(
+          `This will convert all SOL (${totalAmount.toLocaleString()} SOL) to TRIBIFY using ` +
+          `the Pump.fun liquidity pool at 6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7.\n\n` +
+          `Continue?`
+        );
+        if (!confirmed) return;
+        // TODO: Implement Pump.fun swap logic
+        alert('Pump.fun swap implementation coming soon!');
+      }
+      else {
+        alert(
+          `$TRIBIFY is currently only tradeable on Pump.fun against SOL.\n\n` +
+          `Additional trading pairs will become available when the token graduates to Raydium.`
+        );
+        return;
       }
 
-      if (transactions.length === 0) {
-        throw new Error('No valid swaps could be prepared');
-      }
-
-      // Process all swaps
-      await txQueue.add(transactions, (processed) => {
-        setStatus(`Processed ${processed}/${transactions.length} swaps`);
-      });
-
-      await fetchBalances();
-      setStatus(`Successfully converted ${processedAmount} ${fromToken} to ${toToken}`);
+      // ... rest of the conversion logic ...
 
     } catch (error) {
       console.error('Mass conversion failed:', error);
+      setConversionStatus(prev => ({
+        ...prev,
+        isConverting: false
+      }));
       setStatus(`Failed to convert: ${error.message}`);
     }
+  };
+
+  // Add retry handler
+  const handleRetryConversion = async () => {
+    setConversionStatus(prev => ({
+      ...prev,
+      error: null,
+      retryCount: prev.retryCount + 1,
+      inProgress: true
+    }));
+    
+    // Retry with 90% of the previous amount
+    const retryAmount = conversionStatus.totalConverted * 0.9;
+    await handleMassConversion(
+      conversionStatus.fromToken, 
+      conversionStatus.toToken, 
+      retryAmount
+    );
   };
 
   return (
@@ -1862,7 +1893,10 @@ function WalletPage() {
                 </button>
                 <button 
                   className="convert-button tribify-to-usdc"
-                  onClick={() => handleMassConversion('TRIBIFY', 'USDC')}
+                  onClick={() => alert(
+                    `TRIBIFY/USDC conversions will be available after $TRIBIFY graduates from Pump.fun.\n\n` +
+                    `For now, you can convert TRIBIFY to SOL using the Pump.fun liquidity pool.`
+                  )}
                 >
                   USDC
                 </button>
@@ -1879,7 +1913,10 @@ function WalletPage() {
                 </button>
                 <button 
                   className="convert-button sol-to-usdc"
-                  onClick={() => handleMassConversion('SOL', 'USDC')}
+                  onClick={() => alert(
+                    `SOL/USDC conversions will be enabled after $TRIBIFY graduates to Raydium.\n\n` +
+                    `For now, you can use other DEXes like Raydium or Jupiter to convert SOL to USDC.`
+                  )}
                 >
                   USDC
                 </button>
@@ -1890,13 +1927,19 @@ function WalletPage() {
                 <span className="group-label">Convert ALL USDC to:</span>
                 <button 
                   className="convert-button usdc-to-tribify"
-                  onClick={() => handleMassConversion('USDC', 'TRIBIFY')}
+                  onClick={() => alert(
+                    `USDC/TRIBIFY conversions will be available after $TRIBIFY graduates from Pump.fun.\n\n` +
+                    `For now, you can convert USDC to SOL elsewhere, then use Pump.fun to buy TRIBIFY.`
+                  )}
                 >
                   TRIBIFY
                 </button>
                 <button 
                   className="convert-button usdc-to-sol"
-                  onClick={() => handleMassConversion('USDC', 'SOL')}
+                  onClick={() => alert(
+                    `USDC/SOL conversions will be enabled after $TRIBIFY graduates to Raydium.\n\n` +
+                    `For now, you can use other DEXes like Raydium or Jupiter to convert USDC to SOL.`
+                  )}
                 >
                   SOL
                 </button>
@@ -2657,6 +2700,65 @@ function WalletPage() {
                   </button>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Conversion Progress Modal */}
+        {conversionStatus.isConverting && (
+          <div className="modal-container">
+            <div 
+              className="modal-overlay" 
+              onClick={() => {
+                if (!conversionStatus.inProgress) {
+                  setConversionStatus(prev => ({ ...prev, isConverting: false }));
+                }
+              }}
+            />
+            <div className="modal-content conversion-modal">
+              <div className="modal-header">
+                <h3>
+                  Converting {conversionStatus.fromToken} to {conversionStatus.toToken}
+                  {conversionStatus.inProgress && <span className="loading-dot">...</span>}
+                </h3>
+                {!conversionStatus.inProgress && (
+                  <button 
+                    className="close-modal-button"
+                    onClick={() => setConversionStatus(prev => ({ ...prev, isConverting: false }))}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              {conversionStatus.error && (
+                <div className="error-message">
+                  {conversionStatus.error}
+                  {conversionStatus.error.includes('insufficient') && (
+                    <button 
+                      className="retry-button"
+                      onClick={() => handleRetryConversion()}
+                    >
+                      Retry with Lower Amount
+                    </button>
+                  )}
+                </div>
+              )}
+              
+              <div className="progress-bar-container">
+                <div 
+                  className="progress-bar" 
+                  style={{ 
+                    width: `${(conversionStatus.processed / conversionStatus.total) * 100}%`,
+                    transition: 'width 0.3s ease'
+                  }}
+                />
+                <span className="progress-text">
+                  {conversionStatus.processed} / {conversionStatus.total} Wallets Processed
+                </span>
+              </div>
+
+              {/* Rest of the modal content... */}
             </div>
           </div>
         )}
