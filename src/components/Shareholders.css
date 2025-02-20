@@ -1,3 +1,45 @@
+/* Base holder item styles */
+.holder-item {
+  display: grid;
+  grid-template-columns: 2fr 0.5fr 1fr 1fr 1fr 0.5fr 0.5fr 0.5fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  margin: 5px 0;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  border-left: 4px solid transparent;
+}
+
+/* Column styles */
+.holder-col {
+  padding: 0 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.holder-col.address {
+  font-family: monospace;
+}
+
+.holder-col.percent {
+  text-align: right;
+}
+
+.holder-col.balance {
+  text-align: right;
+}
+
+.holder-col.sol {
+  text-align: right;
+}
+
+.holder-col.usdc {
+  text-align: right;
+}
+
+/* User owned highlighting */
 .holder-item.user-owned {
   background-color: rgba(0, 255, 0, 0.1);
   border-left: 4px solid #00ff00;
@@ -5,4 +47,24 @@
 
 .holder-item.user-owned:hover {
   background-color: rgba(0, 255, 0, 0.2);
+}
+
+/* Header row */
+.holder-header {
+  display: grid;
+  grid-template-columns: 2fr 0.5fr 1fr 1fr 1fr 0.5fr 0.5fr 0.5fr;
+  gap: 10px;
+  padding: 10px;
+  font-weight: bold;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.holder-item .wallet-label {
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: rgba(0, 255, 0, 0.1);
+  border: 1px solid #00ff00;
+  border-radius: 4px;
+  color: #00ff00;
+  font-size: 12px;
 } 

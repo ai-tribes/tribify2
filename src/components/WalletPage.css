@@ -446,4 +446,26 @@
   border-radius: 6px;
   margin: 16px 0;
   font-size: 14px;
+}
+
+.wallet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.export-button {
+  padding: 8px 16px;
+  background: rgba(155, 89, 182, 0.2);
+  border: 1px solid #9b59b6;
+  color: #9b59b6;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.export-button:hover {
+  background: rgba(155, 89, 182, 0.3);
+  transform: translateY(-1px);
 } 

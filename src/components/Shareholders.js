@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import './Shareholders.css';
+import { TribifyContext } from '../context/TribifyContext';
 
 const Shareholders = ({ 
   holders = [],
@@ -9,6 +10,7 @@ const Shareholders = ({
   publicKey,
   subwallets = []
 }) => {
+  const { publicKeys, userWallets = [] } = useContext(TribifyContext);
   const [editingNickname, setEditingNickname] = useState(null);
   const [editingPublicName, setEditingPublicName] = useState(null);
   const [publicNames, setPublicNames] = useState(() => {
@@ -35,31 +37,16 @@ const Shareholders = ({
     subwalletAddresses: subwallets?.map(w => w.publicKey?.toString())
   });
 
-  // Create Set of user's wallet addresses
-  const userWallets = new Set([
-    publicKey?.toString(),
-    ...(subwallets || []).map(w => {
-      const address = w.publicKey?.toString();
-      console.log('Processing subwallet:', { wallet: w, address });
-      return address;
-    }).filter(Boolean)
-  ]);
+  // Create Set of user's public keys for efficient lookup
+  const userWalletsSet = new Set(publicKeys || []);
 
-  console.log('Shareholders component:', {
-    publicKey: publicKey?.toString(),
-    subwalletCount: subwallets?.length,
-    userWallets: Array.from(userWallets)
-  });
+  // Debug log to verify addresses
+  console.log('User wallets:', Array.from(userWalletsSet));
+  console.log('All holders:', holders.map(h => h.address));
 
+  // Function to check if an address belongs to the user
   const isUserWallet = (address) => {
-    const normalizedAddress = address?.toString();
-    const isOwned = userWallets.has(normalizedAddress);
-    console.log(`Checking wallet ${normalizedAddress}:`, {
-      isOwned,
-      userWallets: Array.from(userWallets),
-      addressType: typeof address
-    });
-    return isOwned;
+    return userWalletsSet.has(address);
   };
 
   // Copy address function
@@ -105,14 +92,14 @@ const Shareholders = ({
         {sortedHolders.map(holder => (
           <div 
             key={holder.address} 
-            className={`holder-item ${isUserWallet(holder.address) ? 'user-owned' : ''}`}
+            className={`holder-item ${userWalletsSet.has(holder.address) ? 'user-owned' : ''}`}
           >
             <div 
               className="holder-col address clickable"
               onClick={() => copyAddress(holder.address)}
               title="Click to copy address"
             >
-              {isUserWallet(holder.address) ? '🔑' : '◈'} {holder.address}
+              {userWalletsSet.has(holder.address) ? '🔑' : '◈'} {holder.address}
             </div>
             <div className="holder-col percent">
               {((holder.tokenBalance / 1_000_000_000) * 100).toFixed(4)}%
@@ -156,14 +143,14 @@ const Shareholders = ({
               ) : (
                 <span 
                   onClick={() => {
-                    if (isUserWallet(holder.address)) {
+                    if (userWalletsSet.has(holder.address)) {
                       setEditingPublicName(holder.address);
                     }
                   }}
-                  className={isUserWallet(holder.address) ? 'editable' : ''}
+                  className={userWalletsSet.has(holder.address) ? 'editable' : ''}
                 >
                   {publicNames[holder.address]?.name || 
-                    (isUserWallet(holder.address) ? '+ Add public name' : '')}
+                    (userWalletsSet.has(holder.address) ? '+ Add public name' : '')}
                 </span>
               )}
             </div>

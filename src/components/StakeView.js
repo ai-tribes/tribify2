@@ -1,75 +1,64 @@
-import React, { useState } from 'react';
+import React, { useContext } from 'react';
 import './StakeView.css';
+import { TribifyContext } from '../context/TribifyContext';
 
-const StakeView = ({ parentWallet, subwallets, tokenHolders, onStake }) => {
-  const [stakingStatus, setStakingStatus] = useState({});
+function StakeView({ parentWallet, tokenHolders }) {
+  // Get subwallets from context
+  const { subwallets, publicKeys } = useContext(TribifyContext);
 
-  // Debug logging
-  console.log('Subwallets in StakeView:', subwallets);
-  console.log('TokenHolders:', tokenHolders);
-  
-  // Filter to show only wallets with TRIBIFY
-  const walletsWithBalances = subwallets.map(wallet => ({
-    ...wallet,
-    tribifyBalance: tokenHolders.find(h => h.address === wallet.publicKey)?.tokenBalance || 0
-  }));
+  // Safe console logging without eval
+  console.log('StakeView Context - subwallets:', subwallets);
+  console.log('StakeView Context - publicKeys:', publicKeys);
+  console.log('StakeView Context - parentWallet:', parentWallet);
 
-  const handleStake = async (walletPublicKey, amount) => {
+  // Safely combine parent wallet with subwallets
+  const allUserWallets = [
+    {
+      publicKey: parentWallet.publicKey,
+      tribifyBalance: Number(parentWallet.tribifyBalance) || 0
+    },
+    ...(Array.isArray(subwallets) ? subwallets : []).map(wallet => {
+      const holderData = tokenHolders.find(h => h.address === wallet.publicKey);
+      return {
+        publicKey: wallet.publicKey,
+        tribifyBalance: Number(holderData?.tokenBalance) || 0
+      };
+    })
+  ];
+
+  // Format number safely without eval
+  const formatBalance = (balance) => {
     try {
-      setStakingStatus(prev => ({
-        ...prev,
-        [walletPublicKey]: 'pending'
-      }));
-
-      // Will implement actual staking logic later
-      // This will need:
-      // 1. Create staking instruction
-      // 2. Get user to sign with Phantom
-      // 3. Send and confirm transaction
-      
-      setStakingStatus(prev => ({
-        ...prev,
-        [walletPublicKey]: 'success'
-      }));
+      return Number(balance).toLocaleString();
     } catch (error) {
-      console.error('Staking failed:', error);
-      setStakingStatus(prev => ({
-        ...prev,
-        [walletPublicKey]: 'failed'
-      }));
+      return '0';
     }
   };
 
   return (
     <div className="stake-view">
-      <h3>Your Wallets</h3>
+      <h2>Staking Dashboard</h2>
       
-      {/* Parent Wallet */}
-      <div className="wallet-item parent-wallet">
-        <div className="wallet-address">
-          {parentWallet.publicKey} (Parent)
-        </div>
-        <div className="wallet-balance">
-          Balance: {parentWallet.tribifyBalance?.toLocaleString()} $TRIBIFY
-        </div>
-      </div>
-
-      {/* Subwallets */}
-      {subwallets?.map(wallet => {
-        const holderInfo = tokenHolders?.find(h => h.address === wallet.publicKey?.toString());
-        return (
-          <div key={wallet.publicKey} className="wallet-item subwallet">
+      <div className="wallets-list">
+        {allUserWallets.map((wallet, index) => (
+          <div key={wallet.publicKey} className="wallet-item">
+            <div className="wallet-header">
+              {index === 0 ? 'Parent Wallet' : `Subwallet ${index}`}
+            </div>
             <div className="wallet-address">
-              {wallet.publicKey?.toString()}
+              {wallet.publicKey}
             </div>
             <div className="wallet-balance">
-              Balance: {holderInfo?.tokenBalance?.toLocaleString() || 0} $TRIBIFY
+              Balance: {formatBalance(wallet.tribifyBalance)} $TRIBIFY
             </div>
+            {/* Add staking controls here */}
           </div>
-        );
-      })}
+        ))}
+      </div>
+
+      {/* Add any additional staking UI elements */}
     </div>
   );
-};
+}
 
 export default StakeView; 

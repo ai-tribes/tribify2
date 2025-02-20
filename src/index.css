@@ -15,3 +15,125 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Control Panel Button Styles */
+.control-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* Global button styles */
+button {
+  min-width: 120px;
+  height: 40px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(155, 89, 182, 0.2);
+  border: 1px solid #9b59b6;
+  color: #9b59b6;
+}
+
+button:hover {
+  background: rgba(155, 89, 182, 0.3);
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+/* Button variants */
+button.primary {
+  background: rgba(155, 89, 182, 0.3);
+  border-color: #9b59b6;
+  color: white;
+}
+
+button.success {
+  background: rgba(46, 204, 113, 0.2);
+  border-color: #2ecc71;
+  color: #2ecc71;
+}
+
+button.danger {
+  background: rgba(231, 76, 60, 0.2);
+  border-color: #e74c3c;
+  color: #e74c3c;
+}
+
+button.warning {
+  background: rgba(241, 196, 15, 0.2);
+  border-color: #f1c40f;
+  color: #f1c40f;
+}
+
+/* Card styles */
+.card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 10px 0;
+}
+
+/* Input styles */
+input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(155, 89, 182, 0.3);
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: white;
+  font-size: 14px;
+}
+
+input:focus {
+  outline: none;
+  border-color: #9b59b6;
+  box-shadow: 0 0 0 2px rgba(155, 89, 182, 0.2);
+}
+
+/* Headers */
+h1, h2, h3, h4, h5, h6 {
+  color: #9b59b6;
+  margin-bottom: 16px;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(155, 89, 182, 0.2);
+}
+
+th {
+  color: #9b59b6;
+  font-weight: 500;
+}
+
+/* Status indicators */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.status-dot.success { background-color: #2ecc71; }
+.status-dot.warning { background-color: #f1c40f; }
+.status-dot.danger { background-color: #e74c3c; }

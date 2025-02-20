@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useContext } from 'react';
 import './App.css';
 import { Connection, Transaction, SystemProgram, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
@@ -22,6 +22,7 @@ import MessagesPage from './components/MessagesPage';
 import StakeView from './components/StakeView';
 import WalletPage from './components/WalletPage';
 import Shareholders from './components/Shareholders';
+import { TribifyContext } from './context/TribifyContext';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -1278,6 +1279,8 @@ Try asking about one of these topics or use /help to see all commands!`;
     }));
   };
 
+  const { subwallets: contextSubwallets } = useContext(TribifyContext);
+
   return (
     <div className="App">
       {!isConnected && (
@@ -1514,8 +1517,7 @@ Try asking about one of these topics or use /help to see all commands!`;
                   nicknames={nicknames}
                   setNicknames={setNicknames}
                   setActiveView={setActiveView}
-                  publicKey={publicKey?.toString()} // Ensure string format
-                  subwallets={subwallets}
+                  publicKey={publicKey?.toString()}
                 />
               </div>
             )}
@@ -1550,14 +1552,10 @@ Try asking about one of these topics or use /help to see all commands!`;
             {activeView === 'stake' && (
               <StakeView 
                 parentWallet={{
-                  publicKey: publicKey,
-                  tribifyBalance: tokenHolders.find(h => h.address === publicKey)?.tokenBalance || 0
-                }}
-                subwallets={subwallets}
+                  publicKey: publicKey?.toString(),
+                  tribifyBalance: tokenHolders.find(h => h.address === publicKey?.toString())?.tokenBalance || 0
+                }}asv 
                 tokenHolders={tokenHolders}
-                onStake={async (walletPublicKey, amount) => {
-                  console.log('Staking', amount, 'from', walletPublicKey);
-                }}
               />
             )}
           </div>
@@ -1681,7 +1679,7 @@ Try asking about one of these topics or use /help to see all commands!`;
       <Routes>
         <Route path="/wallet" element={
           <WalletPage 
-            subwallets={subwallets} 
+            subwallets={contextSubwallets} 
             setSubwallets={handleSubwalletsUpdate}
           />
         }/>

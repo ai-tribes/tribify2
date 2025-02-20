@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as bip39 from 'bip39';
 import { derivePath } from 'ed25519-hd-key';
@@ -20,6 +20,7 @@ import { Jupiter, QuoteCalculator } from '@jup-ag/sdk';
 import { NATIVE_MINT } from '@solana/spl-token';
 import './ConversionModal.css';
 import ConversionModal from './ConversionModal';
+import { TribifyContext } from '../context/TribifyContext';
 
 const TOTAL_SUPPLY = 1_000_000_000; // 1 Billion tokens
 
@@ -276,6 +277,9 @@ function WalletPage() {
     retryCount: 0 // Add retry counter
   });
 
+  // Add this in WalletPage.js
+  const { setSubwallets, setPublicKeys } = useContext(TribifyContext);
+
   const showStatus = (message, duration = 3000) => {
     setStatusMessage(message);
     setTimeout(() => setStatusMessage(null), duration);
@@ -304,31 +308,30 @@ function WalletPage() {
           return;
         }
 
-        console.log('Found encrypted data length:', encryptedData.length);
-        console.log('First 50 chars of encrypted data:', encryptedData.substring(0, 50));
-
         const walletAddress = window.phantom.solana.publicKey.toString();
-        console.log('Decrypting with wallet:', walletAddress);
-
-        // Decrypt the data
         const decrypted = CryptoJS.AES.decrypt(encryptedData, walletAddress).toString(CryptoJS.enc.Utf8);
-        
         const storedData = JSON.parse(decrypted);
-        console.log('Successfully decrypted keypairs:', storedData.length);
         
         const loadedKeypairs = storedData.map(pair => 
           Keypair.fromSecretKey(new Uint8Array(pair.secretKey))
         );
         
         setKeypairs(loadedKeypairs);
-        console.log('Loaded keypairs:', loadedKeypairs.length);
+
+        // Update TribifyContext with loaded keypairs
+        setSubwallets(loadedKeypairs.map(kp => ({
+          publicKey: kp.publicKey.toString()
+        })));
+        setPublicKeys(loadedKeypairs.map(kp => kp.publicKey.toString()));
+
+        console.log('Loaded keypairs and updated context:', loadedKeypairs.length);
       } catch (error) {
         console.error('Failed to load stored keypairs:', error);
       }
     };
 
     loadStoredKeypairs();
-  }, [navigate]);
+  }, [setSubwallets, setPublicKeys]); // Add context setters to dependency array
 
   useEffect(() => {
     const storeKeypairs = () => {
@@ -394,6 +397,14 @@ function WalletPage() {
       
       console.log('Generated keypairs:', newKeypairs.length);
       setKeypairs(newKeypairs);
+
+      // After generating wallets, update context
+      setSubwallets(newKeypairs.map(kp => ({
+        publicKey: kp.publicKey.toString()
+      })));
+
+      // Add this line to store public keys in context
+      setPublicKeys(newKeypairs.map(kp => kp.publicKey.toString()));
 
     } catch (error) {
       console.error('Failed to generate keypairs:', error);
@@ -1756,6 +1767,12 @@ function WalletPage() {
       conversionStatus.toToken, 
       retryAmount
     );
+  };
+
+  // Function to update subwallets
+  const updateSubwallets = (newSubwallets) => {
+    setSubwallets(newSubwallets);
+    // Pass subwallets to App or a context
   };
 
   return (

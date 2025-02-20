@@ -117,6 +117,29 @@
  * 5. Use batch operations for efficiency
  */
 
+import React, { createContext, useState } from 'react';
+
+export const TribifyContext = createContext();
+
+export const TribifyProvider = ({ children }) => {
+  const [userWallets, setUserWallets] = useState([]);
+  const [subwallets, setSubwallets] = useState([]);
+  const [publicKeys, setPublicKeys] = useState([]);
+
+  return (
+    <TribifyContext.Provider value={{ 
+      userWallets,
+      setUserWallets,
+      subwallets,
+      setSubwallets,
+      publicKeys,
+      setPublicKeys
+    }}>
+      {children}
+    </TribifyContext.Provider>
+  );
+};
+
 // Export constants and types if needed
 export const MAX_WALLETS = 100;
 export const ATA_MINIMUM_SOL = 0.002;

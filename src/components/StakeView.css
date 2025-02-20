@@ -130,36 +130,86 @@
 }
 
 .stake-view {
-  padding: 20px;
+  padding: 24px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .wallet-item {
-  padding: 15px;
-  margin: 10px 0;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 16px;
+  padding: 20px;
+  background: rgba(155, 89, 182, 0.1);
+  border: 1px solid rgba(155, 89, 182, 0.2);
+  border-radius: 8px;
   border-left: 4px solid transparent;
+  transition: all 0.2s ease;
 }
 
-.parent-wallet {
+.wallet-item:hover {
+  background: rgba(155, 89, 182, 0.15);
+}
+
+.wallet-item.parent-wallet {
   border-left-color: #00ff00;
-  background: rgba(0, 255, 0, 0.1);
+  background: rgba(0, 255, 0, 0.05);
+  border-width: 2px;
 }
 
-.subwallet {
-  border-left-color: #ffaa00;
-  background: rgba(255, 170, 0, 0.1);
+.wallet-item.subwallet {
+  border-left-color: #9b59b6;
 }
 
-.wallet-balance {
-  margin-top: 5px;
-  color: #00ff00;
-  font-family: monospace;
+.wallet-info {
+  flex: 1;
 }
 
 .wallet-address {
   font-family: monospace;
+  font-size: 14px;
+  color: #888;
   word-break: break-all;
+}
+
+.wallet-label {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: rgba(0, 255, 0, 0.1);
+  border: 1px solid #00ff00;
+  border-radius: 4px;
+  color: #00ff00;
+  font-size: 12px;
+}
+
+.wallet-balance {
+  font-family: monospace;
+  font-size: 16px;
+  color: #00ff00;
+  margin: 0 24px;
+  min-width: 200px;
+  text-align: right;
+}
+
+/* Override global button styles for stake buttons */
+.wallet-item button {
+  min-width: 100px;
+  background: rgba(155, 89, 182, 0.2);
+  border: 1px solid #9b59b6;
+  color: #9b59b6;
+}
+
+.wallet-item button:hover {
+  background: rgba(155, 89, 182, 0.3);
+  transform: translateY(-1px);
+}
+
+.wallet-item button:active {
+  transform: translateY(1px);
 }
 
 .stake-button {
@@ -170,11 +220,11 @@
   color: white;
   font-weight: bold;
   cursor: pointer;
-  margin-top: 10px;
   text-transform: uppercase;
   letter-spacing: 1px;
   box-shadow: 0 0 10px #ff1493;  /* Neon glow effect */
   transition: all 0.3s ease;
+  min-width: 120px;
 }
 
 .stake-button:hover {
@@ -186,4 +236,10 @@
 .stake-button:active {
   transform: translateY(1px);
   box-shadow: 0 0 5px #ff1493;
+}
+
+.stake-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
 } 
