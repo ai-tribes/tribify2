@@ -23,6 +23,7 @@ import StakeView from './components/StakeView';
 import WalletPage from './components/WalletPage';
 import Shareholders from './components/Shareholders';
 import { TribifyContext } from './context/TribifyContext';
+import Sign from './components/Sign';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -1317,6 +1318,12 @@ Try asking about one of these topics or use /help to see all commands!`;
             >
               Stake
             </button>
+            <button 
+              className="sign-button"
+              onClick={() => setActiveView('sign')}
+            >
+              Sign
+            </button>
             <Password onClick={() => {
               if (friendPassword) {
                 // Has password - show change form
@@ -1557,6 +1564,13 @@ Try asking about one of these topics or use /help to see all commands!`;
                 }}asv 
                 tokenHolders={tokenHolders}
               />
+            )}
+
+            {activeView === 'sign' && (
+              <div className="sign-container">
+                <h3>Sign Messages</h3>
+                {/* Sign component content will go here */}
+              </div>
             )}
           </div>
 

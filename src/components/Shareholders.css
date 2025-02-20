@@ -67,4 +67,35 @@
   border-radius: 4px;
   color: #00ff00;
   font-size: 12px;
+}
+
+/* Add this for the LP row */
+.holder-item.liquidity-pool {
+  background: rgba(135, 206, 235, 0.1);  /* Light blue background */
+  border-left: 4px solid #87CEEB;
+  position: relative;
+}
+
+.holder-item.liquidity-pool:hover {
+  background: rgba(135, 206, 235, 0.15);
+}
+
+.holder-item.liquidity-pool::before {
+  content: "LP";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(135, 206, 235, 0.2);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #87CEEB;
+}
+
+/* Make the LP symbol special */
+.holder-item.liquidity-pool .holder-col.address::before {
+  content: "🌊";  /* Water wave emoji instead of ◈ */
+  margin-right: 8px;
+  font-size: 16px;
 } 
