@@ -1225,26 +1225,6 @@ Try asking about one of these topics or use /help to see all commands!`;
     setTribifyInput('');
   };
 
-  // Move generateWallets inside App component
-  const generateWallets = async (count) => {
-    const wallets = [];
-    for (let i = 0; i < count; i++) {
-      const keypair = Keypair.generate();
-      const wallet = {
-        privateKey: bs58.encode(keypair.secretKey),
-        publicKey: keypair.publicKey.toBase58(),
-        solBalance: 0,
-        usdcBalance: 0,
-        tribifyBalance: 0
-      };
-      wallets.push(wallet);
-    }
-
-    // Fetch balances for all wallets
-    const updatedWallets = await fetchBalances(wallets);
-    setWallets(updatedWallets);
-  };
-
   // Move fetchBalances inside App component
   const fetchBalances = async (wallets) => {
     const connection = new Connection(clusterApiUrl('mainnet-beta'));

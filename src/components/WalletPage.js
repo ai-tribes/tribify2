@@ -217,6 +217,7 @@ function WalletPage() {
   const [showDistributeModal, setShowDistributeModal] = useState(false);
   const [walletBalances, setWalletBalances] = useState({});
 
+  // Add file input ref near other state declarations
   const fileInputRef = useRef(null);
 
   // Add new state for recovery
@@ -366,26 +367,42 @@ function WalletPage() {
   }, [keypairs]);
 
   const generateHDWallet = async () => {
-    if (keypairs.length > 0) {
-      alert('Keypairs already exist! Using existing keys to prevent loss of funds.');
+    if (!window.phantom?.solana?.isConnected) {
+      alert('Please connect your Phantom wallet first');
       return;
     }
 
     try {
       setGenerating(true);
-      console.log('Starting key generation...');
       
-      const message = 'Generate HD wallet seed';
+      // Get parent wallet public key
+      const parentWalletKey = window.phantom.solana.publicKey.toString();
+      console.log('Parent wallet:', parentWalletKey);
+
+      // Create a unique message that includes the parent wallet address
+      const message = `Tribify HD Wallet Generation\nParent: ${parentWalletKey}\nTimestamp: ${Date.now()}`;
       const encodedMessage = new TextEncoder().encode(message);
-      const signature = await window.phantom.solana.signMessage(encodedMessage, 'utf8');
       
-      const seedBytes = Uint8Array.from(signature.data || signature);
-      console.log('Seed bytes:', seedBytes);
+      // Get signature from parent wallet to use as seed
+      const signatureResponse = await window.phantom.solana.signMessage(
+        encodedMessage,
+        'utf8'
+      );
+
+      // Extract signature bytes
+      const signatureBytes = signatureResponse.signature ? 
+        signatureResponse.signature : 
+        signatureResponse;
+
+      // Convert signature to proper format
+      const seedBytes = Uint8Array.from(signatureBytes);
       
       const newKeypairs = [];
       
+      // Generate 100 deterministic child wallets
       for (let i = 0; i < 100; i++) {
         try {
+          // Use BIP44 path with parent wallet's signature as seed
           const path = `m/44'/501'/${i}'/0'`;
           const derivedBytes = derivePath(path, seedBytes).key;
           const keypair = Keypair.fromSeed(derivedBytes.slice(0, 32));
@@ -394,21 +411,37 @@ function WalletPage() {
           console.error(`Failed to generate keypair ${i}:`, err);
         }
       }
-      
-      console.log('Generated keypairs:', newKeypairs.length);
-      setKeypairs(newKeypairs);
 
-      // After generating wallets, update context
+      console.log(`Generated ${newKeypairs.length} child wallets`);
+
+      // Store parent wallet reference
+      localStorage.setItem('tribify_parent_wallet', parentWalletKey);
+
+      // Store keypairs encrypted with parent wallet address
+      const storableData = newKeypairs.map(kp => ({
+        publicKey: kp.publicKey.toString(),
+        secretKey: Array.from(kp.secretKey)
+      }));
+
+      const encrypted = CryptoJS.AES.encrypt(
+        JSON.stringify(storableData),
+        parentWalletKey
+      ).toString();
+
+      localStorage.setItem('tribify_keypairs', encrypted);
+
+      // Update state and context
+      setKeypairs(newKeypairs);
       setSubwallets(newKeypairs.map(kp => ({
         publicKey: kp.publicKey.toString()
       })));
-
-      // Add this line to store public keys in context
       setPublicKeys(newKeypairs.map(kp => kp.publicKey.toString()));
 
+      setStatus('Successfully generated child wallets');
+
     } catch (error) {
-      console.error('Failed to generate keypairs:', error);
-      alert('Failed to generate keys: ' + error.message);
+      console.error('Failed to generate wallets:', error);
+      setStatus('Failed to generate wallets: ' + error.message);
     } finally {
       setGenerating(false);
     }
@@ -416,14 +449,24 @@ function WalletPage() {
 
   const downloadKeypairs = () => {
     try {
+      const parentWalletKey = window.phantom.solana.publicKey.toString();
+      
+      // Validate that these keypairs belong to this parent wallet
+      const storedParentWallet = localStorage.getItem('tribify_parent_wallet');
+      if (storedParentWallet !== parentWalletKey) {
+        alert('Error: These keypairs do not belong to your connected wallet!');
+        return;
+      }
+
       const pairs = keypairs.map((kp, index) => ({
         index: index + 1,
         publicKey: kp.publicKey.toString(),
-        privateKey: Buffer.from(kp.secretKey).toString('hex')
+        privateKey: Buffer.from(kp.secretKey).toString('hex'),
+        parentWallet: parentWalletKey // Include parent wallet for verification
       }));
 
       const data = JSON.stringify({
-        walletAddress: window.phantom.solana.publicKey.toString(),
+        parentWallet: parentWalletKey,
         timestamp: new Date().toISOString(),
         keypairs: pairs
       }, null, 2);
@@ -432,11 +475,18 @@ function WalletPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'tribify-keypairs.json';
+      
+      // Create filename with parent wallet prefix (first 8 chars)
+      const parentPrefix = parentWalletKey.slice(0, 8);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      a.download = `tribify-${parentPrefix}-keypairs-${timestamp}.json`;
+      
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+
+      console.log(`Downloaded keypairs for parent wallet: ${parentWalletKey}`);
     } catch (error) {
       console.error('Failed to download keypairs:', error);
       alert('Failed to download keys: ' + error.message);
@@ -990,37 +1040,94 @@ function WalletPage() {
     getParentWallet();
   }, []);
 
+  // Update the handleFileUpload function
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
     try {
       const text = await file.text();
-      const keys = JSON.parse(text);
-      
-      // Validate and convert the keys to Keypairs
-      const restoredKeypairs = keys.map(key => {
-        try {
-          // Handle both string and array formats
-          const secretKey = typeof key === 'string' ? 
-            new Uint8Array(Buffer.from(key, 'hex')) :
-            new Uint8Array(key);
-          return Keypair.fromSecretKey(secretKey);
-        } catch (e) {
-          console.error('Invalid key format:', e);
-          return null;
-        }
-      }).filter(Boolean); // Remove any invalid keys
+      const backupData = JSON.parse(text);
 
-      if (restoredKeypairs.length > 0) {
-        setKeypairs(restoredKeypairs);
-        setStatus(`Successfully restored ${restoredKeypairs.length} keys`);
+      // Handle both old and new backup formats
+      let restoredKeypairs;
+      
+      if (Array.isArray(backupData)) {
+        // Old format - direct array of keypairs
+        restoredKeypairs = backupData.map(key => {
+          try {
+            const secretKey = typeof key === 'string' 
+              ? new Uint8Array(Buffer.from(key, 'hex'))
+              : new Uint8Array(key);
+            return Keypair.fromSecretKey(secretKey);
+          } catch (e) {
+            console.error('Invalid key format:', e);
+            return null;
+          }
+        }).filter(Boolean);
+      } else if (backupData.keypairs) {
+        // New format with parent wallet info
+        const parentWallet = window.phantom.solana.publicKey.toString();
+        
+        // Allow restore if parent wallet matches or user confirms
+        if (backupData.parentWallet !== parentWallet) {
+          const confirmed = window.confirm(
+            'Warning: This backup appears to be from a different wallet.\n\n' +
+            'Only restore if you are sure these are the correct keys.\n\n' +
+            'Do you want to proceed?'
+          );
+          if (!confirmed) return;
+        }
+
+        restoredKeypairs = backupData.keypairs.map(pair => {
+          try {
+            const secretKey = new Uint8Array(
+              pair.privateKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
+            );
+            return Keypair.fromSecretKey(secretKey);
+          } catch (e) {
+            console.error('Invalid key format:', e);
+            return null;
+          }
+        }).filter(Boolean);
       } else {
-        setStatus('No valid keys found in file');
+        throw new Error('Unrecognized backup format');
       }
-    } catch (e) {
-      console.error('Error restoring keys:', e);
-      setStatus('Error restoring keys: Invalid file format');
+
+      if (restoredKeypairs.length === 0) {
+        throw new Error('No valid keys found in backup file');
+      }
+
+      // Store the restored keypairs
+      const storableData = restoredKeypairs.map(kp => ({
+        publicKey: kp.publicKey.toString(),
+        secretKey: Array.from(kp.secretKey)
+      }));
+
+      const parentWallet = window.phantom.solana.publicKey.toString();
+      const encrypted = CryptoJS.AES.encrypt(
+        JSON.stringify(storableData),
+        parentWallet
+      ).toString();
+
+      localStorage.setItem('tribify_keypairs', encrypted);
+      localStorage.setItem('tribify_parent_wallet', parentWallet);
+
+      // Update state
+      setKeypairs(restoredKeypairs);
+      setSubwallets(restoredKeypairs.map(kp => ({
+        publicKey: kp.publicKey.toString()
+      })));
+      setPublicKeys(restoredKeypairs.map(kp => kp.publicKey.toString()));
+
+      setStatus(`Successfully restored ${restoredKeypairs.length} wallets`);
+      
+      // Refresh balances after restore
+      await fetchBalances();
+
+    } catch (error) {
+      console.error('Error restoring keys:', error);
+      setStatus(`Failed to restore keys: ${error.message}`);
     }
     
     // Reset file input
@@ -1777,6 +1884,15 @@ function WalletPage() {
 
   return (
     <div className="wallet-fullscreen">
+      {/* Hidden file input for restore functionality */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        accept=".json"
+        onChange={handleFileUpload}
+      />
+      
       {notification && (
         <div className="copy-notification">
           {notification}
@@ -1789,7 +1905,7 @@ function WalletPage() {
       )}
       <div className="wallet-content">
         <div className="wallet-header">
-          {/* First row of buttons */}
+          {/* First row - existing controls */}
           <div className="wallet-controls">
             <div className="left-controls">
               <button onClick={() => navigate(-1)}>Close Wallet</button>
@@ -1799,7 +1915,10 @@ function WalletPage() {
               <button onClick={downloadKeypairs} disabled={keypairs.length === 0}>
                 Download Keys
               </button>
-              <button onClick={() => fileInputRef.current?.click()}>
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="restore-button"
+              >
                 Restore Keys
               </button>
               <button 
@@ -1809,35 +1928,79 @@ function WalletPage() {
                 ↻ Refresh Wallets
               </button>
             </div>
+            <div className="right-controls">
+              <button
+                onClick={() => {
+                  const confirmed = window.confirm(
+                    'WARNING: This will delete all your private keys!\n\n' +
+                    'Make sure you have backed up your keys first.\n\n' +
+                    'Are you absolutely sure you want to proceed?'
+                  );
+                  if (confirmed) {
+                    const doubleConfirmed = window.confirm(
+                      'FINAL WARNING: This action cannot be undone!\n\n' +
+                      'Your private keys will be permanently deleted.\n\n' +
+                      'Type "DELETE" to confirm:'
+                    );
+                    if (doubleConfirmed === 'DELETE') {
+                      localStorage.clear();
+                      setKeypairs([]);
+                      setSubwallets([]);
+                      setPublicKeys([]);
+                      window.location.reload();
+                    }
+                  }
+                }}
+                className="nav-button danger"
+              >
+                Clear Storage & Reset
+              </button>
+            </div>
           </div>
 
-          {/* Second row of buttons */}
+          {/* Second row - restore action buttons */}
           <div className="wallet-controls secondary">
             <div className="left-controls">
-              <button className="fund-button" onClick={() => setIsFundingModalOpen(true)}>
+              <button 
+                className="fund-button" 
+                onClick={() => setIsFundingModalOpen(true)}
+              >
                 Fund Subwallets
               </button>
-              <button className="distribute-button" onClick={() => setIsDistributeModalOpen(true)}>
+              <button 
+                className="distribute-button" 
+                onClick={() => setIsDistributeModalOpen(true)}
+              >
                 Distribute $Tribify
               </button>
-              <button onClick={() => setIsBuyModalOpen(true)}>Configure Buy</button>
-              <button className="sequence-button" onClick={() => {
-                buyAndDistribute();
-                setStatus('Buy sequence started');
-              }}>
+              <button onClick={() => setIsBuyModalOpen(true)}>
+                Configure Buy
+              </button>
+              <button 
+                className="sequence-button" 
+                onClick={() => {
+                  buyAndDistribute();
+                  setStatus('Buy sequence started');
+                }}
+              >
                 Buy Sequence
               </button>
-              <button onClick={() => setIsSellModalOpen(true)}>Configure Sell</button>
-              <button className="sequence-button sell" onClick={() => {
-                sellAndDistribute();
-                setStatus('Sell sequence started');
-              }}>
+              <button onClick={() => setIsSellModalOpen(true)}>
+                Configure Sell
+              </button>
+              <button 
+                className="sequence-button sell" 
+                onClick={() => {
+                  sellAndDistribute();
+                  setStatus('Sell sequence started');
+                }}
+              >
                 Sell Sequence
               </button>
             </div>
           </div>
 
-          {/* Third row - conversion buttons */}
+          {/* Third row - restore conversion buttons */}
           <div className="wallet-controls tertiary">
             <div className="conversion-buttons">
               {/* TRIBIFY conversions */}
@@ -1930,7 +2093,6 @@ function WalletPage() {
             {showPrivateKeys ? 'Hide Private Keys' : 'Show Private Keys'}
           </button>
         </div>
-        {/* Add title for subwallets table */}
         <h3 className="subwallets-title">Sub Wallets</h3>
         <div className="wallet-table">
           <div className="table-header">
