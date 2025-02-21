@@ -4,14 +4,15 @@ import {
   MIN_DURATION, 
   MAX_DURATION, 
   calculateAPY, 
-  formatDuration 
+  formatDuration,
+  formatSliderLabel 
 } from '../utils/staking';
 
 const BASE_APY = 3; // Base APY for minimum stake
 const MAX_APY = 25; // Max APY for 4-year stake
 
 const StakingLockModal = ({ wallet, onClose, onStake }) => {
-  const [duration, setDuration] = useState(1440); // Default to 1 day
+  const [duration, setDuration] = useState(1); // Default to 1 minute
   const apy = calculateAPY(duration);
 
   const handleSliderChange = useCallback((e) => {
@@ -19,9 +20,14 @@ const StakingLockModal = ({ wallet, onClose, onStake }) => {
     setDuration(value);
   }, []);
 
+  // Add handler to prevent clicks inside modal from closing it
+  const handleModalClick = (e) => {
+    e.stopPropagation();
+  };
+
   return (
-    <div className="staking-modal-overlay">
-      <div className="staking-modal">
+    <div className="staking-modal-overlay" onClick={onClose}>
+      <div className="staking-modal" onClick={handleModalClick}>
         <div className="staking-modal-header">
           <h3>Stake TRIBIFY</h3>
           <button className="staking-close-button" onClick={onClose}>×</button>
@@ -42,6 +48,17 @@ const StakingLockModal = ({ wallet, onClose, onStake }) => {
 
           <div className="staking-duration-selector">
             <h4>Select Lock Duration</h4>
+            <div className="duration-input">
+              <input
+                type="number"
+                min={MIN_DURATION}
+                max={MAX_DURATION}
+                value={duration}
+                onChange={(e) => setDuration(Math.min(MAX_DURATION, Math.max(MIN_DURATION, parseInt(e.target.value) || 1)))}
+                className="duration-text-input"
+              />
+              <span className="duration-unit">minutes</span>
+            </div>
             <div className="staking-slider-container">
               <input
                 type="range"
@@ -56,7 +73,7 @@ const StakingLockModal = ({ wallet, onClose, onStake }) => {
                 <span className="duration-value">{formatDuration(duration)}</span>
               </div>
               <div className="staking-apy-display">
-                <span className="apy-value">{apy.toFixed(2)}% APY</span>
+                <span className="apy-value">{apy.toFixed(3)}% APY</span>
               </div>
             </div>
           </div>

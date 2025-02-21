@@ -6,6 +6,7 @@ import StakingLockModal from './StakingLockModal';
 import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram } from '@solana/web3.js';
 import { formatDuration } from '../utils/staking';
 import BN from 'bn.js';
+import UnstakeConfirmationModal from './UnstakeConfirmationModal';
 
 function StakeView({ parentWallet, tokenHolders }) {
   const { subwallets, publicKeys } = useContext(TribifyContext);
@@ -14,6 +15,8 @@ function StakeView({ parentWallet, tokenHolders }) {
   const [showStakeModal, setShowStakeModal] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState(null);
   const [lockedStakes, setLockedStakes] = useState({});
+  const [showUnstakeConfirmation, setShowUnstakeConfirmation] = useState(false);
+  const [unstakeWallet, setUnstakeWallet] = useState(null);
 
   // Define APY tiers based on lock period
   const APY_TIERS = [
@@ -45,42 +48,49 @@ function StakeView({ parentWallet, tokenHolders }) {
 
   const handleStake = async (walletPublicKey, balance, duration) => {
     try {
-      // TODO: Implement actual staking transaction
-      console.log(`Will stake ${balance} TRIBIFY for ${duration} minutes from ${walletPublicKey}`);
-
-      // Temporary mock implementation
-      const mockUnlockTime = Math.floor(Date.now() / 1000) + (duration * 60);
+      // Duration is in minutes, store it directly
+      const unlockTime = Math.floor(Date.now() / 1000) + (duration * 60);
       
       setLockedStakes(prev => ({
         ...prev,
         [walletPublicKey]: {
           amount: balance,
-          duration,
-          unlockTime: mockUnlockTime,
-          txSignature: 'mock-tx-' + Date.now()
+          duration, // Original duration in minutes
+          unlockTime
         }
       }));
 
       setShowStakeModal(false);
-      
     } catch (error) {
       console.error('Staking failed:', error);
       alert('Failed to stake: ' + error.message);
     }
   };
 
-  const handleUnstake = async (walletPublicKey) => {
+  const handleUnstakeClick = (walletPublicKey) => {
+    const stake = lockedStakes[walletPublicKey];
+    const currentTime = Math.floor(Date.now() / 1000);
+    
+    if (currentTime < stake.unlockTime) {
+      setUnstakeWallet(walletPublicKey);
+      setShowUnstakeConfirmation(true);
+    } else {
+      handleUnstake(walletPublicKey);
+    }
+  };
+
+  const handleUnstake = async (walletPublicKey, forceEarly = false) => {
     try {
       const stake = lockedStakes[walletPublicKey];
       if (!stake) return;
 
       const currentTime = Math.floor(Date.now() / 1000);
-      if (currentTime < stake.unlockTime) {
+      if (currentTime < stake.unlockTime && !forceEarly) {
         throw new Error(`Tokens are locked for ${formatDuration((stake.unlockTime - currentTime) * 60)}`);
       }
 
       // TODO: Implement actual unstaking transaction
-      console.log(`Will unstake ${stake.amount} TRIBIFY from ${walletPublicKey}`);
+      console.log(`Will unstake ${stake.amount} TRIBIFY from ${walletPublicKey}${forceEarly ? ' (early)' : ''}`);
 
       // Remove from locked stakes
       setLockedStakes(prev => {
@@ -88,6 +98,8 @@ function StakeView({ parentWallet, tokenHolders }) {
         delete newStakes[walletPublicKey];
         return newStakes;
       });
+
+      setShowUnstakeConfirmation(false);
 
     } catch (error) {
       console.error('Unstaking failed:', error);
@@ -137,7 +149,7 @@ function StakeView({ parentWallet, tokenHolders }) {
                 <div className="stake-status">
                   <button 
                     className="unstake-button"
-                    onClick={() => handleUnstake(wallet.publicKey)}
+                    onClick={() => handleUnstakeClick(wallet.publicKey)}
                   >
                     Unstake
                   </button>
@@ -146,7 +158,8 @@ function StakeView({ parentWallet, tokenHolders }) {
                       {Number(lockedStakes[wallet.publicKey].amount).toLocaleString()} TRIBIFY
                     </span>
                     <span className="unlock-time">
-                      Unlocks in {formatDuration((lockedStakes[wallet.publicKey].unlockTime - Date.now()/1000) * 60)}
+                      {/* Remove "minutes" since formatDuration already includes it */}
+                      Unlocks in {formatDuration(Math.floor((lockedStakes[wallet.publicKey].duration)))}
                     </span>
                   </div>
                 </div>
@@ -169,9 +182,15 @@ function StakeView({ parentWallet, tokenHolders }) {
                   }
                 }}
                 value={selectedStakeType[wallet.publicKey] || ''}
+                disabled={lockedStakes[wallet.publicKey]}
               >
-                <option value="">Select Proposal</option>
-                {motions.map(motion => (
+                <option value="">
+                  {lockedStakes[wallet.publicKey] 
+                    ? "Tokens locked in stake" 
+                    : "Select Proposal"
+                  }
+                </option>
+                {!lockedStakes[wallet.publicKey] && motions.map(motion => (
                   <option key={motion.id} value={motion.id}>
                     {motion.title} ({motion.votesFor.toLocaleString()} FOR)
                   </option>
@@ -186,6 +205,14 @@ function StakeView({ parentWallet, tokenHolders }) {
           wallet={selectedWallet}
           onClose={() => setShowStakeModal(false)}
           onStake={handleStake}
+        />
+      )}
+      {showUnstakeConfirmation && (
+        <UnstakeConfirmationModal
+          wallet={unstakeWallet}
+          stake={lockedStakes[unstakeWallet]}
+          onConfirm={() => handleUnstake(unstakeWallet, true)}
+          onClose={() => setShowUnstakeConfirmation(false)}
         />
       )}
     </div>

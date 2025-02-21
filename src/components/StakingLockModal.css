@@ -202,9 +202,16 @@
 }
 
 .duration-value {
-  color: #fff;
-  font-family: 'Roboto Mono', monospace;
-  font-size: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.duration-value::after {
+  content: attr(data-supplementary);
+  font-size: 0.8em;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 2px;
 }
 
 .staking-apy-display {
@@ -235,4 +242,32 @@
 .staking-confirm-button:hover {
   background: #60efff;
   transform: translateY(-2px);
+}
+
+.duration-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.duration-text-input {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: #00ff87;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 16px;
+  width: 120px;
+}
+
+.duration-text-input:focus {
+  outline: none;
+  border-color: #00ff87;
+}
+
+.duration-unit {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
 } 

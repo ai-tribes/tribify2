@@ -253,6 +253,17 @@
   padding: 8px;
 }
 
+.motion-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.motion-select:disabled option {
+  color: rgba(255, 255, 255, 0.5);
+}
+
 .wallet-item {
   display: flex;
   align-items: center;
