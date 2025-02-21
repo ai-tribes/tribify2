@@ -1913,7 +1913,7 @@ function WalletPage() {
                 {generating ? 'Generating...' : 'Generate Keys'}
               </button>
               <button onClick={downloadKeypairs} disabled={keypairs.length === 0}>
-                Download Keys
+                Backup Keys
               </button>
               <button 
                 onClick={() => fileInputRef.current?.click()}
