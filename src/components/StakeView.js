@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import './StakeView.css';
 import { TribifyContext } from '../context/TribifyContext';
 import { GovernanceContext } from '../context/GovernanceContext';
+import StakingLockModal from './StakingLockModal';
 
 function StakeView({ parentWallet, tokenHolders }) {
   const { subwallets, publicKeys } = useContext(TribifyContext);
@@ -12,10 +13,10 @@ function StakeView({ parentWallet, tokenHolders }) {
 
   // Define APY tiers based on lock period
   const APY_TIERS = [
-    { months: 1, apy: 8 },
-    { months: 3, apy: 15 },
-    { months: 6, apy: 25 },
-    { months: 12, apy: 40 }
+    { months: 1, apy: 3 },
+    { months: 3, apy: 5 },
+    { months: 6, apy: 8 },
+    { months: 12, apy: 12 }
   ];
 
   // Combine parent wallet with subwallets
@@ -47,51 +48,6 @@ function StakeView({ parentWallet, tokenHolders }) {
       console.error('Staking failed:', error);
     }
   };
-
-  const StakeModal = () => (
-    <div className="modal-overlay">
-      <div className="stake-modal">
-        <div className="modal-header">
-          <h3>Stake TRIBIFY</h3>
-          <button className="close-button" onClick={() => setShowStakeModal(false)}>×</button>
-        </div>
-        
-        <div className="modal-content">
-          <div className="wallet-info">
-            <div className="label">Wallet:</div>
-            <div className="value">{selectedWallet?.publicKey}</div>
-          </div>
-          
-          <div className="balance-info">
-            <div className="label">Available to Stake:</div>
-            <div className="value">
-              {Number(selectedWallet?.tribifyBalance).toLocaleString()} TRIBIFY
-            </div>
-          </div>
-
-          <div className="lock-periods">
-            <h4>Select Lock Period</h4>
-            <div className="apy-tiers">
-              {APY_TIERS.map(tier => (
-                <button
-                  key={tier.months}
-                  className="tier-button"
-                  onClick={() => handleStake(selectedWallet.publicKey, selectedWallet.tribifyBalance, tier.months)}
-                >
-                  <div className="months">{tier.months} Month{tier.months > 1 ? 's' : ''}</div>
-                  <div className="apy">{tier.apy}% APY</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="warning">
-            ⚠️ Early unstaking will result in loss of all staking rewards
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="stake-view">
@@ -160,7 +116,13 @@ function StakeView({ parentWallet, tokenHolders }) {
           </div>
         ))}
       </div>
-      {showStakeModal && <StakeModal />}
+      {showStakeModal && (
+        <StakingLockModal
+          wallet={selectedWallet}
+          onClose={() => setShowStakeModal(false)}
+          onStake={handleStake}
+        />
+      )}
     </div>
   );
 }
