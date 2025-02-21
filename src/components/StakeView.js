@@ -35,23 +35,37 @@ function StakeView({ parentWallet, tokenHolders }) {
     }
   };
 
+  // Handle staking
+  const handleStake = async (walletPublicKey, balance) => {
+    try {
+      console.log(`Staking ${balance} TRIBIFY from ${walletPublicKey}`);
+      // Staking logic will go here
+    } catch (error) {
+      console.error('Staking failed:', error);
+    }
+  };
+
   return (
     <div className="stake-view">
       <h2>Staking Dashboard</h2>
       
       <div className="wallets-list">
         {allUserWallets.map((wallet, index) => (
-          <div key={wallet.publicKey} className="wallet-item">
-            <div className="wallet-header">
-              {index === 0 ? 'Parent Wallet' : `Subwallet ${index}`}
-            </div>
+          <div key={wallet.publicKey} className="wallet-row">
             <div className="wallet-address">
-              {wallet.publicKey}
+              {index === 0 ? '🔑 ' : '◈ '}{wallet.publicKey}
             </div>
             <div className="wallet-balance">
-              Balance: {formatBalance(wallet.tribifyBalance)} $TRIBIFY
+              {formatBalance(wallet.tribifyBalance)} $TRIBIFY
             </div>
-            {/* Add staking controls here */}
+            {wallet.tribifyBalance > 0 && (
+              <button 
+                className="stake-button"
+                onClick={() => handleStake(wallet.publicKey, wallet.tribifyBalance)}
+              >
+                Stake
+              </button>
+            )}
           </div>
         ))}
       </div>

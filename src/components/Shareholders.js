@@ -69,6 +69,31 @@ const Shareholders = ({
   // Sort holders by balance
   const sortedHolders = [...(holders || [])].sort((a, b) => b.tokenBalance - a.tokenBalance);
 
+  // Add this function to handle public name updates
+  const handlePublicNameUpdate = (address, newName) => {
+    try {
+      // Update the public names state
+      setPublicNames(prev => ({
+        ...prev,
+        [address]: {
+          name: newName,
+          timestamp: Date.now()
+        }
+      }));
+
+      // Save to localStorage
+      localStorage.setItem('publicNames', JSON.stringify({
+        ...publicNames,
+        [address]: {
+          name: newName,
+          timestamp: Date.now()
+        }
+      }));
+    } catch (error) {
+      console.error('Failed to update public name:', error);
+    }
+  };
+
   return (
     <div className="token-holders">
       {notification && (
@@ -92,7 +117,15 @@ const Shareholders = ({
         {sortedHolders.map(holder => (
           <div 
             key={holder.address} 
-            className={`holder-item ${userWalletsSet.has(holder.address) ? 'user-owned' : ''}`}
+            className={`holder-item ${
+              holder.address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' 
+                ? 'liquidity-pool'
+                : holder.address === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'
+                ? 'treasury'
+                : userWalletsSet.has(holder.address) 
+                ? 'user-owned' 
+                : ''
+            }`}
           >
             <div 
               className="holder-col address clickable"
@@ -131,26 +164,35 @@ const Shareholders = ({
                 <input
                   autoFocus
                   defaultValue={publicNames[holder.address]?.name || ''}
-                  onKeyDown={async (e) => {
+                  onBlur={(e) => {
+                    handlePublicNameUpdate(holder.address, e.target.value);
+                    setEditingPublicName(null);
+                  }}
+                  onKeyDown={(e) => {
                     if (e.key === 'Enter') {
-                      // Add public name verification here
+                      handlePublicNameUpdate(holder.address, e.target.value);
                       setEditingPublicName(null);
                     }
                   }}
-                  onBlur={() => setEditingPublicName(null)}
-                  placeholder="Enter & sign to verify"
                 />
               ) : (
                 <span 
                   onClick={() => {
-                    if (userWalletsSet.has(holder.address)) {
+                    // Allow editing for both user wallets and treasury wallet
+                    if (userWalletsSet.has(holder.address) || 
+                        holder.address === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') {
                       setEditingPublicName(holder.address);
                     }
                   }}
-                  className={userWalletsSet.has(holder.address) ? 'editable' : ''}
+                  className={userWalletsSet.has(holder.address) || 
+                             holder.address === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv' 
+                             ? 'editable' : ''}
                 >
                   {publicNames[holder.address]?.name || 
-                    (userWalletsSet.has(holder.address) ? '+ Add public name' : '')}
+                    ((userWalletsSet.has(holder.address) || 
+                      holder.address === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') 
+                      ? '+ Add public name' 
+                      : '')}
                 </span>
               )}
             </div>

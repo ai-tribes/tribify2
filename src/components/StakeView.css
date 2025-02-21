@@ -136,6 +136,66 @@
   margin: 0 auto;
 }
 
+.wallets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wallet-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto;
+  align-items: center;
+  gap: 20px;
+  padding: 10px 20px;
+  background: rgba(155, 89, 182, 0.1);
+  border: 1px solid rgba(155, 89, 182, 0.2);
+  border-radius: 4px;
+  border-left: 4px solid #00ff00;
+}
+
+.wallet-address {
+  font-family: monospace;
+  font-size: 14px;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wallet-balance {
+  font-family: monospace;
+  font-size: 14px;
+  color: #2ecc71;
+  text-align: right;
+}
+
+.stake-button {
+  background: #ff1493;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 0 10px #ff1493;
+  transition: all 0.3s ease;
+  min-width: 80px;
+}
+
+.stake-button:hover {
+  background: #ff69b4;
+  box-shadow: 0 0 20px #ff1493;
+  transform: translateY(-1px);
+}
+
+.stake-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 0 5px #ff1493;
+}
+
 .wallet-item {
   display: flex;
   align-items: center;
