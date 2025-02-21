@@ -21,7 +21,7 @@ const toBigNumber = (amount) => {
   return Math.floor(amount * Math.pow(10, 6)).toString();
 };
 
-const TokenDistributor = ({ parentWallet, subwallets, onComplete, refreshBalances }) => {
+const TokenDistributor = ({ parentWallet, subwallets, onComplete, refreshBalances, onClose }) => {
   const [walletInfo, setWalletInfo] = useState({
     tribifyBalance: 0,
     solBalance: 0
@@ -910,194 +910,233 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete, refreshBalance
   );
 
   return (
-    <div className="distribution-container">
-      <div className="wallet-info-section">
-        <div className="wallet-info-header">
-          <h4>Parent Wallet Balances</h4>
-          <button 
-            className="refresh-button"
-            onClick={refreshBalances}
-          >
-            Refresh Balances
-          </button>
-        </div>
-        <div className="balance-info">
-          <div className="balance-item">
-            <span className="balance-label">TRIBIFY Balance:</span>
-            <span className="balance-value">{walletInfo.tribifyBalance.toLocaleString()} TRIBIFY</span>
-          </div>
-          <div className="balance-item">
-            <span className="balance-label">SOL Balance:</span>
-            <span className="balance-value sol">{walletInfo.solBalance.toFixed(4)} SOL</span>
-          </div>
-        </div>
-      </div>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="guide-section">
+          <h2 className="guide-title">Token Distribution Guide</h2>
+          
+          <h3 className="process-title">Distribution Process</h3>
+          <ul>
+            <li>Enter total TRIBIFY amount to distribute from your balance</li>
+            <li>Choose number of recipient wallets (1-100)</li>
+            <li>Select equal or random distribution</li>
+            <li>Review distribution preview and SOL fees</li>
+            <li>One signature to distribute to all wallets</li>
+          </ul>
 
-      <div className="distribution-form">
-        <div className="form-group">
-          <label>Total TRIBIFY to Distribute:</label>
-          <input
-            type="number"
-            value={distributionConfig.totalAmount}
-            onChange={(e) => {
-              const value = parseFloat(e.target.value);
-              if (!isNaN(value) && value >= 0 && value <= walletInfo.tribifyBalance) {
-                setDistributionConfig(prev => ({
-                  ...prev,
-                  totalAmount: value
-                }));
-              }
-            }}
-            max={walletInfo.tribifyBalance}
-            placeholder={`Max: ${walletInfo.tribifyBalance.toLocaleString()}`}
-          />
-        </div>
+          <h3 className="requirements-title">Requirements</h3>
+          <ul>
+            <li>Connected Phantom Wallet</li>
+            <li>Generated Subwallets (100 ready)</li>
+            <li>Sufficient TRIBIFY balance</li>
+            <li>SOL for transaction fees</li>
+          </ul>
 
-        <div className="form-group">
-          <label>Number of Wallets to Distribute To (1-100):</label>
-          <input
-            type="text"
-            value={distributionConfig.numberOfWallets}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === '' || /^\d+$/.test(value)) {
-                const numValue = value === '' ? '' : parseInt(value);
-                if (value === '' || (numValue >= 1 && numValue <= 100)) {
-                  setDistributionConfig(prev => ({
-                    ...prev,
-                    numberOfWallets: value
-                  }));
-                }
-              }
-            }}
-            placeholder="Enter number (1-100)"
-          />
-        </div>
-
-        <div className="form-group distribution-type">
-          <label>Distribution Type:</label>
-          <div className="distribution-options">
-            <div 
-              className={`distribution-option ${!distributionConfig.isRandomDistribution ? 'active' : ''}`}
-              onClick={() => setDistributionConfig(prev => ({ ...prev, isRandomDistribution: false }))}
-            >
-              <div className="option-header">
-                <input
-                  type="radio"
-                  checked={!distributionConfig.isRandomDistribution}
-                  onChange={() => setDistributionConfig(prev => ({ ...prev, isRandomDistribution: false }))}
-                />
-                <span>Equal Distribution</span>
-              </div>
-              <p className="option-description">All selected wallets receive the same amount of tokens</p>
-            </div>
-
-            <div 
-              className={`distribution-option ${distributionConfig.isRandomDistribution ? 'active' : ''}`}
-              onClick={() => setDistributionConfig(prev => ({ ...prev, isRandomDistribution: true }))}
-            >
-              <div className="option-header">
-                <input
-                  type="radio"
-                  checked={distributionConfig.isRandomDistribution}
-                  onChange={() => setDistributionConfig(prev => ({ ...prev, isRandomDistribution: true }))}
-                />
-                <span>Random Distribution</span>
-              </div>
-              <p className="option-description">Tokens are distributed in random amounts while maintaining the total</p>
-            </div>
+          <div className="recover-buttons">
+            <button className="recover-all-tokens">
+              Recover All Tokens
+            </button>
+            <button className="recover-single-address">
+              Recover Single Address
+            </button>
           </div>
         </div>
 
-        <div className="form-group distribution-filter">
-          <div className="filter-option">
-            <label>Distribution Filter:</label>
-            <div className="filter-content">
-              <input
-                type="checkbox"
-                checked={distributionFilter.onlyNewWallets}
-                onChange={(e) => setDistributionFilter(prev => ({
-                  ...prev,
-                  onlyNewWallets: e.target.checked
-                }))}
-                id="new-wallets-only"
-              />
-              <label htmlFor="new-wallets-only">
-                Only distribute to wallets without TRIBIFY accounts
-              </label>
-              {distributionFilter.checkingWallets ? (
-                <span className="checking-status">(Checking...)</span>
-              ) : (
-                <span className="available-count">
-                  ({distributionFilter.availableNewWallets} available)
-                </span>
-              )}
+        <div className="form-section">
+          <div className="form-header">
+            <h2>Distribute $Tribify</h2>
+            <button className="close-button" onClick={onClose}>×</button>
+          </div>
+
+          <div className="wallet-info-section">
+            <div className="wallet-info-header">
+              <h4>Parent Wallet Balances</h4>
               <button 
-                className="refresh-atas"
-                onClick={checkWalletATAs}
-                disabled={distributionFilter.checkingWallets}
+                className="refresh-button"
+                onClick={refreshBalances}
               >
-                ↻
+                Refresh Balances
               </button>
             </div>
-          </div>
-        </div>
-
-        {distributionConfig.totalAmount > 0 && distributionConfig.numberOfWallets > 0 && (
-          <div className="distribution-preview">
-            {!distributionConfig.isRandomDistribution && (
-              <div className="preview-item">
-                <span>Amount per wallet:</span>
-                <span>{distributionConfig.amountPerWallet.toLocaleString()} TRIBIFY</span>
+            <div className="balance-info">
+              <div className="balance-item">
+                <span className="balance-label">TRIBIFY Balance:</span>
+                <span className="balance-value">{walletInfo.tribifyBalance.toLocaleString()} TRIBIFY</span>
               </div>
-            )}
-            <div className="preview-item">
-              <span>Total wallets:</span>
-              <span>{distributionConfig.numberOfWallets}</span>
-            </div>
-            <div className="preview-item">
-              <span>Total to distribute:</span>
-              <span>{distributionConfig.totalAmount.toLocaleString()} TRIBIFY</span>
-            </div>
-            <div className="preview-item fee-estimate">
-              <span>Estimated SOL fees:</span>
-              <div className="fee-breakdown">
-                <div>ATA Creation: ~{estimatedFees.ataCreation.toFixed(4)} SOL</div>
-                <div>Transaction Fees: ~{estimatedFees.transaction.toFixed(6)} SOL</div>
-                <div className="total-fees">Total: ~{estimatedFees.total.toFixed(4)} SOL</div>
+              <div className="balance-item">
+                <span className="balance-label">SOL Balance:</span>
+                <span className="balance-value sol">{walletInfo.solBalance.toFixed(4)} SOL</span>
               </div>
             </div>
           </div>
-        )}
 
-        {(distributionStatus.isDistributing || recoveryStatus.isRecovering) && (
-          <div className="modal-overlay">
-            <div className="progress-modal">
-              <ProgressDisplay 
-                status={distributionStatus.isDistributing ? distributionStatus : recoveryStatus}
-                config={distributionConfig}
+          <div className="distribution-form">
+            <div className="form-group">
+              <label>Total TRIBIFY to Distribute:</label>
+              <input
+                type="number"
+                value={distributionConfig.totalAmount}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value);
+                  if (!isNaN(value) && value >= 0 && value <= walletInfo.tribifyBalance) {
+                    setDistributionConfig(prev => ({
+                      ...prev,
+                      totalAmount: value
+                    }));
+                  }
+                }}
+                max={walletInfo.tribifyBalance}
+                placeholder={`Max: ${walletInfo.tribifyBalance.toLocaleString()}`}
               />
             </div>
-          </div>
-        )}
 
-        <button 
-          className="distribute-button"
-          disabled={
-            !distributionConfig.totalAmount || 
-            distributionConfig.totalAmount <= 0 ||
-            estimatedFees.total > walletInfo.solBalance ||
-            distributionStatus.isDistributing
-          }
-          onClick={distributeTokens}
-        >
-          {distributionStatus.isDistributing 
-            ? 'Distribution in Progress...'
-            : estimatedFees.total > walletInfo.solBalance 
-            ? 'Insufficient SOL for fees'
-            : 'Start Distribution'
-          }
-        </button>
+            <div className="form-group">
+              <label>Number of Wallets to Distribute To (1-100):</label>
+              <input
+                type="text"
+                value={distributionConfig.numberOfWallets}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '' || /^\d+$/.test(value)) {
+                    const numValue = value === '' ? '' : parseInt(value);
+                    if (value === '' || (numValue >= 1 && numValue <= 100)) {
+                      setDistributionConfig(prev => ({
+                        ...prev,
+                        numberOfWallets: value
+                      }));
+                    }
+                  }
+                }}
+                placeholder="Enter number (1-100)"
+              />
+            </div>
+
+            <div className="form-group distribution-type">
+              <label>Distribution Type:</label>
+              <div className="distribution-options">
+                <div 
+                  className={`distribution-option ${!distributionConfig.isRandomDistribution ? 'active' : ''}`}
+                  onClick={() => setDistributionConfig(prev => ({ ...prev, isRandomDistribution: false }))}
+                >
+                  <div className="option-header">
+                    <input
+                      type="radio"
+                      checked={!distributionConfig.isRandomDistribution}
+                      onChange={() => setDistributionConfig(prev => ({ ...prev, isRandomDistribution: false }))}
+                    />
+                    <span>Equal Distribution</span>
+                  </div>
+                  <p className="option-description">All selected wallets receive the same amount of tokens</p>
+                </div>
+
+                <div 
+                  className={`distribution-option ${distributionConfig.isRandomDistribution ? 'active' : ''}`}
+                  onClick={() => setDistributionConfig(prev => ({ ...prev, isRandomDistribution: true }))}
+                >
+                  <div className="option-header">
+                    <input
+                      type="radio"
+                      checked={distributionConfig.isRandomDistribution}
+                      onChange={() => setDistributionConfig(prev => ({ ...prev, isRandomDistribution: true }))}
+                    />
+                    <span>Random Distribution</span>
+                  </div>
+                  <p className="option-description">Tokens are distributed in random amounts while maintaining the total</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="form-group distribution-filter">
+              <div className="filter-option">
+                <label>Distribution Filter:</label>
+                <div className="filter-content">
+                  <input
+                    type="checkbox"
+                    checked={distributionFilter.onlyNewWallets}
+                    onChange={(e) => setDistributionFilter(prev => ({
+                      ...prev,
+                      onlyNewWallets: e.target.checked
+                    }))}
+                    id="new-wallets-only"
+                  />
+                  <label htmlFor="new-wallets-only">
+                    Only distribute to wallets without TRIBIFY accounts
+                  </label>
+                  {distributionFilter.checkingWallets ? (
+                    <span className="checking-status">(Checking...)</span>
+                  ) : (
+                    <span className="available-count">
+                      ({distributionFilter.availableNewWallets} available)
+                    </span>
+                  )}
+                  <button 
+                    className="refresh-atas"
+                    onClick={checkWalletATAs}
+                    disabled={distributionFilter.checkingWallets}
+                  >
+                    ↻
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {distributionConfig.totalAmount > 0 && distributionConfig.numberOfWallets > 0 && (
+              <div className="distribution-preview">
+                {!distributionConfig.isRandomDistribution && (
+                  <div className="preview-item">
+                    <span>Amount per wallet:</span>
+                    <span>{distributionConfig.amountPerWallet.toLocaleString()} TRIBIFY</span>
+                  </div>
+                )}
+                <div className="preview-item">
+                  <span>Total wallets:</span>
+                  <span>{distributionConfig.numberOfWallets}</span>
+                </div>
+                <div className="preview-item">
+                  <span>Total to distribute:</span>
+                  <span>{distributionConfig.totalAmount.toLocaleString()} TRIBIFY</span>
+                </div>
+                <div className="preview-item fee-estimate">
+                  <span>Estimated SOL fees:</span>
+                  <div className="fee-breakdown">
+                    <div>ATA Creation: ~{estimatedFees.ataCreation.toFixed(4)} SOL</div>
+                    <div>Transaction Fees: ~{estimatedFees.transaction.toFixed(6)} SOL</div>
+                    <div className="total-fees">Total: ~{estimatedFees.total.toFixed(4)} SOL</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {(distributionStatus.isDistributing || recoveryStatus.isRecovering) && (
+              <div className="modal-overlay">
+                <div className="progress-modal">
+                  <ProgressDisplay 
+                    status={distributionStatus.isDistributing ? distributionStatus : recoveryStatus}
+                    config={distributionConfig}
+                  />
+                </div>
+              </div>
+            )}
+
+            <button 
+              className="distribute-button"
+              disabled={
+                !distributionConfig.totalAmount || 
+                distributionConfig.totalAmount <= 0 ||
+                estimatedFees.total > walletInfo.solBalance ||
+                distributionStatus.isDistributing
+              }
+              onClick={distributeTokens}
+            >
+              {distributionStatus.isDistributing 
+                ? 'Distribution in Progress...'
+                : estimatedFees.total > walletInfo.solBalance 
+                ? 'Insufficient SOL for fees'
+                : 'Start Distribution'
+              }
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

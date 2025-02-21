@@ -1,0 +1,102 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: #1a1a1a;
+  width: 1200px;
+  max-height: 90vh;
+  display: flex;
+}
+
+.token-distribution-guide {
+  width: 350px;
+  padding: 24px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.distribution-form {
+  flex: 1;
+  padding: 24px;
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.5);
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+.guide-section {
+  padding: 24px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.guide-title {
+  color: #9b59b6;
+  font-size: 18px;
+  margin-bottom: 24px;
+}
+
+.process-title {
+  color: #9b59b6;
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+
+.requirements-title {
+  color: #9b59b6;
+  font-size: 16px;
+  margin: 24px 0 16px;
+}
+
+.recover-all-tokens,
+.recover-single-address {
+  width: 100%;
+  padding: 8px;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.distribution-container {
+  display: flex;
+}
+
+.distribution-grid {
+  display: grid;
+  grid-template-columns: 2fr 0.5fr 1fr 1fr 1fr 0.5fr 0.5fr 0.5fr 0.5fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+}
+
+.distribution-row {
+  margin: 5px 0;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.distribution-col {
+  padding: 0 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+} 

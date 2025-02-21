@@ -9,7 +9,8 @@ const Shareholders = ({
   setNicknames,
   setActiveView,
   publicKey,
-  subwallets = []
+  subwallets = [],
+  stakedAddresses = []
 }) => {
   const { publicKeys, userWallets = [] } = useContext(TribifyContext);
   const [editingNickname, setEditingNickname] = useState(null);
@@ -134,9 +135,10 @@ const Shareholders = ({
           <div className="holder-col percent">Share</div>
           <div className="holder-col name">Name</div>
           <div className="holder-col public-name">Public Name</div>
-          <div className="holder-col balance">$TRIBIFY</div>
+          <div className="holder-col balance">TRIBIFY</div>
           <div className="holder-col sol">SOL</div>
           <div className="holder-col usdc">USDC</div>
+          <div className="holder-col staked">Staked</div>
           <div className="holder-col message">Message</div>
         </div>
 
@@ -232,6 +234,11 @@ const Shareholders = ({
             </div>
             <div className="holder-col usdc">
               $ {holder.usdcBalance?.toFixed(2) || '0.00'}
+            </div>
+            <div className="holder-col staked">
+              <span className={`staked-badge ${stakedAddresses?.includes(holder.address) ? 'yes' : 'no'}`}>
+                {stakedAddresses?.includes(holder.address) ? 'Yes' : 'No'}
+              </span>
             </div>
             <div className="holder-col message">
               {holder.address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' ? (

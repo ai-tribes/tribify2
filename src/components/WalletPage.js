@@ -1882,6 +1882,13 @@ function WalletPage() {
     // Pass subwallets to App or a context
   };
 
+  const handleDistributeComplete = () => {
+    setShowDistributeModal(false);
+    fetchBalances();
+  };
+
+  const refreshBalances = fetchBalances;
+
   return (
     <div className="wallet-fullscreen">
       {/* Hidden file input for restore functionality */}
@@ -2680,11 +2687,9 @@ function WalletPage() {
                   <TokenDistributor 
                     parentWallet={window.phantom?.solana}
                     subwallets={keypairs}
-                    onComplete={() => {
-                      setIsDistributeModalOpen(false);
-                      fetchBalances();
-                    }}
-                    refreshBalances={fetchBalances}
+                    onComplete={handleDistributeComplete}
+                    refreshBalances={refreshBalances}
+                    onClose={() => setShowDistributeModal(false)}  // Add this
                   />
                 </div>
               </div>

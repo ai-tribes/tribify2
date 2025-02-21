@@ -1,0 +1,24 @@
+.modal-content {
+  background: #1a1a1a;
+  padding: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  width: 1200px;
+  max-height: 90vh;
+  display: grid;
+  grid-template-columns: 350px 1fr; /* Fixed left column, flexible right column */
+  gap: 0; /* Remove the gap */
+  overflow: hidden;
+}
+
+.modal-left {
+  padding: 24px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  overflow-y: auto;
+}
+
+.modal-right {
+  padding: 24px;
+  overflow-y: auto;
+} 

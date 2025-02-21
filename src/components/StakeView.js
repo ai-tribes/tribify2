@@ -7,8 +7,9 @@ import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgr
 import { formatDuration } from '../utils/staking';
 import BN from 'bn.js';
 import UnstakeConfirmationModal from './UnstakeConfirmationModal';
+import Shareholders from './Shareholders';
 
-function StakeView({ parentWallet, tokenHolders }) {
+function StakeView({ parentWallet, tokenHolders, nicknames, setNicknames }) {
   const { subwallets, publicKeys } = useContext(TribifyContext);
   const { motions } = useContext(GovernanceContext);
   const [selectedStakeType, setSelectedStakeType] = useState({});
@@ -40,6 +41,9 @@ function StakeView({ parentWallet, tokenHolders }) {
       };
     })
   ];
+
+  // Get array of staked addresses
+  const stakedAddresses = Object.keys(lockedStakes);
 
   const handleStakeClick = (wallet) => {
     setSelectedWallet(wallet);
@@ -113,6 +117,16 @@ function StakeView({ parentWallet, tokenHolders }) {
         <h2>Staking Dashboard</h2>
       </div>
       
+      {/* Show Shareholders component with staked addresses */}
+      <Shareholders 
+        holders={tokenHolders}
+        stakedAddresses={stakedAddresses}
+        publicKey={parentWallet.publicKey}
+        nicknames={nicknames}
+        setNicknames={setNicknames}
+        subwallets={subwallets}
+      />
+
       <div className="wallets-list">
         <div className="wallet-row header">
           <div className="wallet-col address">
