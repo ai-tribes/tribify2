@@ -31,9 +31,30 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete, refreshBalance
   });
   const [distributionConfig, setDistributionConfig] = useState({
     totalAmount: '',
-    numberOfWallets: 10,
+    numberOfWallets: '',
     amountPerWallet: 0,
     isRandomDistribution: false
+  });
+
+  // Add new state for distribution progress
+  const [distributionStatus, setDistributionStatus] = useState({
+    isDistributing: false,
+    currentWallet: null,
+    processedWallets: [],
+    error: null
+  });
+
+  // Add new recovery status state
+  const [recoveryStatus, setRecoveryStatus] = useState({
+    isRecovering: false,
+    currentPhase: null, // 'checking', 'creating_atas', 'transferring'
+    processedCount: 0,
+    totalWallets: 0,
+    currentWallet: null,
+    successfulTransfers: [],
+    failedTransfers: [],
+    totalRecovered: 0,
+    error: null
   });
 
   const fetchWalletBalances = async () => {
@@ -163,40 +184,32 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete, refreshBalance
 
   const distributeTokens = async () => {
     try {
-      // First, verify all recipient addresses are in our subwallets list
-      const selectedWallets = subwallets.slice(0, distributionConfig.numberOfWallets);
-      const validRecipients = new Set(selectedWallets.map(w => w.publicKey.toString()));
+      setDistributionStatus({
+        isDistributing: true,
+        currentWallet: null,
+        processedWallets: [],
+        error: null
+      });
 
-      // Add strict validation
+      const selectedWallets = subwallets.slice(0, distributionConfig.numberOfWallets);
+      
+      // Confirmation dialog with details
       const confirmMessage = `Please verify:\n\n` +
         `Total Amount: ${distributionConfig.totalAmount.toLocaleString()} TRIBIFY\n` +
         `Number of Recipients: ${distributionConfig.numberOfWallets}\n` +
         `First Recipient: ${selectedWallets[0].publicKey.toString()}\n` +
         `Last Recipient: ${selectedWallets[selectedWallets.length - 1].publicKey.toString()}\n\n` +
-        `Estimated fees: ${estimatedFees.total.toFixed(4)} SOL\n\n` +
-        `Are you sure you want to proceed?`;
+        `This will require ONE signature to distribute to all wallets.\n\n` +
+        `Proceed with distribution?`;
 
       if (!window.confirm(confirmMessage)) {
+        setDistributionStatus(prev => ({ ...prev, isDistributing: false }));
         return;
       }
 
-      // Double check the amounts
-      const totalAmount = distributionConfig.isRandomDistribution
-        ? distributionConfig.totalAmount
-        : distributionConfig.amountPerWallet * distributionConfig.numberOfWallets;
-
-      if (totalAmount > walletInfo.tribifyBalance) {
-        throw new Error('Insufficient TRIBIFY balance');
-      }
-
-      console.log('Starting distribution...');
       const connection = new Connection(
         `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
-        {
-          commitment: 'confirmed',
-          wsEndpoint: undefined,
-          confirmTransactionInitialTimeout: 60000
-        }
+        { commitment: 'confirmed' }
       );
 
       const tribifyMint = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
@@ -214,113 +227,108 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete, refreshBalance
 
       const parentTokenAccount = parentTokenAccounts.value[0].pubkey;
       
-      // Select wallets and calculate amounts
+      // Calculate amounts for each wallet
       const amounts = distributionConfig.isRandomDistribution 
         ? generateRandomAmounts(distributionConfig.totalAmount, distributionConfig.numberOfWallets)
         : Array(distributionConfig.numberOfWallets).fill(distributionConfig.amountPerWallet);
 
-      // First, fund wallets that need ATAs
-      const BATCH_SIZE = 4;
-      for (let i = 0; i < selectedWallets.length; i += BATCH_SIZE) {
-        const batchWallets = selectedWallets.slice(i, i + BATCH_SIZE);
-        const transaction = new Transaction();
+      // Create single transaction for all distributions
+      const transaction = new Transaction();
+      
+      // Add instructions for each wallet
+      for (let i = 0; i < selectedWallets.length; i++) {
+        const wallet = selectedWallets[i];
+        const amount = amounts[i];
+        
+        setDistributionStatus(prev => ({
+          ...prev,
+          currentWallet: wallet.publicKey.toString()
+        }));
 
-        // Check which wallets need funding for ATAs
-        for (let j = 0; j < batchWallets.length; j++) {
-          const wallet = batchWallets[j];
-          const recipientATA = await getAssociatedTokenAddress(
-            tribifyMint,
-            wallet.publicKey
-          );
+        const recipientATA = await getAssociatedTokenAddress(
+          tribifyMint,
+          wallet.publicKey
+        );
 
-          const accountInfo = await connection.getAccountInfo(recipientATA);
-          if (!accountInfo) {
-            // Add SOL transfer instruction
-            transaction.add(
-              SystemProgram.transfer({
-                fromPubkey: parentPublicKey,
-                toPubkey: wallet.publicKey,
-                lamports: LAMPORTS_FOR_ATA
-              })
-            );
-          }
-        }
-
-        if (transaction.instructions.length > 0) {
-          const { blockhash } = await connection.getLatestBlockhash();
-          transaction.recentBlockhash = blockhash;
-          transaction.feePayer = parentPublicKey;
-
-          try {
-            const signed = await window.phantom.solana.signTransaction(transaction);
-            const signature = await connection.sendRawTransaction(signed.serialize());
-            console.log(`Funding batch ${Math.floor(i/BATCH_SIZE) + 1} sent:`, signature);
-            await connection.confirmTransaction(signature);
-          } catch (error) {
-            console.error('Funding transaction failed:', error);
-            throw error;
-          }
-        }
-      }
-
-      // Now do token transfers in batches
-      for (let i = 0; i < selectedWallets.length; i += BATCH_SIZE) {
-        const batchWallets = selectedWallets.slice(i, i + BATCH_SIZE);
-        const batchAmounts = amounts.slice(i, i + BATCH_SIZE);
-        const transaction = new Transaction();
-
-        for (let j = 0; j < batchWallets.length; j++) {
-          const wallet = batchWallets[j];
-          const amount = batchAmounts[j];
-          
-          const recipientATA = await getAssociatedTokenAddress(
-            tribifyMint,
-            wallet.publicKey
-          );
-
-          // Create ATA if needed
-          const accountInfo = await connection.getAccountInfo(recipientATA);
-          if (!accountInfo) {
-            transaction.add(
-              createAssociatedTokenAccountInstruction(
-                parentPublicKey,
-                recipientATA,
-                wallet.publicKey,
-                tribifyMint
-              )
-            );
-          }
-
-          // Add transfer instruction
+        // Check if ATA exists
+        const accountInfo = await connection.getAccountInfo(recipientATA);
+        if (!accountInfo) {
+          // Add ATA creation instruction
           transaction.add(
-            createTransferInstruction(
-              parentTokenAccount,
-              recipientATA,
+            createAssociatedTokenAccountInstruction(
               parentPublicKey,
-              toBigNumber(amount)
+              recipientATA,
+              wallet.publicKey,
+              tribifyMint
             )
           );
         }
 
-        const { blockhash } = await connection.getLatestBlockhash();
-        transaction.recentBlockhash = blockhash;
-        transaction.feePayer = parentPublicKey;
+        // Add transfer instruction
+        transaction.add(
+          createTransferInstruction(
+            parentTokenAccount,
+            recipientATA,
+            parentPublicKey,
+            toBigNumber(amount)
+          )
+        );
 
-        try {
-          const signed = await window.phantom.solana.signTransaction(transaction);
-          const signature = await connection.sendRawTransaction(signed.serialize());
-          console.log(`Transfer batch ${Math.floor(i/BATCH_SIZE) + 1} sent:`, signature);
-          await connection.confirmTransaction(signature);
-        } catch (error) {
-          console.error('Transfer transaction failed:', error);
-          throw error;
-        }
+        setDistributionStatus(prev => ({
+          ...prev,
+          processedWallets: [...prev.processedWallets, wallet.publicKey.toString()]
+        }));
       }
 
-      console.log('All distributions complete');
-      onComplete?.();
+      // Send the single transaction
+      const { blockhash } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = parentPublicKey;
+
+      try {
+        const signed = await window.phantom.solana.signTransaction(transaction);
+        const signature = await connection.sendRawTransaction(signed.serialize());
+        console.log('Distribution transaction sent:', signature);
+        
+        // Wait for confirmation
+        await connection.confirmTransaction(signature);
+        
+        console.log('Distribution complete');
+        onComplete?.();
+        
+        // Show success status briefly before closing
+        setDistributionStatus(prev => ({
+          ...prev,
+          isDistributing: false,
+          currentWallet: null,
+          processedWallets: selectedWallets.map(w => w.publicKey.toString())
+        }));
+        
+        setTimeout(() => {
+          setDistributionStatus({
+            isDistributing: false,
+            currentWallet: null,
+            processedWallets: [],
+            error: null
+          });
+        }, 3000);
+
+      } catch (error) {
+        console.error('Distribution transaction failed:', error);
+        setDistributionStatus(prev => ({
+          ...prev,
+          error: error.message
+        }));
+        throw error;
+      }
+
     } catch (error) {
       console.error('Distribution failed:', error);
+      setDistributionStatus(prev => ({
+        ...prev,
+        isDistributing: false,
+        error: error.message
+      }));
       alert(`Distribution failed: ${error.message}`);
     }
   };
@@ -341,6 +349,489 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete, refreshBalance
       return i === count - 1 ? remaining : amount;
     });
   };
+
+  // Add this function before the RecoveryModal component
+  const retryFailedTransfers = async () => {
+    try {
+      if (recoveryStatus.failedTransfers.length === 0) return;
+
+      setRecoveryStatus(prev => ({
+        ...prev,
+        currentPhase: 'transferring',
+        error: null
+      }));
+
+      const connection = new Connection(
+        `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
+        { commitment: 'confirmed' }
+      );
+
+      const tribifyMint = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
+      const parentPublicKey = new PublicKey(window.phantom.solana.publicKey.toString());
+
+      // Get parent token account
+      const parentTokenAccounts = await connection.getParsedTokenAccountsByOwner(
+        parentPublicKey,
+        { mint: tribifyMint }
+      );
+
+      if (!parentTokenAccounts.value.length) {
+        throw new Error('No TRIBIFY token account found for parent wallet');
+      }
+
+      const parentTokenAccount = parentTokenAccounts.value[0].pubkey;
+
+      // Create single transaction for all retries
+      const transaction = new Transaction();
+
+      // Add instructions for each failed transfer
+      for (const failedAddress of recoveryStatus.failedTransfers) {
+        setRecoveryStatus(prev => ({
+          ...prev,
+          currentWallet: failedAddress
+        }));
+
+        const recipientATA = await getAssociatedTokenAddress(
+          tribifyMint,
+          new PublicKey(failedAddress)
+        );
+
+        // Check if ATA exists
+        const accountInfo = await connection.getAccountInfo(recipientATA);
+        if (!accountInfo) {
+          // Add ATA creation instruction
+          transaction.add(
+            createAssociatedTokenAccountInstruction(
+              parentPublicKey,
+              recipientATA,
+              new PublicKey(failedAddress),
+              tribifyMint
+            )
+          );
+        }
+
+        // Add transfer instruction
+        transaction.add(
+          createTransferInstruction(
+            parentTokenAccount,
+            recipientATA,
+            parentPublicKey,
+            toBigNumber(1) // Retry with minimum amount to test transfer
+          )
+        );
+      }
+
+      // Send the single retry transaction
+      const { blockhash } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = parentPublicKey;
+
+      const signed = await window.phantom.solana.signTransaction(transaction);
+      const signature = await connection.sendRawTransaction(signed.serialize());
+      await connection.confirmTransaction(signature);
+
+      // Update status after successful retry
+      setRecoveryStatus(prev => ({
+        ...prev,
+        currentPhase: null,
+        failedTransfers: [],
+        successfulTransfers: [
+          ...prev.successfulTransfers,
+          ...prev.failedTransfers
+        ],
+        currentWallet: null,
+        error: null
+      }));
+
+      // Refresh balances
+      await refreshBalances();
+
+    } catch (error) {
+      console.error('Retry failed:', error);
+      setRecoveryStatus(prev => ({
+        ...prev,
+        currentPhase: null,
+        error: `Retry failed: ${error.message}`
+      }));
+    }
+  };
+
+  // Update the RecoveryModal component
+  const RecoveryModal = () => (
+    <div className="recovery-modal">
+      <div className="recovery-header">
+        <h3>Token Recovery</h3>
+        <div className="phase-indicator">
+          <div className={`phase ${recoveryStatus.currentPhase === 'checking' ? 'active' : ''}`}>
+            <span className="icon">🔍</span>
+            <span>Checking</span>
+          </div>
+          <div className="phase-line"></div>
+          <div className={`phase ${recoveryStatus.currentPhase === 'creating_atas' ? 'active' : ''}`}>
+            <span className="icon">⚙️</span>
+            <span>Setup</span>
+          </div>
+          <div className="phase-line"></div>
+          <div className={`phase ${recoveryStatus.currentPhase === 'transferring' ? 'active' : ''}`}>
+            <span className="icon">↗️</span>
+            <span>Transfer</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="recovery-progress">
+        <div className="progress-bar-container">
+          <div 
+            className="progress-bar" 
+            style={{ 
+              width: `${(recoveryStatus.processedCount / recoveryStatus.totalWallets) * 100}%` 
+            }}
+          />
+          <div className="progress-details">
+            <span className="progress-text">
+              {recoveryStatus.processedCount} / {recoveryStatus.totalWallets} Wallets
+            </span>
+            <span className="percentage">
+              {Math.round((recoveryStatus.processedCount / recoveryStatus.totalWallets) * 100)}%
+            </span>
+          </div>
+        </div>
+
+        {recoveryStatus.currentWallet && (
+          <div className="current-operation">
+            <div className="operation-label">Current Wallet:</div>
+            <div className="wallet-info">
+              <div className="wallet-address">
+                {recoveryStatus.currentWallet.slice(0, 6)}...{recoveryStatus.currentWallet.slice(-6)}
+              </div>
+              <div className={`status-indicator ${recoveryStatus.currentPhase}`}>
+                {recoveryStatus.currentPhase === 'checking' && '🔍 Checking'}
+                {recoveryStatus.currentPhase === 'creating_atas' && '⚙️ Creating ATA'}
+                {recoveryStatus.currentPhase === 'transferring' && '↗️ Transferring'}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="recovery-stats">
+        <div className="stats-grid">
+          <div className="stat-card success">
+            <div className="stat-header">Successfully Recovered</div>
+            <div className="stat-value">{recoveryStatus.successfulTransfers.length}</div>
+          </div>
+          <div className="stat-card failed">
+            <div className="stat-header">Failed Transfers</div>
+            <div className="stat-value">{recoveryStatus.failedTransfers.length}</div>
+          </div>
+          <div className="stat-card total">
+            <div className="stat-header">Total TRIBIFY Recovered</div>
+            <div className="stat-value">{recoveryStatus.totalRecovered.toLocaleString()}</div>
+          </div>
+        </div>
+      </div>
+
+      {recoveryStatus.error && (
+        <div className="recovery-error">
+          <div className="error-content">
+            <span className="error-icon">⚠️</span>
+            <span className="error-message">{recoveryStatus.error}</span>
+          </div>
+          <button 
+            className="dismiss-error"
+            onClick={() => setRecoveryStatus(prev => ({ ...prev, error: null }))}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      <div className="recovery-actions">
+        {recoveryStatus.failedTransfers.length > 0 && (
+          <button 
+            className="retry-button"
+            onClick={retryFailedTransfers}
+          >
+            <span className="icon">↻</span>
+            Retry Failed ({recoveryStatus.failedTransfers.length})
+          </button>
+        )}
+        <button 
+          className="close-button"
+          onClick={() => setRecoveryStatus(prev => ({ ...prev, isRecovering: false }))}
+          disabled={recoveryStatus.currentPhase !== null}
+        >
+          {recoveryStatus.currentPhase ? 'Recovery in Progress...' : 'Close'}
+        </button>
+      </div>
+    </div>
+  );
+
+  // Update the CSS
+  const styles = `
+  .recovery-modal {
+    background: #1a1b1e;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    max-width: 600px;
+    width: 100%;
+    color: #fff;
+  }
+
+  .recovery-header {
+    margin-bottom: 32px;
+    text-align: center;
+  }
+
+  .recovery-header h3 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #fff;
+  }
+
+  .phase-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 20px 0;
+  }
+
+  .phase {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0.5;
+    transition: all 0.3s ease;
+  }
+
+  .phase.active {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+
+  .phase .icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+
+  .phase-line {
+    flex: 1;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 12px;
+  }
+
+  .progress-bar-container {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    height: 24px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .progress-bar {
+    background: linear-gradient(90deg, #00ff87, #60efff);
+    height: 100%;
+    transition: width 0.3s ease;
+    border-radius: 12px;
+  }
+
+  .progress-details {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  .current-operation {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 20px;
+  }
+
+  .operation-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 8px;
+  }
+
+  .wallet-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .wallet-address {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 14px;
+    color: #00ff87;
+  }
+
+  .status-indicator {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 24px 0;
+  }
+
+  .stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .stat-header {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+    font-weight: bold;
+  }
+
+  .stat-card.success .stat-value { color: #00ff87; }
+  .stat-card.failed .stat-value { color: #ff4757; }
+  .stat-card.total .stat-value { color: #60efff; }
+
+  .recovery-error {
+    background: rgba(255, 71, 87, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 24px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .error-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .dismiss-error {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    font-size: 20px;
+  }
+
+  .recovery-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+  }
+
+  .retry-button, .close-button {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+  }
+
+  .retry-button {
+    background: #60efff;
+    color: #1a1b1e;
+  }
+
+  .retry-button:hover {
+    background: #00ff87;
+  }
+
+  .close-button {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
+
+  .close-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .close-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  `;
+
+  // Add the styles to the document
+  useEffect(() => {
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = styles;
+    document.head.appendChild(styleSheet);
+    return () => {
+      document.head.removeChild(styleSheet);
+    };
+  }, []);
+
+  // Update the distribution form section to use a shared progress component
+  const ProgressDisplay = ({ status, config }) => (
+    <div className="progress-display">
+      <h4>Distribution Progress</h4>
+      <div className="progress-container">
+        <div className="progress-bar" 
+          style={{ 
+            width: `${(status.processedWallets.length / config.numberOfWallets) * 100}%` 
+          }} 
+        />
+        <div className="progress-details">
+          <span className="progress-text">
+            {status.processedWallets.length} / {config.numberOfWallets} Wallets
+          </span>
+          <span className="percentage">
+            {Math.round((status.processedWallets.length / config.numberOfWallets) * 100)}%
+          </span>
+        </div>
+      </div>
+      {status.currentWallet && (
+        <div className="current-operation">
+          <div className="operation-label">Processing Wallet:</div>
+          <div className="wallet-info">
+            <div className="wallet-address">
+              {status.currentWallet.slice(0, 6)}...{status.currentWallet.slice(-6)}
+            </div>
+            <div className="status-indicator">
+              ↗️ Transferring
+            </div>
+          </div>
+        </div>
+      )}
+      {status.error && (
+        <div className="operation-error">
+          <span className="error-icon">⚠️</span>
+          <span className="error-message">{status.error}</span>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="distribution-container">
@@ -389,19 +880,21 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete, refreshBalance
         <div className="form-group">
           <label>Number of Wallets to Distribute To (1-100):</label>
           <input
-            type="number"
+            type="text"
             value={distributionConfig.numberOfWallets}
             onChange={(e) => {
-              const value = parseInt(e.target.value);
-              if (!isNaN(value) && value >= 1 && value <= 100) {
-                setDistributionConfig(prev => ({
-                  ...prev,
-                  numberOfWallets: value
-                }));
+              const value = e.target.value;
+              if (value === '' || /^\d+$/.test(value)) {
+                const numValue = value === '' ? '' : parseInt(value);
+                if (value === '' || (numValue >= 1 && numValue <= 100)) {
+                  setDistributionConfig(prev => ({
+                    ...prev,
+                    numberOfWallets: value
+                  }));
+                }
               }
             }}
-            min="1"
-            max="100"
+            placeholder="Enter number (1-100)"
           />
         </div>
 
@@ -467,16 +960,30 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete, refreshBalance
           </div>
         )}
 
+        {(distributionStatus.isDistributing || recoveryStatus.isRecovering) && (
+          <div className="modal-overlay">
+            <div className="progress-modal">
+              <ProgressDisplay 
+                status={distributionStatus.isDistributing ? distributionStatus : recoveryStatus}
+                config={distributionConfig}
+              />
+            </div>
+          </div>
+        )}
+
         <button 
           className="distribute-button"
           disabled={
             !distributionConfig.totalAmount || 
             distributionConfig.totalAmount <= 0 ||
-            estimatedFees.total > walletInfo.solBalance
+            estimatedFees.total > walletInfo.solBalance ||
+            distributionStatus.isDistributing
           }
           onClick={distributeTokens}
         >
-          {estimatedFees.total > walletInfo.solBalance 
+          {distributionStatus.isDistributing 
+            ? 'Distribution in Progress...'
+            : estimatedFees.total > walletInfo.solBalance 
             ? 'Insufficient SOL for fees'
             : 'Start Distribution'
           }
