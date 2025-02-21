@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import './Shareholders.css';
 import { TribifyContext } from '../context/TribifyContext';
+import LoadingIndicator from './LoadingIndicator';
 
 const Shareholders = ({ 
   holders = [],
@@ -18,6 +19,7 @@ const Shareholders = ({
     return saved ? JSON.parse(saved) : {};
   });
   const [notification, setNotification] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   console.log('Shareholders received:', {
     publicKey,
@@ -94,6 +96,30 @@ const Shareholders = ({
     }
   };
 
+  // Add default name for Liquidity Pool
+  const LP_ADDRESS = '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7';
+  const defaultPublicNames = {
+    [LP_ADDRESS]: {
+      name: 'Liquidity Pool',
+      isDefault: true
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 5000);
+    
+    if (holders && holders.length > 0) {
+      clearTimeout(timer);
+      setIsLoading(false);
+    }
+
+    return () => clearTimeout(timer);
+  }, [holders]);
+
+  if (isLoading) {
+    return <LoadingIndicator />;
+  }
+
   return (
     <div className="token-holders">
       {notification && (
@@ -160,7 +186,9 @@ const Shareholders = ({
               )}
             </div>
             <div className="holder-col public-name">
-              {editingPublicName === holder.address ? (
+              {holder.address === LP_ADDRESS ? (
+                <span>Liquidity Pool</span>
+              ) : editingPublicName === holder.address ? (
                 <input
                   autoFocus
                   defaultValue={publicNames[holder.address]?.name || ''}

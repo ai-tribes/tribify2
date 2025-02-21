@@ -101,45 +101,48 @@ function VotePage({ tokenHolders, publicKey }) {
     </div>
   );
 
-  const NewProposalModal = () => (
-    <div className="modal-overlay">
-      <div className="new-proposal-modal">
-        <div className="modal-header">
-          <h3>Create New Proposal</h3>
-          <button 
-            className="close-button"
-            onClick={() => setShowNewProposalModal(false)}
-          >
-            ×
-          </button>
-        </div>
+  const CreateProposalModal = ({ onClose }) => {
+    const [formData, setFormData] = useState({
+      title: '',
+      description: '',
+      deadline: ''
+    });
 
-        <form onSubmit={handleCreateProposal}>
+    const handleChange = (e) => {
+      const { name, value } = e.target;
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    };
+
+    return (
+      <div className="modal-overlay">
+        <div className="modal-content">
+          <h3>Create New Proposal</h3>
+          <button className="close-btn" onClick={onClose}>×</button>
+
           <div className="form-group">
             <label>Title</label>
             <input
               type="text"
-              value={newProposal.title}
-              onChange={e => setNewProposal({
-                ...newProposal,
-                title: e.target.value
-              })}
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
               placeholder="Enter proposal title"
-              required
+              className="proposal-input"
             />
           </div>
 
           <div className="form-group">
             <label>Description</label>
             <textarea
-              value={newProposal.description}
-              onChange={e => setNewProposal({
-                ...newProposal,
-                description: e.target.value
-              })}
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
               placeholder="Describe your proposal"
-              required
-              rows={4}
+              className="proposal-textarea"
+              rows={6}
             />
           </div>
 
@@ -147,25 +150,20 @@ function VotePage({ tokenHolders, publicKey }) {
             <label>Deadline</label>
             <input
               type="date"
-              value={newProposal.deadline}
-              onChange={e => setNewProposal({
-                ...newProposal,
-                deadline: e.target.value
-              })}
-              min={new Date().toISOString().split('T')[0]}
-              required
+              name="deadline"
+              value={formData.deadline}
+              onChange={handleChange}
+              className="proposal-input"
             />
           </div>
 
-          <div className="form-actions">
-            <button type="submit" className="submit-proposal">
-              Create Proposal
-            </button>
-          </div>
-        </form>
+          <button className="create-proposal-btn">
+            Create Proposal
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="vote-page">
@@ -179,7 +177,7 @@ function VotePage({ tokenHolders, publicKey }) {
         </button>
       </div>
 
-      {showNewProposalModal && <NewProposalModal />}
+      {showNewProposalModal && <CreateProposalModal onClose={() => setShowNewProposalModal(false)} />}
 
       <div className="proposals-section">
         <h3>My Proposals</h3>

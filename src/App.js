@@ -953,21 +953,15 @@ What would you like to explore first? You can:
   const handleDisconnect = async () => {
     try {
       await window.phantom.solana.disconnect();
-      // Remove ourselves from online users
-      if (publicKey) {
-        setOnlineUsers(prev => {
-          const next = new Set(prev);
-          next.delete(publicKey);
-          return next;
-        });
-      }
       setIsConnected(false);
       setPublicKey(null);
       setBalance(null);
       setHasPaid(false);
       setStatus('');
+      setOnlineUsers(new Set());
+      setSubwallets([]);
     } catch (error) {
-      console.error('Disconnect error:', error);
+      console.error('Failed to disconnect:', error);
     }
   };
 
@@ -1264,6 +1258,24 @@ Try asking about one of these topics or use /help to see all commands!`;
 
   const { subwallets: contextSubwallets } = useContext(TribifyContext);
 
+  // Just show welcome screen when not connected
+  if (!publicKey) {
+    return (
+      <div className="welcome-container">
+        <h1>Welcome to Tribify</h1>
+        <p>Connect your Phantom wallet to get started</p>
+        <button onClick={handleConnection} className="connect-button">
+          Connect Phantom Wallet
+        </button>
+        <p className="info-text">
+          Your wallet will be used to generate secure child wallets. 
+          Each child wallet is uniquely derived from your parent wallet.
+        </p>
+      </div>
+    );
+  }
+
+  // Show main app when connected
   return (
     <div className="App">
       {!isConnected && (

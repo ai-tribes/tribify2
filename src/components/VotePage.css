@@ -173,59 +173,81 @@
   z-index: 1000;
 }
 
-.new-proposal-modal {
+.modal-content {
   background: #1a1a1a;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 24px;
   width: 90%;
   max-width: 600px;
+  position: relative;
   border: 1px solid rgba(155, 89, 182, 0.2);
 }
 
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.modal-header h3 {
+.modal-content h3 {
   color: #9b59b6;
-  margin: 0;
+  margin: 0 0 24px 0;
+  font-size: 20px;
 }
 
-.close-button {
+.close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
   background: none;
   border: none;
-  color: #888;
+  color: rgba(255, 255, 255, 0.5);
   font-size: 24px;
   cursor: pointer;
+  padding: 4px 8px;
+}
+
+.close-btn:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.create-proposal-btn {
+  width: 100%;
+  background: #9b59b6;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  margin-top: 24px;
+  transition: all 0.2s ease;
+}
+
+.create-proposal-btn:hover {
+  background: #8e44ad;
+  transform: translateY(-1px);
 }
 
 .form-group {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .form-group label {
-  display: block;
-  margin-bottom: 8px;
-  color: #888;
-}
-
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(155, 89, 182, 0.2);
-  border-radius: 4px;
-  color: #fff;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
 }
 
-.form-group textarea {
+.proposal-input,
+.proposal-textarea {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.proposal-textarea {
   resize: vertical;
-  min-height: 100px;
+  min-height: 120px;
+  font-family: inherit;
 }
 
 .form-actions {
