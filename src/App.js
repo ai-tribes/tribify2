@@ -24,6 +24,7 @@ import WalletPage from './components/WalletPage';
 import Shareholders from './components/Shareholders';
 import { TribifyContext } from './context/TribifyContext';
 import Sign from './components/Sign';
+import VotePage from './components/VotePage';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -1313,16 +1314,28 @@ Try asking about one of these topics or use /help to see all commands!`;
               Wallet
             </button>
             <button 
-              className="stake-button"
+              className={activeView === 'stake' ? 'active' : ''}
               onClick={() => setActiveView('stake')}
             >
               Stake
             </button>
             <button 
-              className="sign-button"
+              className={activeView === 'snipe' ? 'active' : ''}
+              onClick={() => setActiveView('snipe')}
+            >
+              Snipe
+            </button>
+            <button 
+              className={activeView === 'sign' ? 'active' : ''}
               onClick={() => setActiveView('sign')}
             >
               Sign
+            </button>
+            <button 
+              className={activeView === 'vote' ? 'active' : ''}
+              onClick={() => setActiveView('vote')}
+            >
+              Vote
             </button>
             <Password onClick={() => {
               if (friendPassword) {
@@ -1566,11 +1579,22 @@ Try asking about one of these topics or use /help to see all commands!`;
               />
             )}
 
+            {activeView === 'snipe' && (
+              <div className="sign-container">
+                <h3>Snipe Messages</h3>
+                {/* Snipe component content will go here */}
+              </div>
+            )}
+
             {activeView === 'sign' && (
               <div className="sign-container">
                 <h3>Sign Messages</h3>
                 {/* Sign component content will go here */}
               </div>
+            )}
+
+            {activeView === 'vote' && (
+              <VotePage tokenHolders={tokenHolders} />
             )}
           </div>
 

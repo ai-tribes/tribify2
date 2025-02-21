@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import './MessagesPage.css';
+import { GovernanceContext } from '../context/GovernanceContext';
 
 const MessagesPage = ({ 
   tokenHolders, 
@@ -20,6 +21,8 @@ const MessagesPage = ({
     votingPeriod: '7', // days
     options: ['For', 'Against', 'Abstain']
   });
+
+  const { motions, addMessageToProposal } = useContext(GovernanceContext);
 
   // Get all chats with unread messages
   const unreadChats = tokenHolders.filter(holder => 

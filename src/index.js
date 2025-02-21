@@ -5,17 +5,20 @@ import App from './App.js';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { TribifyProvider } from './context/TribifyContext';
 import WalletPage from './components/WalletPage';
+import { GovernanceProvider } from './context/GovernanceContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <TribifyProvider>
-      <Router>
-        <Routes>
-          <Route exact path="/" element={<App />} />
-          <Route path="/wallet" element={<WalletPage />} />
-        </Routes>
-      </Router>
+      <GovernanceProvider>
+        <Router>
+          <Routes>
+            <Route exact path="/" element={<App />} />
+            <Route path="/wallet" element={<WalletPage />} />
+          </Routes>
+        </Router>
+      </GovernanceProvider>
     </TribifyProvider>
   </React.StrictMode>
 );

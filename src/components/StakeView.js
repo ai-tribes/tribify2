@@ -1,10 +1,12 @@
 import React, { useContext } from 'react';
 import './StakeView.css';
 import { TribifyContext } from '../context/TribifyContext';
+import { GovernanceContext } from '../context/GovernanceContext';
 
 function StakeView({ parentWallet, tokenHolders }) {
   // Get subwallets from context
   const { subwallets, publicKeys } = useContext(TribifyContext);
+  const { motions, stakeForProposal } = useContext(GovernanceContext);
 
   // Safe console logging without eval
   console.log('StakeView Context - subwallets:', subwallets);
