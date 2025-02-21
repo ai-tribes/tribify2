@@ -3,6 +3,9 @@ import './StakeView.css';
 import { TribifyContext } from '../context/TribifyContext';
 import { GovernanceContext } from '../context/GovernanceContext';
 import StakingLockModal from './StakingLockModal';
+import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram } from '@solana/web3.js';
+import { formatDuration } from '../utils/staking';
+import BN from 'bn.js';
 
 function StakeView({ parentWallet, tokenHolders }) {
   const { subwallets, publicKeys } = useContext(TribifyContext);
@@ -10,6 +13,7 @@ function StakeView({ parentWallet, tokenHolders }) {
   const [selectedStakeType, setSelectedStakeType] = useState({});
   const [showStakeModal, setShowStakeModal] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState(null);
+  const [lockedStakes, setLockedStakes] = useState({});
 
   // Define APY tiers based on lock period
   const APY_TIERS = [
@@ -39,13 +43,55 @@ function StakeView({ parentWallet, tokenHolders }) {
     setShowStakeModal(true);
   };
 
-  const handleStake = async (walletPublicKey, balance, lockPeriod) => {
+  const handleStake = async (walletPublicKey, balance, duration) => {
     try {
-      console.log(`Staking ${balance} TRIBIFY from ${walletPublicKey} for ${lockPeriod} months`);
-      // Staking logic here
+      // TODO: Implement actual staking transaction
+      console.log(`Will stake ${balance} TRIBIFY for ${duration} minutes from ${walletPublicKey}`);
+
+      // Temporary mock implementation
+      const mockUnlockTime = Math.floor(Date.now() / 1000) + (duration * 60);
+      
+      setLockedStakes(prev => ({
+        ...prev,
+        [walletPublicKey]: {
+          amount: balance,
+          duration,
+          unlockTime: mockUnlockTime,
+          txSignature: 'mock-tx-' + Date.now()
+        }
+      }));
+
       setShowStakeModal(false);
+      
     } catch (error) {
       console.error('Staking failed:', error);
+      alert('Failed to stake: ' + error.message);
+    }
+  };
+
+  const handleUnstake = async (walletPublicKey) => {
+    try {
+      const stake = lockedStakes[walletPublicKey];
+      if (!stake) return;
+
+      const currentTime = Math.floor(Date.now() / 1000);
+      if (currentTime < stake.unlockTime) {
+        throw new Error(`Tokens are locked for ${formatDuration((stake.unlockTime - currentTime) * 60)}`);
+      }
+
+      // TODO: Implement actual unstaking transaction
+      console.log(`Will unstake ${stake.amount} TRIBIFY from ${walletPublicKey}`);
+
+      // Remove from locked stakes
+      setLockedStakes(prev => {
+        const newStakes = { ...prev };
+        delete newStakes[walletPublicKey];
+        return newStakes;
+      });
+
+    } catch (error) {
+      console.error('Unstaking failed:', error);
+      alert('Failed to unstake: ' + error.message);
     }
   };
 
@@ -87,12 +133,31 @@ function StakeView({ parentWallet, tokenHolders }) {
             </div>
             
             <div className="wallet-col stake">
-              <button 
-                className="stake-button"
-                onClick={() => handleStakeClick(wallet)}
-              >
-                Stake
-              </button>
+              {lockedStakes[wallet.publicKey] ? (
+                <div className="stake-status">
+                  <button 
+                    className="unstake-button"
+                    onClick={() => handleUnstake(wallet.publicKey)}
+                  >
+                    Unstake
+                  </button>
+                  <div className="lock-info">
+                    <span className="locked-amount">
+                      {Number(lockedStakes[wallet.publicKey].amount).toLocaleString()} TRIBIFY
+                    </span>
+                    <span className="unlock-time">
+                      Unlocks in {formatDuration((lockedStakes[wallet.publicKey].unlockTime - Date.now()/1000) * 60)}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <button 
+                  className="stake-button"
+                  onClick={() => handleStakeClick(wallet)}
+                >
+                  Stake
+                </button>
+              )}
             </div>
 
             <div className="wallet-col motions">

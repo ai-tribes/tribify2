@@ -426,4 +426,44 @@
   color: #ff4757;
   font-size: 14px;
   text-align: center;
+}
+
+.stake-status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.unstake-button {
+  width: 180px;
+  padding: 8px 16px;
+  background: #ff4757;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.unstake-button:hover {
+  background: #ff6b81;
+  transform: translateY(-1px);
+}
+
+.lock-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 12px;
+}
+
+.locked-amount {
+  color: #00ff87;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.unlock-time {
+  color: rgba(255, 255, 255, 0.5);
 } 
