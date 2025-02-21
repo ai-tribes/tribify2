@@ -14,6 +14,8 @@ const LAMPORTS_FOR_ATA = 0.002 * LAMPORTS_PER_SOL; // Amount needed to create an
 
 const BATCH_SIZE = 4; // Number of operations per batch
 
+const MAX_INSTRUCTIONS_PER_TX = 12; // This allows for 6 wallets per tx (ATA + transfer for each)
+
 const toBigNumber = (amount) => {
   // Convert to integer representation with 6 decimals
   return Math.floor(amount * Math.pow(10, 6)).toString();
@@ -36,7 +38,7 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete, refreshBalance
     isRandomDistribution: false
   });
 
-  // Add new state for distribution progress
+  // Add new state for distribution
   const [distributionStatus, setDistributionStatus] = useState({
     isDistributing: false,
     currentWallet: null,
@@ -55,6 +57,13 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete, refreshBalance
     failedTransfers: [],
     totalRecovered: 0,
     error: null
+  });
+
+  // Add to state declarations
+  const [distributionFilter, setDistributionFilter] = useState({
+    onlyNewWallets: false,
+    availableNewWallets: 0,
+    checkingWallets: false
   });
 
   const fetchWalletBalances = async () => {
@@ -182,6 +191,47 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete, refreshBalance
     fetchWalletBalances();
   }, []);
 
+  // Add function to check ATA status
+  const checkWalletATAs = async () => {
+    try {
+      setDistributionFilter(prev => ({ ...prev, checkingWallets: true }));
+      
+      const connection = new Connection(
+        `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
+        { commitment: 'confirmed' }
+      );
+      
+      const tribifyMint = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
+      
+      let newWalletsCount = 0;
+      for (const wallet of subwallets) {
+        const ata = await getAssociatedTokenAddress(
+          tribifyMint,
+          wallet.publicKey
+        );
+        const account = await connection.getAccountInfo(ata);
+        if (!account) {
+          newWalletsCount++;
+        }
+      }
+      
+      setDistributionFilter(prev => ({
+        ...prev,
+        availableNewWallets: newWalletsCount,
+        checkingWallets: false
+      }));
+      
+    } catch (error) {
+      console.error('Error checking ATAs:', error);
+      setDistributionFilter(prev => ({ ...prev, checkingWallets: false }));
+    }
+  };
+
+  // Add useEffect to check ATAs when component mounts
+  useEffect(() => {
+    checkWalletATAs();
+  }, []);
+
   const distributeTokens = async () => {
     try {
       setDistributionStatus({
@@ -191,20 +241,44 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete, refreshBalance
         error: null
       });
 
-      const selectedWallets = subwallets.slice(0, distributionConfig.numberOfWallets);
+      // Filter wallets based on ATA status if needed
+      let selectedWallets = subwallets.slice(0, distributionConfig.numberOfWallets);
       
-      // Confirmation dialog with details
-      const confirmMessage = `Please verify:\n\n` +
-        `Total Amount: ${distributionConfig.totalAmount.toLocaleString()} TRIBIFY\n` +
-        `Number of Recipients: ${distributionConfig.numberOfWallets}\n` +
-        `First Recipient: ${selectedWallets[0].publicKey.toString()}\n` +
-        `Last Recipient: ${selectedWallets[selectedWallets.length - 1].publicKey.toString()}\n\n` +
-        `This will require ONE signature to distribute to all wallets.\n\n` +
-        `Proceed with distribution?`;
+      if (distributionFilter.onlyNewWallets) {
+        const connection = new Connection(
+          `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
+          { commitment: 'confirmed' }
+        );
+        
+        const tribifyMint = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
+        
+        // Filter to only wallets without ATAs
+        const walletsWithoutATA = [];
+        for (const wallet of subwallets) {
+          const ata = await getAssociatedTokenAddress(
+            tribifyMint,
+            wallet.publicKey
+          );
+          const account = await connection.getAccountInfo(ata);
+          if (!account) {
+            walletsWithoutATA.push(wallet);
+            if (walletsWithoutATA.length >= distributionConfig.numberOfWallets) {
+              break;
+            }
+          }
+        }
+        
+        selectedWallets = walletsWithoutATA;
+      }
 
-      if (!window.confirm(confirmMessage)) {
-        setDistributionStatus(prev => ({ ...prev, isDistributing: false }));
-        return;
+      if (selectedWallets.length === 0) {
+        throw new Error('No eligible wallets found for distribution');
+      }
+
+      // Split wallets into batches
+      const batches = [];
+      for (let i = 0; i < selectedWallets.length; i += 6) { // Process 6 wallets at a time
+        batches.push(selectedWallets.slice(i, i + 6));
       }
 
       const connection = new Connection(
@@ -229,98 +303,100 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete, refreshBalance
       
       // Calculate amounts for each wallet
       const amounts = distributionConfig.isRandomDistribution 
-        ? generateRandomAmounts(distributionConfig.totalAmount, distributionConfig.numberOfWallets)
-        : Array(distributionConfig.numberOfWallets).fill(distributionConfig.amountPerWallet);
+        ? generateRandomAmounts(distributionConfig.totalAmount, selectedWallets.length)
+        : Array(selectedWallets.length).fill(distributionConfig.amountPerWallet);
 
-      // Create single transaction for all distributions
-      const transaction = new Transaction();
-      
-      // Add instructions for each wallet
-      for (let i = 0; i < selectedWallets.length; i++) {
-        const wallet = selectedWallets[i];
-        const amount = amounts[i];
+      // Process each batch
+      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+        const batch = batches[batchIndex];
+        const transaction = new Transaction();
         
-        setDistributionStatus(prev => ({
-          ...prev,
-          currentWallet: wallet.publicKey.toString()
-        }));
+        // Add instructions for each wallet in this batch
+        for (let i = 0; i < batch.length; i++) {
+          const wallet = batch[i];
+          const amount = amounts[batchIndex * 6 + i]; // Calculate correct amount index
+          
+          setDistributionStatus(prev => ({
+            ...prev,
+            currentWallet: wallet.publicKey.toString()
+          }));
 
-        const recipientATA = await getAssociatedTokenAddress(
-          tribifyMint,
-          wallet.publicKey
-        );
+          const recipientATA = await getAssociatedTokenAddress(
+            tribifyMint,
+            wallet.publicKey
+          );
 
-        // Check if ATA exists
-        const accountInfo = await connection.getAccountInfo(recipientATA);
-        if (!accountInfo) {
-          // Add ATA creation instruction
+          // Check if ATA exists
+          const accountInfo = await connection.getAccountInfo(recipientATA);
+          if (!accountInfo) {
+            transaction.add(
+              createAssociatedTokenAccountInstruction(
+                parentPublicKey,
+                recipientATA,
+                wallet.publicKey,
+                tribifyMint
+              )
+            );
+          }
+
+          // Add transfer instruction
           transaction.add(
-            createAssociatedTokenAccountInstruction(
-              parentPublicKey,
+            createTransferInstruction(
+              parentTokenAccount,
               recipientATA,
-              wallet.publicKey,
-              tribifyMint
+              parentPublicKey,
+              toBigNumber(amount)
             )
           );
+
+          setDistributionStatus(prev => ({
+            ...prev,
+            processedWallets: [...prev.processedWallets, wallet.publicKey.toString()]
+          }));
         }
 
-        // Add transfer instruction
-        transaction.add(
-          createTransferInstruction(
-            parentTokenAccount,
-            recipientATA,
-            parentPublicKey,
-            toBigNumber(amount)
-          )
-        );
+        // Send this batch's transaction
+        const { blockhash } = await connection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = parentPublicKey;
 
-        setDistributionStatus(prev => ({
-          ...prev,
-          processedWallets: [...prev.processedWallets, wallet.publicKey.toString()]
-        }));
+        try {
+          const signed = await window.phantom.solana.signTransaction(transaction);
+          const signature = await connection.sendRawTransaction(signed.serialize());
+          console.log(`Batch ${batchIndex + 1}/${batches.length} sent:`, signature);
+          
+          // Wait for confirmation
+          await connection.confirmTransaction(signature);
+          
+          // Add small delay between batches
+          if (batchIndex < batches.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        } catch (error) {
+          console.error(`Batch ${batchIndex + 1} failed:`, error);
+          throw error;
+        }
       }
 
-      // Send the single transaction
-      const { blockhash } = await connection.getLatestBlockhash();
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = parentPublicKey;
-
-      try {
-        const signed = await window.phantom.solana.signTransaction(transaction);
-        const signature = await connection.sendRawTransaction(signed.serialize());
-        console.log('Distribution transaction sent:', signature);
-        
-        // Wait for confirmation
-        await connection.confirmTransaction(signature);
-        
-        console.log('Distribution complete');
-        onComplete?.();
-        
-        // Show success status briefly before closing
-        setDistributionStatus(prev => ({
-          ...prev,
+      console.log('All distributions complete');
+      onComplete?.();
+      
+      // Show success status briefly before closing
+      setDistributionStatus(prev => ({
+        ...prev,
+        isDistributing: false,
+        currentWallet: null,
+        processedWallets: selectedWallets.map(w => w.publicKey.toString())
+      }));
+      
+      setTimeout(() => {
+        setDistributionStatus({
           isDistributing: false,
           currentWallet: null,
-          processedWallets: selectedWallets.map(w => w.publicKey.toString())
-        }));
-        
-        setTimeout(() => {
-          setDistributionStatus({
-            isDistributing: false,
-            currentWallet: null,
-            processedWallets: [],
-            error: null
-          });
-        }, 3000);
-
-      } catch (error) {
-        console.error('Distribution transaction failed:', error);
-        setDistributionStatus(prev => ({
-          ...prev,
-          error: error.message
-        }));
-        throw error;
-      }
+          processedWallets: [],
+          error: null
+        });
+      }, 3000);
 
     } catch (error) {
       console.error('Distribution failed:', error);
@@ -929,6 +1005,40 @@ const TokenDistributor = ({ parentWallet, subwallets, onComplete, refreshBalance
                 <span>Random Distribution</span>
               </div>
               <p className="option-description">Tokens are distributed in random amounts while maintaining the total</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="form-group distribution-filter">
+          <div className="filter-option">
+            <label>Distribution Filter:</label>
+            <div className="filter-content">
+              <input
+                type="checkbox"
+                checked={distributionFilter.onlyNewWallets}
+                onChange={(e) => setDistributionFilter(prev => ({
+                  ...prev,
+                  onlyNewWallets: e.target.checked
+                }))}
+                id="new-wallets-only"
+              />
+              <label htmlFor="new-wallets-only">
+                Only distribute to wallets without TRIBIFY accounts
+              </label>
+              {distributionFilter.checkingWallets ? (
+                <span className="checking-status">(Checking...)</span>
+              ) : (
+                <span className="available-count">
+                  ({distributionFilter.availableNewWallets} available)
+                </span>
+              )}
+              <button 
+                className="refresh-atas"
+                onClick={checkWalletATAs}
+                disabled={distributionFilter.checkingWallets}
+              >
+                ↻
+              </button>
             </div>
           </div>
         </div>
