@@ -1562,7 +1562,11 @@ Try asking about one of these topics or use /help to see all commands!`;
 
             {activeView === 'snipe' && (
               <div className="page-container">
-                <SnipePage publicKey={publicKey} />
+                <SnipePage 
+                  publicKey={publicKey}
+                  parentBalance={0.067453326}
+                  subwallets={subwallets || []} 
+                />
               </div>
             )}
 
