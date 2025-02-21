@@ -25,6 +25,7 @@ import Shareholders from './components/Shareholders';
 import { TribifyContext } from './context/TribifyContext';
 import Sign from './components/Sign';
 import VotePage from './components/VotePage';
+import SnipePage from './components/SnipePage';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -1554,15 +1555,14 @@ Try asking about one of these topics or use /help to see all commands!`;
                 parentWallet={{
                   publicKey: publicKey?.toString(),
                   tribifyBalance: tokenHolders.find(h => h.address === publicKey?.toString())?.tokenBalance || 0
-                }}asv 
+                }}
                 tokenHolders={tokenHolders}
               />
             )}
 
             {activeView === 'snipe' && (
-              <div className="sign-container">
-                <h3>Snipe Messages</h3>
-                {/* Snipe component content will go here */}
+              <div className="page-container">
+                <SnipePage publicKey={publicKey} />
               </div>
             )}
 
