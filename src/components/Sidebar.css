@@ -17,6 +17,10 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.brand-logo {
+  padding: 12px 0;
+}
+
 .logo {
   color: #00ff87;
   font-size: 20px;
@@ -26,6 +30,7 @@
   text-decoration: none;
   transition: opacity 0.2s;
   font-family: monospace;
+  display: block;
 }
 
 .logo:hover {
@@ -107,4 +112,22 @@
   .sidebar {
     display: none;
   }
+}
+
+.sidebar-button {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.sidebar-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
 } 

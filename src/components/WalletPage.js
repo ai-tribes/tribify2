@@ -21,6 +21,9 @@ import { NATIVE_MINT } from '@solana/spl-token';
 import './ConversionModal.css';
 import ConversionModal from './ConversionModal';
 import { TribifyContext } from '../context/TribifyContext';
+import Layout from './Layout';
+import Header from './Header';
+import './WalletPage.css';
 
 const TOTAL_SUPPLY = 1_000_000_000; // 1 Billion tokens
 
@@ -142,6 +145,127 @@ const txQueue = new TransactionQueue();
 
 function WalletPage() {
   const navigate = useNavigate();
+  const { publicKey, subwallets, setSubwallets } = useContext(TribifyContext);
+  
+  // State variables
+  const [parentBalances, setParentBalances] = useState({ TRIBIFY: 0, SOL: 0, USDC: 0 });
+  const [showPrivateKey, setShowPrivateKey] = useState(null);
+  const [showPrivateKeys, setShowPrivateKeys] = useState(false);
+  const [walletBalances, setWalletBalances] = useState({});
+  const [conversionStatus, setConversionStatus] = useState({
+    isConverting: false,
+    fromToken: null,
+    toToken: null,
+    error: null,
+    retryCount: 0,
+    inProgress: false,
+    totalConverted: 0
+  });
+
+  // Functions
+  const clearStorage = () => {
+    if (window.confirm('Are you sure you want to clear all wallet data?')) {
+      localStorage.clear();
+      setSubwallets([]);
+      setParentBalances({ TRIBIFY: 0, SOL: 0, USDC: 0 });
+      setWalletBalances({});
+      navigate('/app');
+    }
+  };
+
+  const refreshBalances = async () => {
+    try {
+      const connection = getConnection();
+      // Refresh parent wallet balances
+      const parentWallet = new PublicKey(publicKey);
+      const solBalance = await connection.getBalance(parentWallet) / LAMPORTS_PER_SOL;
+      
+      // Get TRIBIFY and USDC balances
+      const tribifyAta = await getAssociatedTokenAddress(
+        new PublicKey(TRIBIFY_TOKEN_MINT),
+        parentWallet
+      );
+      const usdcAta = await getAssociatedTokenAddress(
+        new PublicKey(USDC_MINT),
+        parentWallet
+      );
+
+      const [tribifyAccount, usdcAccount] = await Promise.all([
+        connection.getTokenAccountBalance(tribifyAta).catch(() => ({ value: { uiAmount: 0 } })),
+        connection.getTokenAccountBalance(usdcAta).catch(() => ({ value: { uiAmount: 0 } }))
+      ]);
+
+      setParentBalances({
+        TRIBIFY: tribifyAccount.value.uiAmount || 0,
+        SOL: solBalance,
+        USDC: usdcAccount.value.uiAmount || 0
+      });
+
+      // Refresh subwallet balances
+      const newBalances = {};
+      await Promise.all(subwallets.map(async (wallet) => {
+        const solBal = await connection.getBalance(wallet.publicKey) / LAMPORTS_PER_SOL;
+        const tribifyAta = await getAssociatedTokenAddress(
+          new PublicKey(TRIBIFY_TOKEN_MINT),
+          wallet.publicKey
+        );
+        const usdcAta = await getAssociatedTokenAddress(
+          new PublicKey(USDC_MINT),
+          wallet.publicKey
+        );
+
+        const [tribifyBal, usdcBal] = await Promise.all([
+          connection.getTokenAccountBalance(tribifyAta).catch(() => ({ value: { uiAmount: 0 } })),
+          connection.getTokenAccountBalance(usdcAta).catch(() => ({ value: { uiAmount: 0 } }))
+        ]);
+
+        newBalances[wallet.publicKey.toString()] = {
+          TRIBIFY: tribifyBal.value.uiAmount || 0,
+          SOL: solBal,
+          USDC: usdcBal.value.uiAmount || 0
+        };
+      }));
+
+      setWalletBalances(newBalances);
+    } catch (error) {
+      console.error('Error refreshing balances:', error);
+    }
+  };
+
+  const handleRestore = async (event) => {
+    try {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = async (e) => {
+        const content = e.target.result;
+        const wallets = JSON.parse(content);
+        
+        // Validate the wallet data
+        if (!Array.isArray(wallets) || !wallets.every(w => w.publicKey && w.secretKey)) {
+          throw new Error('Invalid wallet backup file format');
+        }
+
+        setSubwallets(wallets.map(w => ({
+          publicKey: new PublicKey(w.publicKey),
+          secretKey: w.secretKey
+        })));
+
+        await refreshBalances();
+      };
+
+      reader.readAsText(file);
+    } catch (error) {
+      console.error('Error restoring wallets:', error);
+      alert('Failed to restore wallets: ' + error.message);
+    }
+  };
+
+  // Effect to refresh balances on mount
+  useEffect(() => {
+    refreshBalances();
+  }, []);
+
   const [selectedAmount, setSelectedAmount] = useState('');
   const [showBuyConfig, setShowBuyConfig] = useState(false);
   const [showSellConfig, setShowSellConfig] = useState(false);
@@ -213,9 +337,7 @@ function WalletPage() {
     minAmount: 0,
     maxAmount: 0
   });
-  const [publicKey, setPublicKey] = useState(null);
   const [showDistributeModal, setShowDistributeModal] = useState(false);
-  const [walletBalances, setWalletBalances] = useState({});
 
   // Add file input ref near other state declarations
   const fileInputRef = useRef(null);
@@ -259,27 +381,8 @@ function WalletPage() {
     fundedCount: 0,
   });
 
-  // Add new state for showing/hiding private keys
-  const [showPrivateKeys, setShowPrivateKeys] = useState(false);
-
-  // Add this to your state declarations
-  const [conversionStatus, setConversionStatus] = useState({
-    isConverting: false,
-    inProgress: false,
-    processed: 0,
-    total: 0,
-    currentBatch: [],
-    successfulWallets: [],
-    failedWallets: [],
-    totalConverted: 0,
-    fromToken: '',
-    toToken: '',
-    error: null, // Add error state
-    retryCount: 0 // Add retry counter
-  });
-
   // Add this in WalletPage.js
-  const { setSubwallets, setPublicKeys } = useContext(TribifyContext);
+  const { setPublicKeys } = useContext(TribifyContext);
 
   const showStatus = (message, duration = 3000) => {
     setStatusMessage(message);
@@ -1030,7 +1133,6 @@ function WalletPage() {
         if (window.phantom?.solana) {
           const response = await window.phantom.solana.connect();
           setParentWalletAddress(response.publicKey.toString());
-          setPublicKey(response.publicKey.toString());
         }
       } catch (error) {
         console.error('Error getting parent wallet:', error);
@@ -1883,960 +1985,69 @@ function WalletPage() {
   };
 
   return (
-    <div className="wallet-fullscreen">
-      {/* Hidden file input for restore functionality */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        style={{ display: 'none' }}
-        accept=".json"
-        onChange={handleFileUpload}
-      />
-      
-      {notification && (
-        <div className="copy-notification">
-          {notification}
-        </div>
-      )}
-      {statusMessage && (
-        <div className="status-message">
-          {statusMessage}
-        </div>
-      )}
-      <div className="wallet-content">
-        <div className="wallet-header">
-          {/* First row - existing controls */}
-          <div className="wallet-controls">
-            <div className="left-controls">
-              <button onClick={() => navigate(-1)}>Close Wallet</button>
-              <button onClick={generateHDWallet} disabled={generating}>
-                {generating ? 'Generating...' : 'Generate Keys'}
-              </button>
-              <button onClick={downloadKeypairs} disabled={keypairs.length === 0}>
-                Backup Keys
-              </button>
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="restore-button"
-              >
-                Restore Keys
-              </button>
-              <button 
-                onClick={fetchBalances} 
-                disabled={keypairs.length === 0 || isLoading}
-              >
-                ↻ Refresh Wallets
-              </button>
-            </div>
-            <div className="right-controls">
-              <button
-                onClick={() => {
-                  const confirmed = window.confirm(
-                    'WARNING: This will delete all your private keys!\n\n' +
-                    'Make sure you have backed up your keys first.\n\n' +
-                    'Are you absolutely sure you want to proceed?'
-                  );
-                  if (confirmed) {
-                    const doubleConfirmed = window.confirm(
-                      'FINAL WARNING: This action cannot be undone!\n\n' +
-                      'Your private keys will be permanently deleted.\n\n' +
-                      'Type "DELETE" to confirm:'
-                    );
-                    if (doubleConfirmed === 'DELETE') {
-                      localStorage.clear();
-                      setKeypairs([]);
-                      setSubwallets([]);
-                      setPublicKeys([]);
-                      window.location.reload();
-                    }
-                  }
-                }}
-                className="nav-button danger"
-              >
-                Clear Storage & Reset
-              </button>
-            </div>
-          </div>
-
-          {/* Second row - restore action buttons */}
-          <div className="wallet-controls secondary">
-            <div className="left-controls">
-              <button 
-                className="fund-button" 
-                onClick={() => setIsFundingModalOpen(true)}
-              >
-                Fund Subwallets
-              </button>
-              <button 
-                className="distribute-button" 
-                onClick={() => setIsDistributeModalOpen(true)}
-              >
-                Distribute $Tribify
-              </button>
-              <button onClick={() => setIsBuyModalOpen(true)}>
-                Configure Buy
-              </button>
-              <button 
-                className="sequence-button" 
-                onClick={() => {
-                  buyAndDistribute();
-                  setStatus('Buy sequence started');
-                }}
-              >
-                Buy Sequence
-              </button>
-              <button onClick={() => setIsSellModalOpen(true)}>
-                Configure Sell
-              </button>
-              <button 
-                className="sequence-button sell" 
-                onClick={() => {
-                  sellAndDistribute();
-                  setStatus('Sell sequence started');
-                }}
-              >
-                Sell Sequence
-              </button>
-            </div>
-          </div>
-
-          {/* Third row - restore conversion buttons */}
-          <div className="wallet-controls tertiary">
-            <div className="conversion-buttons">
-              {/* TRIBIFY conversions */}
-              <div className="conversion-group tribify">
-                <span className="group-label">Convert ALL TRIBIFY to:</span>
-                <button 
-                  className="convert-button tribify-to-sol"
-                  onClick={() => handleMassConversion('TRIBIFY', 'SOL')}
-                >
-                  SOL
-                </button>
-                <button 
-                  className="convert-button tribify-to-usdc"
-                  onClick={() => alert(
-                    `TRIBIFY/USDC conversions will be available after $TRIBIFY graduates from Pump.fun.\n\n` +
-                    `For now, you can convert TRIBIFY to SOL using the Pump.fun liquidity pool.`
-                  )}
-                >
-                  USDC
-                </button>
-              </div>
-
-              {/* SOL conversions */}
-              <div className="conversion-group sol">
-                <span className="group-label">Convert ALL SOL to:</span>
-                <button 
-                  className="convert-button sol-to-tribify"
-                  onClick={() => handleMassConversion('SOL', 'TRIBIFY')}
-                >
-                  TRIBIFY
-                </button>
-                <button 
-                  className="convert-button sol-to-usdc"
-                  onClick={() => alert(
-                    `SOL/USDC conversions will be enabled after $TRIBIFY graduates to Raydium.\n\n` +
-                    `For now, you can use other DEXes like Raydium or Jupiter to convert SOL to USDC.`
-                  )}
-                >
-                  USDC
-                </button>
-              </div>
-
-              {/* USDC conversions */}
-              <div className="conversion-group usdc">
-                <span className="group-label">Convert ALL USDC to:</span>
-                <button 
-                  className="convert-button usdc-to-tribify"
-                  onClick={() => alert(
-                    `USDC/TRIBIFY conversions will be available after $TRIBIFY graduates from Pump.fun.\n\n` +
-                    `For now, you can convert USDC to SOL elsewhere, then use Pump.fun to buy TRIBIFY.`
-                  )}
-                >
-                  TRIBIFY
-                </button>
-                <button 
-                  className="convert-button usdc-to-sol"
-                  onClick={() => alert(
-                    `USDC/SOL conversions will be enabled after $TRIBIFY graduates to Raydium.\n\n` +
-                    `For now, you can use other DEXes like Raydium or Jupiter to convert USDC to SOL.`
-                  )}
-                >
-                  SOL
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="parent-wallet-info">
-          <div className="parent-wallet-row">
-            <span className="label">Parent Wallet:</span>
-            <span className="address">{parentWalletAddress || 'Not Connected'}</span>
-            <div className="parent-balances">
-              <span className="parent-balance tribify">
-                {walletBalances['parent']?.tribify?.toLocaleString() || '0'} TRIBIFY
-              </span>
-              <span className="parent-balance sol">
-                {walletBalances['parent']?.sol?.toFixed(4) || '0.0000'} SOL
-              </span>
-              <span className="parent-balance usdc">
-                ${walletBalances['parent']?.usdc?.toFixed(2) || '0.00'} USDC
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="wallet-controls">
-          <button 
-            className={`toggle-private-keys ${showPrivateKeys ? 'active' : ''}`}
-            onClick={() => setShowPrivateKeys(!showPrivateKeys)}
-          >
-            {showPrivateKeys ? 'Hide Private Keys' : 'Show Private Keys'}
-          </button>
-        </div>
-        <h3 className="subwallets-title">Sub Wallets</h3>
-        <div className="wallet-table">
-          <div className="table-header">
-            <div className="col-index">#</div>
-            <div className="col-private">Private Key</div>
-            <div className="col-public">Public Key</div>
-            <div className="col-tribify">TRIBIFY</div>
-            <div className="col-sol">SOL</div>
-            <div className="col-usdc">USDC</div>
+    <Layout>
+      <div className="wallet-page">
+        <div className="wallet-modal">
+          <div className="wallet-modal-header">
+            <h2>Wallet Management</h2>
+            <button className="close-button" onClick={() => navigate('/app')}>×</button>
           </div>
           
-          <div className="table-row totals-row">
-            <div className="col-index">-</div>
-            <div className="col-private">CUMULATIVE SUBWALLETS' BALANCE</div>
-            <div className="col-public">-</div>
-            <div className="col-tribify total-value">
-              {calculateTotals().tribify.toLocaleString()} TRIBIFY
+          <div className="wallet-modal-content">
+            {/* Wallet actions */}
+            <div className="wallet-actions">
+              <button>Close Wallet</button>
+              <button>Generate Keys</button>
+              <button>Backup Keys</button>
+              <button>Restore Keys</button>
+              <button>⟳ Refresh Wallets</button>
+              <button>Clear Storage & Reset</button>
             </div>
-            <div className="col-sol total-value">
-              {calculateTotals().sol.toFixed(4)} SOL
+
+            {/* Trading actions */}
+            <div className="trading-actions">
+              <button>Fund Subwallets</button>
+              <button>Distribute $TRIBIFY</button>
+              <button>Configure Buy</button>
+              <button>Buy Sequence</button>
+              <button>Configure Sell</button>
+              <button>Sell Sequence</button>
             </div>
-            <div className="col-usdc total-value">
-              ${calculateTotals().usdc.toFixed(2)}
+
+            {/* Conversion sections */}
+            <div className="conversion-sections">
+              {/* TRIBIFY conversion */}
+              <div className="conversion-group">
+                <span>Convert ALL TRIBIFY to:</span>
+                <button>SOL</button>
+                <button>USDC</button>
+              </div>
+
+              {/* SOL conversion */}
+              <div className="conversion-group">
+                <span>Convert ALL SOL to:</span>
+                <button>TRIBIFY</button>
+                <button>USDC</button>
+              </div>
+
+              {/* USDC conversion */}
+              <div className="conversion-group">
+                <span>Convert ALL USDC to:</span>
+                <button>TRIBIFY</button>
+                <button>SOL</button>
+              </div>
+            </div>
+
+            {/* Parent wallet info */}
+            <div className="parent-wallet-info">
+              <h3>Parent Wallet</h3>
+              <div className="wallet-address">{parentWalletAddress}</div>
+              {/* Balance info */}
             </div>
           </div>
-
-          {keypairs.map((keypair, i) => (
-            <div key={i} className="table-row">
-              <div className="col-index">{i + 1}</div>
-              <div 
-                className={`col-private ${copiedStates[`private-${i}`] ? 'copied' : ''}`}
-                onClick={() => copyToClipboard(Buffer.from(keypair.secretKey).toString('hex'), i, 'private')}
-              >
-                {showPrivateKeys 
-                  ? Buffer.from(keypair.secretKey).toString('hex')
-                  : '••••••••••••••••••••••'}
-              </div>
-              <div 
-                className={`col-public ${copiedStates[`public-${i}`] ? 'copied' : ''}`}
-                onClick={() => copyToClipboard(keypair.publicKey.toString(), i, 'public')}
-              >
-                {keypair.publicKey.toString()}
-              </div>
-              <div className="col-tribify">
-                {walletBalances[keypair.publicKey.toString()]?.tribify?.toLocaleString() || '0'} TRIBIFY
-              </div>
-              <div className="col-sol">
-                {walletBalances[keypair.publicKey.toString()]?.sol?.toFixed(4) || '0.0000'} SOL
-              </div>
-              <div className="col-usdc">
-                ${(keypair.usdcBalance || 0).toFixed(2)}
-              </div>
-            </div>
-          ))}
         </div>
-
-        {/* Buy Configuration Modal */}
-        {isBuyModalOpen && (
-          <div className="modal-container">
-            <div className="modal-overlay" onClick={() => setIsBuyModalOpen(false)} />
-            <div className="modal-content">
-              {/* Left side - Guide */}
-              <div className="modal-left">
-                <ConfigExplanation type="buy" />
-                <div className="required-fields">
-                  <h3>Required Details</h3>
-                  <div className="field-group">
-                    <label>Contract Address</label>
-                    <input 
-                      type="text"
-                      placeholder="Token contract address"
-                      value={buyConfig.contractAddress}
-                      onChange={(e) => setBuyConfig({
-                        ...buyConfig,
-                        contractAddress: e.target.value
-                      })}
-                    />
-                  </div>
-                  <div className="field-group">
-                    <label>Custom RPC URL (Optional)</label>
-                    <input 
-                      type="text"
-                      placeholder="Your RPC endpoint"
-                      value={buyConfig.rpcUrl}
-                      onChange={(e) => setBuyConfig({
-                        ...buyConfig,
-                        rpcUrl: e.target.value
-                      })}
-                    />
-                  </div>
-                  <div className="field-group">
-                    <label>Associated Token Account</label>
-                    <input 
-                      type="text"
-                      placeholder="ATA address"
-                      value={buyConfig.ataAddress}
-                      onChange={(e) => setBuyConfig({
-                        ...buyConfig,
-                        ataAddress: e.target.value
-                      })}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Right side - Settings */}
-              <div className="modal-right">
-                <div className="dialog-header">
-                  <h3>Configure Automated Buying Sequence</h3>
-                  <div className="header-buttons">
-                    <button 
-                      className="randomize-button"
-                      onClick={() => randomizeConfig('buy')}
-                      title="Generate random configuration"
-                    >
-                      🎲 Randomize
-                    </button>
-                    <button className="save-button" onClick={() => setIsBuyModalOpen(false)}>
-                      Save Config
-                    </button>
-                    <button 
-                      className="buy-button"
-                      onClick={() => {
-                        buyAndDistribute();
-                        setIsBuyModalOpen(false);
-                        setStatus('Automated buying has been started.');
-                      }}
-                    >
-                      Start Buying
-                    </button>
-                  </div>
-                </div>
-
-                <div className="settings-grid">
-                  {/* Wallet & Amount Settings */}
-                  <div className="form-section">
-                    <div className="form-section-title">Wallet & Amount Settings</div>
-                    <div className="wallet-amount-section">
-                      <div className="form-field">
-                        <label>Number of Wallets (1-100)</label>
-                        <input type="number" {...walletCountProps} />
-                      </div>
-                      <div className="form-field">
-                        <label>Min Amount</label>
-                        <input type="number" {...minAmountProps} />
-                      </div>
-                      <div className="form-field">
-                        <label>Max Amount</label>
-                        <input type="number" {...maxAmountProps} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Transaction Settings */}
-                  <div className="form-section">
-                    <div className="form-section-title">Transaction Settings</div>
-                    <div className="transaction-settings">
-                      <div className="form-field">
-                        <label>Slippage (%)</label>
-                        <input type="number" {...slippageProps} />
-                      </div>
-                      <div className="form-field">
-                        <label>Priority Fee (SOL)</label>
-                        <input type="number" {...priorityFeeProps} />
-                      </div>
-                      <div className="form-field">
-                        <label className="checkbox-label">
-                          <input 
-                            type="checkbox" 
-                            checked={buyConfig.randomOrder}
-                            onChange={(e) => setBuyConfig({
-                              ...buyConfig,
-                              randomOrder: e.target.checked
-                            })}
-                          />
-                          Randomize Wallet Order
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Time Settings */}
-                  <div className="form-section">
-                    <div className="form-section-title">Time Settings</div>
-                    <div className="time-settings">
-                      <div className="form-field">
-                        <label>Start Time</label>
-                        <input type="datetime-local" {...startTimeProps} />
-                      </div>
-                      <div className="form-field">
-                        <label>End Time</label>
-                        <input type="datetime-local" {...endTimeProps} />
-                      </div>
-                      <div className="form-field">
-                        <label>Min Interval (seconds)</label>
-                        <input type="number" {...minIntervalProps} />
-                      </div>
-                      <div className="form-field">
-                        <label>Max Interval (seconds)</label>
-                        <input type="number" {...maxIntervalProps} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Budget Settings */}
-                  <div className="form-section">
-                    <div className="form-section-title">Budget</div>
-                    <div className="budget-settings">
-                      <div className="form-field">
-                        <label>Maximum Budget ({buyConfig.denominationType})</label>
-                        <input 
-                          type="number"
-                          value={buyConfig.budget}
-                          onChange={(e) => setBuyConfig({
-                            ...buyConfig,
-                            budget: parseFloat(e.target.value)
-                          })}
-                          min="0"
-                          step="0.1"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="dialog-note">
-                  Will automatically buy random amounts between {buyConfig.minAmount} and {buyConfig.maxAmount} {buyConfig.denominatedInSol ? 'SOL' : 'TRIBIFY'} 
-                  using {buyConfig.walletCount} wallet{buyConfig.walletCount > 1 ? 's' : ''}<br/>
-                  Buys will occur between {buyConfig.startTime ? new Date(buyConfig.startTime).toLocaleString() : '(not set)'} 
-                  and {buyConfig.endTime ? new Date(buyConfig.endTime).toLocaleString() : '(not set)'}<br/>
-                  with {buyConfig.minInterval}-{buyConfig.maxInterval} minute intervals between transactions
-                  {buyConfig.randomOrder && ' in random wallet order'}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Sell Configuration Modal */}
-        {isSellModalOpen && (
-          <div className="modal-container">
-            <div className="modal-overlay" onClick={() => setIsSellModalOpen(false)} />
-            <div className="modal-content">
-              {/* Left side - Guide */}
-              <div className="modal-left">
-                <ConfigExplanation type="sell" />
-                <div className="required-fields">
-                  <h3>Required Details</h3>
-                  <div className="field-group">
-                    <label>Token Address to Sell</label>
-                    <input 
-                      type="text"
-                      placeholder="Token address"
-                      value={sellConfig.tokenAddress}
-                      onChange={(e) => setSellConfig({
-                        ...sellConfig,
-                        tokenAddress: e.target.value
-                      })}
-                    />
-                  </div>
-                  <div className="field-group">
-                    <label>DEX Contract Address</label>
-                    <input 
-                      type="text"
-                      placeholder="DEX contract address"
-                      value={sellConfig.dexAddress}
-                      onChange={(e) => setSellConfig({
-                        ...sellConfig,
-                        dexAddress: e.target.value
-                      })}
-                    />
-                  </div>
-                  <div className="field-group">
-                    <label>Output Token Address (SOL/USDC)</label>
-                    <input 
-                      type="text"
-                      placeholder="Output token address"
-                      value={sellConfig.outputAddress}
-                      onChange={(e) => setSellConfig({
-                        ...sellConfig,
-                        outputAddress: e.target.value
-                      })}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Right side - Settings */}
-              <div className="modal-right">
-                <div className="dialog-header">
-                  <h3>Configure Automated Selling Sequence</h3>
-                  <div className="header-buttons">
-                    <button 
-                      className="randomize-button"
-                      onClick={() => randomizeConfig('sell')}
-                      title="Generate random configuration"
-                    >
-                      🎲 Randomize
-                    </button>
-                    <button className="save-button" onClick={() => setIsSellModalOpen(false)}>
-                      Save Config
-                    </button>
-                    <button 
-                      className="sell-button"
-                      onClick={() => {
-                        sellAndDistribute();
-                        setIsSellModalOpen(false);
-                        setStatus('Automated selling has been started.');
-                      }}
-                    >
-                      Start Selling
-                    </button>
-                  </div>
-                </div>
-
-                <div className="settings-grid">
-                  {/* Wallet & Amount Settings */}
-                  <div className="form-section">
-                    <div className="form-section-title">Wallet & Amount Settings</div>
-                    <div className="wallet-amount-section">
-                      <div className="form-field">
-                        <label>Number of Wallets (1-100)</label>
-                        <input 
-                          type="number"
-                          min="1"
-                          max="100"
-                          value={sellConfig.walletCount}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            walletCount: Math.min(100, Math.max(1, parseInt(e.target.value) || 1))
-                          })}
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label>Min Amount</label>
-                        <input 
-                          type="number"
-                          min="0"
-                          step="0.000001"
-                          value={sellConfig.minAmount}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            minAmount: Math.max(0, parseFloat(e.target.value) || 0)
-                          })}
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label>Max Amount</label>
-                        <input 
-                          type="number"
-                          min="0"
-                          step="0.000001"
-                          value={sellConfig.maxAmount}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            maxAmount: Math.max(sellConfig.minAmount, parseFloat(e.target.value) || 0)
-                          })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Transaction Settings */}
-                  <div className="form-section">
-                    <div className="form-section-title">Transaction Settings</div>
-                    <div className="transaction-settings">
-                      <div className="form-field">
-                        <label>Slippage (%)</label>
-                        <input 
-                          type="number"
-                          min="0.1"
-                          max="100"
-                          step="0.1"
-                          value={sellConfig.slippage}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            slippage: parseFloat(e.target.value)
-                          })}
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label>Priority Fee (SOL)</label>
-                        <input 
-                          type="number"
-                          min="0"
-                          step="0.000001"
-                          value={sellConfig.priorityFee}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            priorityFee: parseFloat(e.target.value)
-                          })}
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label className="checkbox-label">
-                          <input 
-                            type="checkbox" 
-                            checked={sellConfig.randomOrder}
-                            onChange={(e) => setSellConfig({
-                              ...sellConfig,
-                              randomOrder: e.target.checked
-                            })}
-                          />
-                          Randomize Wallet Order
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Time Settings */}
-                  <div className="form-section">
-                    <div className="form-section-title">Time Settings</div>
-                    <div className="time-settings">
-                      <div className="form-field">
-                        <label>Start Time</label>
-                        <input 
-                          type="datetime-local"
-                          value={sellConfig.startTime || ''}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            startTime: e.target.value
-                          })}
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label>End Time</label>
-                        <input 
-                          type="datetime-local"
-                          min={sellConfig.startTime || ''}
-                          value={sellConfig.endTime || ''}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            endTime: e.target.value
-                          })}
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label>Min Interval (seconds)</label>
-                        <input 
-                          type="number"
-                          min="1"
-                          value={sellConfig.minInterval}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            minInterval: Math.max(1, parseInt(e.target.value) || 1)
-                          })}
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label>Max Interval (seconds)</label>
-                        <input 
-                          type="number"
-                          min={sellConfig.minInterval}
-                          value={sellConfig.maxInterval}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            maxInterval: Math.max(sellConfig.minInterval, parseInt(e.target.value) || sellConfig.minInterval)
-                          })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Budget Section */}
-                  <div className="form-section">
-                    <div className="form-section-title">Budget</div>
-                    <div className="budget-settings">
-                      <div className="form-field">
-                        <label>Maximum Budget ({sellConfig.denominationType})</label>
-                        <input 
-                          type="number"
-                          value={sellConfig.budget}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            budget: parseFloat(e.target.value)
-                          })}
-                          min="0"
-                          step="0.1"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="dialog-note">
-                  Will automatically sell random amounts between {sellConfig.minAmount} and {sellConfig.maxAmount} {sellConfig.denominationType} 
-                  using {sellConfig.walletCount} wallet{sellConfig.walletCount > 1 ? 's' : ''}<br/>
-                  Sales will occur between {sellConfig.startTime ? new Date(sellConfig.startTime).toLocaleString() : '(not set)'} 
-                  and {sellConfig.endTime ? new Date(sellConfig.endTime).toLocaleString() : '(not set)'}<br/>
-                  with {sellConfig.minInterval}-{sellConfig.maxInterval} second intervals between transactions
-                  {sellConfig.randomOrder && ' in random wallet order'}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Fund Subwallets Modal */}
-        {isFundingModalOpen && (
-          <div className="modal-container">
-            <div className="modal-overlay" onClick={() => setIsFundingModalOpen(false)} />
-            <div className="modal-content">
-              <FundSubwallets 
-                parentWallet={window.phantom?.solana}
-                subwallets={keypairs}
-                onComplete={() => {
-                  setIsFundingModalOpen(false);
-                  fetchBalances();
-                }}
-                refreshBalances={fetchBalances}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Distribute Modal */}
-        {isDistributeModalOpen && (
-          <div className="modal-container">
-            <div className="modal-overlay" onClick={() => setIsDistributeModalOpen(false)} />
-            <div className="modal-content">
-              <div className="modal-left">
-                <div className="config-explanation">
-                  <h2>Token Distribution Guide</h2>
-                  <div className="explanation-section">
-                    <h3>Distribution Process</h3>
-                    <ul>
-                      <li>Enter total TRIBIFY amount to distribute from your balance</li>
-                      <li>Choose number of recipient wallets (1-100)</li>
-                      <li>Select equal or random distribution</li>
-                      <li>Review distribution preview and SOL fees</li>
-                      <li>One signature to distribute to all wallets</li>
-                    </ul>
-                  </div>
-                  <div className="explanation-section">
-                    <h3>Requirements</h3>
-                    <ul>
-                      <li>Connected Phantom Wallet</li>
-                      <li>Generated Subwallets ({keypairs.length ? `${keypairs.length} ready` : 'none yet'})</li>
-                      <li>Sufficient TRIBIFY balance</li>
-                      <li>SOL for transaction fees</li>
-                    </ul>
-                    {!keypairs.length && (
-                      <button 
-                        className="generate-keys-button"
-                        onClick={generateHDWallet}
-                        disabled={generating}
-                      >
-                        {generating ? 'Generating...' : 'Generate Subwallets'}
-                      </button>
-                    )}
-                  </div>
-                  <div className="recovery-section">
-                    <button 
-                      className={`recover-tokens-button ${loadingStates.recoverAll ? 'loading' : ''}`}
-                      onClick={async () => {
-                        setLoadingStates(prev => ({ ...prev, recoverAll: true }));
-                        await recoverAllTokens();
-                        setLoadingStates(prev => ({ ...prev, recoverAll: false }));
-                      }}
-                      disabled={loadingStates.recoverAll}
-                    >
-                      {loadingStates.recoverAll ? (
-                        <span className="loading-spinner">↻</span>
-                      ) : 'Recover All Tokens'}
-                    </button>
-                    
-                    <button 
-                      className={`recover-single-button ${loadingStates.recoverSingle ? 'loading' : ''}`}
-                      onClick={() => setShowSingleRecoveryModal(true)}
-                      disabled={loadingStates.recoverSingle}
-                    >
-                      Recover Single Address
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-right">
-                <div className="dialog-header">
-                  <h3>Distribute $Tribify</h3>
-                  <button onClick={() => setIsDistributeModalOpen(false)}>×</button>
-                </div>
-
-                <div className="distribution-container">
-                  <TokenDistributor 
-                    parentWallet={window.phantom?.solana}
-                    subwallets={keypairs}
-                    onComplete={() => {
-                      setIsDistributeModalOpen(false);
-                      fetchBalances();
-                    }}
-                    refreshBalances={fetchBalances}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Single Recovery Modal */}
-        {showSingleRecoveryModal && (
-          <div className="modal-container">
-            <div className="modal-overlay" onClick={() => setShowSingleRecoveryModal(false)} />
-            <div className="modal-content single-recovery-modal">
-              <h3>Recover Single Address</h3>
-              <div className="single-recovery-form">
-                <input
-                  type="text"
-                  placeholder="Enter wallet address to recover"
-                  value={singleRecoveryAddress}
-                  onChange={(e) => setSingleRecoveryAddress(e.target.value)}
-                />
-                <div className="modal-buttons">
-                  <button
-                    className="recover-button"
-                    onClick={() => {
-                      if (singleRecoveryAddress) {
-                        recoverSingleAddress(singleRecoveryAddress);
-                        setSingleRecoveryAddress('');
-                        setShowSingleRecoveryModal(false);
-                      }
-                    }}
-                  >
-                    Recover
-                  </button>
-                  <button
-                    className="cancel-button"
-                    onClick={() => setShowSingleRecoveryModal(false)}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Recovery Progress Modal */}
-        {recoveryStatus.isRecovering && (
-          <div className="modal-container">
-            <div 
-              className="modal-overlay" 
-              onClick={() => {
-                if (!recoveryStatus.inProgress) {  // Only allow closing if not actively recovering
-                  setRecoveryStatus(prev => ({ ...prev, isRecovering: false }));
-                }
-              }} 
-            />
-            <div className="modal-content recovery-modal">
-              <div className="modal-header">
-                <h3>Token Recovery Progress</h3>
-                {!recoveryStatus.inProgress && (  // Only show X button if not actively recovering
-                  <button 
-                    className="close-modal-button"
-                    onClick={() => setRecoveryStatus(prev => ({ ...prev, isRecovering: false }))}
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-              
-              <div className="progress-bar-container">
-                <div 
-                  className="progress-bar" 
-                  style={{ width: `${(recoveryStatus.processed / recoveryStatus.total) * 100}%` }}
-                />
-                <span className="progress-text">
-                  {recoveryStatus.processed} / {recoveryStatus.total} Wallets Processed
-                </span>
-              </div>
-
-              <div className="current-batch">
-                <h4>Processing Wallets:</h4>
-                {recoveryStatus.currentBatch.map((wallet, index) => (
-                  <div key={index} className="batch-wallet">
-                    <span className="wallet-address">{wallet.slice(0, 6)}...{wallet.slice(-6)}</span>
-                    <span className={`status ${
-                      recoveryStatus.successfulWallets.includes(wallet) ? 'success' : 
-                      recoveryStatus.failedWallets.includes(wallet) ? 'failed' : 'pending'
-                    }`}>
-                      {recoveryStatus.successfulWallets.includes(wallet) ? '✓' :
-                       recoveryStatus.failedWallets.includes(wallet) ? '✗' : '...'}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="recovery-stats">
-                <div className="stat">
-                  <span>Successfully Recovered:</span>
-                  <span className="success">{recoveryStatus.successfulWallets.length}</span>
-                </div>
-                <div className="stat">
-                  <span>Failed:</span>
-                  <span className="failed">{recoveryStatus.failedWallets.length}</span>
-                </div>
-                <div className="stat total-recovered">
-                  <span>Total TRIBIFY Recovered:</span>
-                  <span className="amount">{recoveryStatus.totalRecovered.toLocaleString()}</span>
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                {!recoveryStatus.inProgress && (  // Show close button if not actively recovering
-                  <button 
-                    className="close-button"
-                    onClick={() => setRecoveryStatus(prev => ({ ...prev, isRecovering: false }))}
-                  >
-                    Close
-                  </button>
-                )}
-                {recoveryStatus.inProgress && (  // Show cancel button if recovery is in progress
-                  <button 
-                    className="cancel-button"
-                    onClick={() => {
-                      if (window.confirm('Are you sure you want to cancel the recovery process?')) {
-                        setRecoveryStatus(prev => ({ 
-                          ...prev, 
-                          isRecovering: false,
-                          inProgress: false 
-                        }));
-                      }
-                    }}
-                  >
-                    Cancel Recovery
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Conversion Progress Modal */}
-        {conversionStatus.isConverting && (
-          <ConversionModal 
-            keypairs={keypairs}
-            walletBalances={walletBalances}
-            fromToken={conversionStatus.fromToken}
-            toToken={conversionStatus.toToken}
-            onClose={() => setConversionStatus(prev => ({ ...prev, isConverting: false }))}
-            onComplete={fetchBalances}
-          />
-        )}
       </div>
-    </div>
+    </Layout>
   );
 }
 

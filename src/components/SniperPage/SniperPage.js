@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TribifyContext } from '../../context/TribifyContext';
+import Layout from '../Layout';
 import './SniperPage.css';
 
 function SniperPage() {
@@ -9,43 +10,61 @@ function SniperPage() {
   const [targets, setTargets] = useState([]);
   const [selectedWallet, setSelectedWallet] = useState(null);
 
+  if (!publicKey) {
+    return (
+      <Layout>
+        <div className="snipe-container">
+          <div className="no-wallet-message">
+            Please connect your wallet to use the sniper
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
-    <div className="sniper-page">
-      <div className="page-header">
-        <h2>Sniper</h2>
-        <button className="close-button" onClick={() => navigate('/app')}>×</button>
-      </div>
-
-      {/* Wallet Selection */}
-      <div className="wallet-section">
-        <h3>Select Wallet</h3>
-        <div className="wallet-info">
-          {publicKey && (
-            <div className="wallet-address">
-              {publicKey.slice(0, 6)}...{publicKey.slice(-4)}
+    <Layout>
+      <div className="snipe-container">
+        <div className="snipe-layout">
+          <div className="sniper-page">
+            <div className="page-header">
+              <h2>Sniper</h2>
+              <button className="close-button" onClick={() => navigate('/app')}>×</button>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Sniper Targets */}
-      <div className="targets-section">
-        <div className="section-header">
-          <h3>Snipe Targets</h3>
-          <button className="add-target-button" onClick={() => handleAddTarget()}>
-            + Add Target
-          </button>
-        </div>
-
-        <div className="targets-list">
-          {targets.map(target => (
-            <div key={target.id} className="target-item">
-              {/* Target inputs */}
+            {/* Wallet Selection */}
+            <div className="wallet-section">
+              <h3>Select Wallet</h3>
+              <div className="wallet-info">
+                {publicKey && (
+                  <div className="wallet-address">
+                    {publicKey.slice(0, 6)}...{publicKey.slice(-4)}
+                  </div>
+                )}
+              </div>
             </div>
-          ))}
+
+            {/* Sniper Targets */}
+            <div className="targets-section">
+              <div className="section-header">
+                <h3>Snipe Targets</h3>
+                <button className="add-target-button" onClick={() => handleAddTarget()}>
+                  + Add Target
+                </button>
+              </div>
+
+              <div className="targets-list">
+                {targets.map(target => (
+                  <div key={target.id} className="target-item">
+                    {/* Target inputs */}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </Layout>
   );
 }
 

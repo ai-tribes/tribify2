@@ -12,7 +12,7 @@ import Messages from './components/Messages';
 import Backup from './components/Backup';
 import Restore from './components/Restore';
 import Disconnect from './components/Disconnect';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, Router } from 'react-router-dom';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { clusterApiUrl } from '@solana/web3.js';
@@ -32,6 +32,7 @@ import Docs from './components/Docs';
 import LandingPage from './components/LandingPage';
 import AppLayout from './components/AppLayout';
 import MainDashboard from './components/MainDashboard';
+import LayoutPage from './components/LayoutPage/LayoutPage';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -408,6 +409,7 @@ function App() {
               <Route path="vote" element={<VotePage />} />
               <Route path="docs" element={<Docs />} />
               <Route path="graph" element={<TokenHolderGraph />} />
+              <Route path="layout" element={<LayoutPage />} />
               
               {/* Settings routes */}
               <Route path="settings/*" element={

@@ -1,162 +1,23 @@
-.sitemap-container {
-  padding: 32px;
-  color: #fff;
-  background: #111;
-}
-
-.title {
-  color: #9b59b6;  /* Purple theme */
-  font-size: 24px;
-  margin-bottom: 32px;
-}
-
-.section-title {
-  color: #9b59b6;
-  font-size: 18px;
-  margin: 24px 0 16px;
-}
-
-pre {
-  font-family: monospace;
-  color: #888;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 20px;
-  border-radius: 4px;
-  margin: 12px 0;
-  line-height: 1.5;
-}
-
-.route-item {
+.dashboard-container {
+  padding: 24px;
+  height: calc(100vh - 48px);
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 8px;
+  justify-content: center;
+  color: #fff;
 }
 
-.route-item code {
-  color: #00ff87;
-  font-family: monospace;
+.welcome-section {
+  text-align: center;
 }
 
-.tech-note {
-  color: #666;
-  font-style: italic;
-  font-size: 12px;
-}
-
-.subsection {
-  color: #666;
-  font-size: 14px;
-  text-transform: uppercase;
-  margin: 20px 0 12px;
-}
-
-.sitemap-header {
-  margin-bottom: 40px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.sitemap-header h1 {
-  color: #00ff87;
+.welcome-section h1 {
   font-size: 32px;
-  margin-bottom: 8px;
-}
-
-.route-indicator {
-  font-family: monospace;
-  color: #666;
-}
-
-.route-section {
-  margin-bottom: 40px;
-}
-
-.route-section h2 {
-  color: #888;
-  font-size: 20px;
   margin-bottom: 16px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.route-list {
-  display: grid;
-  gap: 16px;
-}
-
-.route-link {
-  display: flex;
-  align-items: center;
-  padding: 16px;
-  text-decoration: none;
-  color: #fff;
-  transition: all 0.2s;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-}
-
-.route-link:hover {
-  background: rgba(0, 255, 135, 0.1);
-  border-color: #00ff87;
-}
-
-.route-link code {
-  font-family: monospace;
   color: #00ff87;
-  margin-right: 16px;
-  padding: 4px 8px;
-  background: rgba(0, 255, 135, 0.1);
-  border-radius: 4px;
 }
 
-.route-description {
+.welcome-section p {
+  font-size: 18px;
   color: #888;
-}
-
-.nested-routes {
-  padding: 16px;
-}
-
-.nested-routes > code {
-  display: block;
-  font-family: monospace;
-  color: #666;
-  margin-bottom: 8px;
-}
-
-.route-link.nested {
-  margin-left: 24px;
-  margin-top: 8px;
-  background: rgba(0, 0, 0, 0.2);
-}
-
-.layout-structure pre,
-.component-hierarchy pre,
-.state-management pre {
-  font-family: monospace;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 20px;
-  border-radius: 8px;
-  border: 1px solid rgba(0, 255, 135, 0.1);
-  color: #888;
-}
-
-.layout-visual {
-  font-family: monospace;
-  white-space: pre;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 20px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #888;
-}
-
-.layout-tree {
-  font-family: monospace;
-  white-space: pre;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 20px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
 } 
