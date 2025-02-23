@@ -60,4 +60,10 @@
   margin: 20px 0;
   background: rgba(255, 255, 255, 0.05);
   text-align: center;
+}
+
+.status-message.warning {
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  color: #ffc107;
 } 

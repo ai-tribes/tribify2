@@ -2,6 +2,10 @@ import React, { useState, useEffect, useContext } from 'react';
 import './Shareholders.css';
 import { TribifyContext } from '../context/TribifyContext';
 
+// Constants
+const PUMP_LP_ADDRESS = '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7';
+const TREASURY_ADDRESS = 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv';
+
 const Shareholders = ({ 
   holders = [],
   nicknames = {},
@@ -18,6 +22,9 @@ const Shareholders = ({
     return saved ? JSON.parse(saved) : {};
   });
   const [notification, setNotification] = useState(null);
+
+  // Calculate total supply from holders
+  const totalSupply = holders.reduce((sum, holder) => sum + holder.tokenBalance, 0);
 
   console.log('Shareholders received:', {
     publicKey,
@@ -96,6 +103,14 @@ const Shareholders = ({
 
   return (
     <div className="token-holders">
+      <div className="holders-header">
+        <h2>Token Holders</h2>
+        <div className="holders-stats">
+          <span>Total Holders: {holders.length}</span>
+          <span>Total Supply: {totalSupply.toLocaleString()} TRIBIFY</span>
+        </div>
+      </div>
+
       {notification && (
         <div className={`notification ${notification.type}`}>
           {notification.message}
@@ -103,40 +118,34 @@ const Shareholders = ({
       )}
 
       <div className="holders-list">
-        <div className="holder-header">
-          <div className="holder-col address">Address</div>
-          <div className="holder-col percent">Share</div>
-          <div className="holder-col name">Name</div>
-          <div className="holder-col public-name">Public Name</div>
-          <div className="holder-col balance">$TRIBIFY</div>
-          <div className="holder-col sol">SOL</div>
-          <div className="holder-col usdc">USDC</div>
-          <div className="holder-col message">Message</div>
+        <div className="holder-row header">
+          <div className="holder-col">Address</div>
+          <div className="holder-col">Share</div>
+          <div className="holder-col">Name</div>
+          <div className="holder-col">Public Name</div>
+          <div className="holder-col">TRIBIFY</div>
+          <div className="holder-col">SOL</div>
+          <div className="holder-col">USDC</div>
+          <div className="holder-col">Actions</div>
         </div>
 
         {sortedHolders.map(holder => (
           <div 
-            key={holder.address} 
-            className={`holder-item ${
-              holder.address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' 
-                ? 'liquidity-pool'
-                : holder.address === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'
-                ? 'treasury'
-                : userWalletsSet.has(holder.address) 
-                ? 'user-owned' 
-                : ''
+            key={holder.address}
+            className={`holder-row ${
+              holder.address === PUMP_LP_ADDRESS ? 'liquidity-pool' :
+              holder.address === TREASURY_ADDRESS ? 'treasury' :
+              isUserWallet(holder.address) ? 'user-owned' : ''
             }`}
           >
-            <div 
-              className="holder-col address clickable"
-              onClick={() => copyAddress(holder.address)}
-              title="Click to copy address"
-            >
-              {userWalletsSet.has(holder.address) ? '🔑' : '◈'} {holder.address}
+            <div className="holder-col address" onClick={() => copyAddress(holder.address)}>
+              {isUserWallet(holder.address) ? '🔑' : '◈'} {holder.address}
             </div>
+            
             <div className="holder-col percent">
-              {((holder.tokenBalance / 1_000_000_000) * 100).toFixed(4)}%
+              {((holder.tokenBalance / totalSupply) * 100).toFixed(2)}%
             </div>
+
             <div className="holder-col name">
               {editingNickname === holder.address ? (
                 <input
@@ -159,6 +168,7 @@ const Shareholders = ({
                 </span>
               )}
             </div>
+
             <div className="holder-col public-name">
               {editingPublicName === holder.address ? (
                 <input
@@ -180,33 +190,37 @@ const Shareholders = ({
                   onClick={() => {
                     // Allow editing for both user wallets and treasury wallet
                     if (userWalletsSet.has(holder.address) || 
-                        holder.address === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') {
+                        holder.address === TREASURY_ADDRESS) {
                       setEditingPublicName(holder.address);
                     }
                   }}
                   className={userWalletsSet.has(holder.address) || 
-                             holder.address === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv' 
+                             holder.address === TREASURY_ADDRESS 
                              ? 'editable' : ''}
                 >
                   {publicNames[holder.address]?.name || 
                     ((userWalletsSet.has(holder.address) || 
-                      holder.address === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') 
+                      holder.address === TREASURY_ADDRESS) 
                       ? '+ Add public name' 
                       : '')}
                 </span>
               )}
             </div>
+
             <div className="holder-col balance">
               {holder.tokenBalance.toLocaleString()}
             </div>
+
             <div className="holder-col sol">
               {holder.solBalance?.toFixed(4) || '0.0000'}
             </div>
+
             <div className="holder-col usdc">
               $ {holder.usdcBalance?.toFixed(2) || '0.00'}
             </div>
+
             <div className="holder-col message">
-              {holder.address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' ? (
+              {holder.address === PUMP_LP_ADDRESS ? (
                 <button 
                   className="message-all-button"
                   onClick={() => setActiveView('messages')}

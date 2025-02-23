@@ -1,0 +1,237 @@
+.hamburger-container {
+  display: none; /* Hide by default on desktop */
+}
+
+/* Only show on mobile */
+@media (max-width: 768px) {
+  .hamburger-container {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1000;
+  }
+
+  .hamburger-button {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 255, 135, 0.1);
+    border: 1px solid rgba(0, 255, 135, 0.2);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px;
+    cursor: pointer;
+    z-index: 1001;
+    transition: all 0.3s ease;
+  }
+
+  .menu {
+    width: 280px;
+    height: 100vh;
+    background: #1a1a1a;
+    padding: 80px 0 20px;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    border-right: 1px solid rgba(0, 255, 135, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .menu.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    color: #fff;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    font-size: 16px;
+  }
+
+  .menu-item:hover {
+    background: rgba(0, 255, 135, 0.1);
+    padding-left: 28px;
+  }
+
+  .menu-item.active {
+    background: rgba(0, 255, 135, 0.15);
+    border-left: 4px solid #00ff87;
+    color: #00ff87;
+  }
+
+  .menu-item-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .menu-section {
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .menu-section:last-child {
+    border-bottom: none;
+  }
+
+  .menu-section-title {
+    padding: 0 24px;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #666;
+    margin-bottom: 8px;
+  }
+
+  /* Add some spacing for the main content */
+  .main-content {
+    padding-left: 20px;
+  }
+}
+
+.hamburger-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 255, 135, 0.1);
+  border: 1px solid rgba(0, 255, 135, 0.2);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  cursor: pointer;
+  z-index: 1001;
+  transition: all 0.3s ease;
+}
+
+.hamburger-button:hover {
+  background: rgba(0, 255, 135, 0.2);
+  transform: translateY(-1px);
+}
+
+.hamburger-button span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: #00ff87;
+  transition: all 0.3s ease;
+}
+
+.hamburger-button.open span:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+
+.hamburger-button.open span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-button.open span:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
+}
+
+.menu {
+  width: 280px;
+  height: 100vh;
+  background: #1a1a1a;
+  padding: 80px 0 20px;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  border-right: 1px solid rgba(0, 255, 135, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menu.open {
+  transform: translateX(0);
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  color: #fff;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  font-size: 16px;
+}
+
+.menu-item:hover {
+  background: rgba(0, 255, 135, 0.1);
+  padding-left: 28px;
+}
+
+.menu-item.active {
+  background: rgba(0, 255, 135, 0.15);
+  border-left: 4px solid #00ff87;
+  color: #00ff87;
+}
+
+.menu-item-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-section {
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.menu-section:last-child {
+  border-bottom: none;
+}
+
+.menu-section-title {
+  padding: 0 24px;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+/* Add some spacing for the main content */
+.main-content {
+  padding-left: 80px;
+  padding-top: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .menu {
+    width: 100%;
+    padding-top: 60px;
+  }
+
+  .main-content {
+    padding-left: 20px;
+  }
+} 

@@ -1,0 +1,65 @@
+.sniper-page {
+  padding: 24px;
+  background: #111;
+  min-height: 100vh;
+  color: #fff;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.page-header h2 {
+  color: #00ff87;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.close-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.add-target-button {
+  padding: 8px 16px;
+  background: rgba(0, 255, 135, 0.1);
+  border: 1px solid #00ff87;
+  color: #00ff87;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-target-button:hover {
+  background: rgba(0, 255, 135, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Add more specific styles for targets, inputs, etc */ 

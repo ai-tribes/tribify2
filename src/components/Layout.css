@@ -1,0 +1,63 @@
+.app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.sidebar {
+  width: 240px;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.3);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  position: fixed;
+  left: 0;
+  top: 0;
+  overflow-y: auto;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: 240px; /* Width of the sidebar */
+  padding: 20px;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+/* Adjust TokenHolderGraph container */
+.graph-container {
+  width: calc(100vw - 280px); /* Account for sidebar and padding */
+  height: calc(100vh - 40px);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Adjust other components */
+.messages-page,
+.sign-container,
+.wallet-page {
+  margin-left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Remove any mobile menu button styles */
+.menu-toggle-button {
+  display: none; /* Hide hamburger button */
+}
+
+/* Add mobile responsiveness if needed */
+@media (max-width: 768px) {
+  .sidebar {
+    display: none; /* Handle mobile differently if needed */
+  }
+  
+  .main-content {
+    margin-left: 0;
+    padding-top: 60px; /* Space for hamburger menu */
+  }
+  
+  .graph-container {
+    width: 100vw;
+  }
+} 

@@ -1,16 +1,17 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState } from 'react';
 import './StakeView.css';
 import { TribifyContext } from '../context/TribifyContext';
 import { GovernanceContext } from '../context/GovernanceContext';
 import StakingLockModal from './StakingLockModal';
-import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram } from '@solana/web3.js';
-import { formatDuration } from '../utils/staking';
-import BN from 'bn.js';
 import UnstakeConfirmationModal from './UnstakeConfirmationModal';
+import { formatDuration } from '../utils/staking';
 
-function StakeView({ parentWallet, tokenHolders }) {
-  const { subwallets, publicKeys } = useContext(TribifyContext);
-  const { motions } = useContext(GovernanceContext);
+function StakeView() {
+  // Get the parent wallet from localStorage
+  const parentWalletAddress = localStorage.getItem('tribify_parent_wallet');
+  const { subwallets = [] } = useContext(TribifyContext);
+  const { motions = [] } = useContext(GovernanceContext);
+  
   const [selectedStakeType, setSelectedStakeType] = useState({});
   const [showStakeModal, setShowStakeModal] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState(null);
@@ -18,44 +19,38 @@ function StakeView({ parentWallet, tokenHolders }) {
   const [showUnstakeConfirmation, setShowUnstakeConfirmation] = useState(false);
   const [unstakeWallet, setUnstakeWallet] = useState(null);
 
-  // Define APY tiers based on lock period
-  const APY_TIERS = [
-    { months: 1, apy: 3 },
-    { months: 3, apy: 5 },
-    { months: 6, apy: 8 },
-    { months: 12, apy: 12 }
-  ];
-
   // Combine parent wallet with subwallets
   const allUserWallets = [
     {
-      publicKey: parentWallet.publicKey,
-      tribifyBalance: Number(parentWallet.tribifyBalance) || 0
+      publicKey: parentWalletAddress,
+      type: 'parent',
+      tribifyBalance: 0, // We'll need to fetch this
+      label: 'Parent Wallet'
     },
-    ...(Array.isArray(subwallets) ? subwallets : []).map(wallet => {
-      const holderData = tokenHolders.find(h => h.address === wallet.publicKey);
-      return {
-        publicKey: wallet.publicKey,
-        tribifyBalance: Number(holderData?.tokenBalance) || 0
-      };
-    })
+    ...(Array.isArray(subwallets) ? subwallets : []).map((wallet, index) => ({
+      publicKey: wallet.publicKey.toString(),
+      type: 'sub',
+      tribifyBalance: 0, // We'll need to fetch this
+      label: `Subwallet ${index + 1}`
+    }))
   ];
 
   const handleStakeClick = (wallet) => {
+    if (!wallet) return;
     setSelectedWallet(wallet);
     setShowStakeModal(true);
   };
 
   const handleStake = async (walletPublicKey, balance, duration) => {
+    if (!walletPublicKey) return;
     try {
-      // Duration is in minutes, store it directly
       const unlockTime = Math.floor(Date.now() / 1000) + (duration * 60);
       
       setLockedStakes(prev => ({
         ...prev,
         [walletPublicKey]: {
           amount: balance,
-          duration, // Original duration in minutes
+          duration,
           unlockTime
         }
       }));
@@ -107,99 +102,107 @@ function StakeView({ parentWallet, tokenHolders }) {
     }
   };
 
+  const handleMotionSelect = (walletPublicKey, motionId) => {
+    setLockedStakes(prev => ({
+      ...prev,
+      [walletPublicKey]: {
+        ...prev[walletPublicKey],
+        motionId
+      }
+    }));
+  };
+
   return (
     <div className="stake-view">
       <div className="stake-header">
         <h2>Staking Dashboard</h2>
+        <div className="stake-stats">
+          <span>Total Staked: {Object.values(lockedStakes).reduce((sum, stake) => sum + stake.amount, 0).toLocaleString()} TRIBIFY</span>
+        </div>
       </div>
       
       <div className="wallets-list">
         <div className="wallet-row header">
-          <div className="wallet-col address">
-            <span>Wallet Address</span>
-          </div>
-          <div className="wallet-col balance">
-            <span>Balance</span>
-          </div>
-          <div className="wallet-col stake">
-            <span>Simple Stake</span>
-          </div>
-          <div className="wallet-col motions">
-            <span>Governance Stake</span>
-          </div>
+          <div className="wallet-col">Address</div>
+          <div className="wallet-col">Balance</div>
+          <div className="wallet-col">Motion</div>
+          <div className="wallet-col">Status</div>
+          <div className="wallet-col">Actions</div>
         </div>
 
-        {allUserWallets.map((wallet, index) => (
-          <div key={wallet.publicKey} className="wallet-row">
-            <div className="wallet-col address">
-              <span className="wallet-number">{index}</span>
-              <span className="wallet-icon">{index === 0 ? '🔑' : '◈'}</span>
-              <span className="wallet-address-text">{wallet.publicKey}</span>
-            </div>
-            
-            <div className="wallet-col balance">
-              <span className="balance-amount">
-                {Number(wallet.tribifyBalance).toLocaleString()}
-              </span>
-              <span className="balance-symbol">$TRIBIFY</span>
-            </div>
-            
-            <div className="wallet-col stake">
-              {lockedStakes[wallet.publicKey] ? (
-                <div className="stake-status">
-                  <button 
-                    className="unstake-button"
-                    onClick={() => handleUnstakeClick(wallet.publicKey)}
-                  >
-                    Unstake
-                  </button>
-                  <div className="lock-info">
-                    <span className="locked-amount">
-                      {Number(lockedStakes[wallet.publicKey].amount).toLocaleString()} TRIBIFY
-                    </span>
-                    <span className="unlock-time">
-                      {/* Remove "minutes" since formatDuration already includes it */}
-                      Unlocks in {formatDuration(Math.floor((lockedStakes[wallet.publicKey].duration)))}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <button 
-                  className="stake-button"
-                  onClick={() => handleStakeClick(wallet)}
-                >
-                  Stake
-                </button>
-              )}
-            </div>
+        {allUserWallets.map((wallet) => {
+          const stake = lockedStakes[wallet.publicKey];
+          const currentTime = Math.floor(Date.now() / 1000);
+          const isLocked = stake && currentTime < stake.unlockTime;
 
-            <div className="wallet-col motions">
-              <select 
-                className="motion-select"
-                onChange={(e) => {
-                  if (e.target.value) {
-                    handleStake(wallet.publicKey, wallet.tribifyBalance, e.target.value);
-                  }
-                }}
-                value={selectedStakeType[wallet.publicKey] || ''}
-                disabled={lockedStakes[wallet.publicKey]}
-              >
-                <option value="">
-                  {lockedStakes[wallet.publicKey] 
-                    ? "Tokens locked in stake" 
-                    : "Select Proposal"
-                  }
-                </option>
-                {!lockedStakes[wallet.publicKey] && motions.map(motion => (
-                  <option key={motion.id} value={motion.id}>
-                    {motion.title} ({motion.votesFor.toLocaleString()} FOR)
-                  </option>
-                ))}
-              </select>
+          return (
+            <div key={wallet.publicKey} className="wallet-row">
+              <div className="wallet-col address">
+                <span className="wallet-type-icon">
+                  {wallet.type === 'parent' ? '🔑' : '◈'}
+                </span>
+                <span className="wallet-address">
+                  {wallet.publicKey.slice(0, 6)}...{wallet.publicKey.slice(-4)}
+                </span>
+                <span className="wallet-label">{wallet.label}</span>
+              </div>
+
+              <div className="wallet-col balance">
+                {wallet.tribifyBalance?.toLocaleString() || '0'} TRIBIFY
+                {stake && <span className="staked-badge">Staked</span>}
+              </div>
+
+              <div className="wallet-col motion">
+                {stake ? (
+                  <select 
+                    value={stake.motionId || ''} 
+                    onChange={(e) => handleMotionSelect(wallet.publicKey, e.target.value)}
+                    className="motion-select"
+                  >
+                    <option value="">Select Motion</option>
+                    {motions.map(motion => (
+                      <option key={motion.id} value={motion.id}>
+                        Motion #{motion.id}: {motion.title.slice(0, 30)}...
+                      </option>
+                    ))}
+                  </select>
+                ) : '-'}
+              </div>
+
+              <div className="wallet-col status">
+                {!stake ? (
+                  <span className="status-badge unstaked">Unstaked</span>
+                ) : isLocked ? (
+                  <span className="status-badge locked">
+                    Locked ({formatDuration((stake.unlockTime - currentTime) * 60)} left)
+                  </span>
+                ) : (
+                  <span className="status-badge unlocked">Ready to Unstake</span>
+                )}
+              </div>
+
+              <div className="wallet-col actions">
+                {!stake ? (
+                  <button 
+                    onClick={() => handleStakeClick(wallet)}
+                    className="stake-button"
+                  >
+                    Stake
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => handleUnstakeClick(wallet.publicKey)}
+                    className={`unstake-button ${isLocked ? 'locked' : ''}`}
+                  >
+                    {isLocked ? 'Unstake Early' : 'Unstake'}
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
       {showStakeModal && (
         <StakingLockModal
           wallet={selectedWallet}
