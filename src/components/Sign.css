@@ -4,6 +4,36 @@
   margin: 0 auto;
 }
 
+.sign-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.mode-toggle {
+  display: flex;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mode-button {
+  background: rgba(0, 0, 0, 0.2);
+  border: none;
+  padding: 8px 16px;
+  color: #ccc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-button.active {
+  background: #3498db;
+  color: white;
+}
+
 .upload-section {
   background: rgba(255, 255, 255, 0.05);
   padding: 20px;
@@ -60,4 +90,291 @@
   margin: 20px 0;
   background: rgba(255, 255, 255, 0.05);
   text-align: center;
+}
+
+.status-message.error {
+  background: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+  border-left: 3px solid #e74c3c;
+}
+
+/* New styles for SignPage component */
+.description {
+  color: #ccc;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.connect-prompt {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  margin: 30px 0;
+  color: #f39c12;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon-wallet {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  background-color: rgba(243, 156, 18, 0.2);
+  border-radius: 50%;
+  position: relative;
+}
+
+.icon-wallet:before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 16px;
+  border: 2px solid #f39c12;
+  border-radius: 2px;
+}
+
+.sign-form {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.form-group textarea {
+  width: 100%;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: white;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: white;
+  font-family: inherit;
+}
+
+.sign-button, .verify-button {
+  background: #2ecc71;
+  color: black;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
+  position: relative;
+}
+
+.sign-button:hover, .verify-button:hover {
+  background: #27ae60;
+}
+
+.sign-button:disabled, .verify-button:disabled {
+  background: #555;
+  cursor: not-allowed;
+  color: #888;
+}
+
+.sign-button.loading:after, .verify-button.loading:after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  right: 10px;
+  margin-top: -8px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: black;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.signature-result {
+  margin-top: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.signature-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.signature-header h3 {
+  margin: 0;
+  color: #3498db;
+}
+
+.copy-button {
+  background: rgba(52, 152, 219, 0.2);
+  color: #3498db;
+  border: 1px solid #3498db;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.copy-button:hover {
+  background: rgba(52, 152, 219, 0.3);
+}
+
+.copy-button.copied {
+  background: #3498db;
+  color: white;
+}
+
+.signature-box {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 15px;
+  border-radius: 4px;
+  font-family: monospace;
+  word-break: break-all;
+  color: #2ecc71;
+  margin-bottom: 10px;
+}
+
+.signature-note {
+  font-size: 12px;
+  color: #999;
+  margin: 0;
+}
+
+.examples-section {
+  margin-bottom: 20px;
+}
+
+.examples-section h3 {
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: #ccc;
+}
+
+.example-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.example-button {
+  background: rgba(52, 152, 219, 0.2);
+  color: #3498db;
+  border: 1px solid rgba(52, 152, 219, 0.5);
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.example-button:hover {
+  background: rgba(52, 152, 219, 0.3);
+}
+
+.verification-form {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.verification-result {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.verification-result.valid {
+  background: rgba(46, 204, 113, 0.1);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.verification-result.invalid {
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.result-icon {
+  font-size: 24px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.valid .result-icon {
+  background: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+}
+
+.invalid .result-icon {
+  background: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+}
+
+.result-message {
+  flex: 1;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .sign-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .mode-toggle {
+    width: 100%;
+  }
+  
+  .mode-button {
+    flex: 1;
+    text-align: center;
+  }
+  
+  .example-buttons {
+    flex-direction: column;
+  }
+  
+  .example-button {
+    width: 100%;
+  }
 } 
