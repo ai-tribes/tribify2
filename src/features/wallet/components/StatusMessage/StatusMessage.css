@@ -1,0 +1,65 @@
+/* StatusMessage component styles */
+.status-message {
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Message types */
+.status-message.info {
+  background-color: var(--info-light, rgba(0, 120, 212, 0.1));
+  color: var(--info, #0078d4);
+  border-left: 4px solid var(--info, #0078d4);
+}
+
+.status-message.success {
+  background-color: var(--success-light, rgba(57, 181, 74, 0.1));
+  color: var(--success, #39b54a);
+  border-left: 4px solid var(--success, #39b54a);
+}
+
+.status-message.error {
+  background-color: var(--error-light, rgba(232, 17, 35, 0.1));
+  color: var(--error, #e81123);
+  border-left: 4px solid var(--error, #e81123);
+}
+
+.status-message.warning {
+  background-color: var(--warning-light, rgba(255, 185, 0, 0.1));
+  color: var(--warning, #ffb900);
+  border-left: 4px solid var(--warning, #ffb900);
+}
+
+/* Dark mode adjustments */
+body.dark .status-message.info {
+  background-color: rgba(0, 120, 212, 0.2);
+}
+
+body.dark .status-message.success {
+  background-color: rgba(57, 181, 74, 0.2);
+}
+
+body.dark .status-message.error {
+  background-color: rgba(232, 17, 35, 0.2);
+}
+
+body.dark .status-message.warning {
+  background-color: rgba(255, 185, 0, 0.2);
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+} 

@@ -1,0 +1,156 @@
+/* Base Modal Container */
+.base-modal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* Overlay */
+.base-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1001;
+}
+
+/* Modal Content */
+.base-modal-content {
+  position: relative;
+  z-index: 1002;
+  display: flex;
+  background: #1a1a1a;
+  border-radius: 12px;
+  color: #fff;
+  max-height: 90vh;
+  overflow: hidden; /* Contains floating children */
+}
+
+/* Modal Sizes */
+.base-modal-content.small {
+  width: 500px;
+}
+
+.base-modal-content.medium {
+  width: 800px;
+}
+
+.base-modal-content.large {
+  width: 1200px;
+}
+
+/* Left Panel */
+.base-modal-left {
+  width: 300px;
+  flex-shrink: 0;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.2);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  overflow-y: auto;
+}
+
+/* Right Panel */
+.base-modal-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Prevents flex item from overflowing */
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* Header */
+.base-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.base-modal-header h3 {
+  color: #00ff9d;
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.base-modal-header-buttons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Close Button */
+.base-modal-close {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.base-modal-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Main Content Area */
+.base-modal-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .base-modal-content.large {
+    width: 95%;
+    margin: 20px;
+  }
+}
+
+@media (max-width: 800px) {
+  .base-modal-content.medium {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .base-modal-content {
+    flex-direction: column;
+  }
+  
+  .base-modal-left {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+@media (max-width: 500px) {
+  .base-modal-content.small {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .base-modal-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .base-modal-header-buttons {
+    width: 100%;
+    justify-content: flex-end;
+  }
+} 

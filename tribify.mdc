@@ -1,0 +1,333 @@
+# Tribify Cursor Rules
+
+## Code Structure and Organization
+
+rule "feature-based-folder-structure" {
+  description = "Code should be organized using feature-based folder structure"
+  folders {
+    require = [
+      "src/features/wallet",
+      "src/features/sniper",
+      "src/features/staking",
+      "src/common/components",
+      "src/common/hooks",
+      "src/services",
+      "src/contexts"
+    ]
+  }
+  severity = "warning"
+}
+
+rule "component-structure" {
+  description = "Components should follow standardized structure with proper imports, prop validation, and exports"
+  pattern {
+    match = "src/features/**/*.js"
+    require = [
+      "import React",
+      "PropTypes",
+      "export default"
+    ]
+  }
+  severity = "warning"
+}
+
+rule "app-js-size" {
+  description = "App.js should be kept under 300 lines by breaking into smaller components"
+  file_size {
+    path = "src/App.js"
+    max_lines = 300
+  }
+  severity = "error"
+}
+
+rule "barrel-files" {
+  description = "Feature directories should have index.js barrel files for exports"
+  files {
+    require = [
+      "src/features/*/index.js"
+    ]
+  }
+  severity = "suggestion"
+}
+
+## Performance Optimization
+
+rule "use-memoization" {
+  description = "Complex components should use React.memo for memoization"
+  pattern {
+    match = "src/features/**/*.js"
+    suggest = [
+      "React.memo",
+      "useMemo",
+      "useCallback"
+    ]
+  }
+  severity = "suggestion"
+}
+
+rule "implement-code-splitting" {
+  description = "Large pages should use React.lazy and Suspense for code splitting"
+  pattern {
+    match = "src/App.js"
+    suggest = [
+      "React.lazy",
+      "Suspense"
+    ]
+  }
+  severity = "recommendation"
+}
+
+rule "optimize-list-rendering" {
+  description = "Long lists should use virtualization for performance"
+  pattern {
+    match = "src/**/*List.js"
+    suggest = [
+      "react-window",
+      "react-virtualized"
+    ]
+  }
+  severity = "suggestion"
+}
+
+## State Management
+
+rule "custom-hooks" {
+  description = "Complex state logic should be extracted to custom hooks"
+  pattern {
+    match = "src/features/**/*.js"
+    suggest = [
+      "use[A-Z]"
+    ]
+  }
+  severity = "recommendation"
+}
+
+rule "context-organization" {
+  description = "Context providers should be organized hierarchically"
+  pattern {
+    match = "src/App.js"
+    suggest = [
+      "<[A-Za-z]+Provider>"
+    ]
+  }
+  severity = "suggestion"
+}
+
+rule "zustand-store" {
+  description = "Consider using Zustand for global state management"
+  pattern {
+    match = "src/contexts/**/*.js"
+    suggest = [
+      "import create from 'zustand'"
+    ]
+  }
+  severity = "suggestion"
+}
+
+## Form Management and Validation
+
+rule "form-validation" {
+  description = "Forms should use React Hook Form or Formik for validation"
+  pattern {
+    match = "src/features/**/*Form.js"
+    require_one_of = [
+      "useForm",
+      "Formik"
+    ]
+  }
+  severity = "warning"
+}
+
+rule "form-error-handling" {
+  description = "Forms should display validation errors"
+  pattern {
+    match = "src/features/**/*Form.js"
+    require = [
+      "errors"
+    ]
+  }
+  severity = "warning"
+}
+
+## User Experience
+
+rule "toast-notifications" {
+  description = "Use toast notifications for user feedback"
+  pattern {
+    match = "src/features/**/*.js"
+    suggest = [
+      "toast"
+    ]
+  }
+  severity = "recommendation"
+}
+
+rule "accessibility" {
+  description = "Ensure components have proper ARIA attributes"
+  pattern {
+    match = "src/**/*.js"
+    suggest = [
+      "aria-"
+    ]
+  }
+  severity = "warning"
+}
+
+rule "responsive-design" {
+  description = "Use responsive design techniques"
+  pattern {
+    match = "src/**/*.css"
+    suggest = [
+      "@media",
+      "flex",
+      "grid"
+    ]
+  }
+  severity = "recommendation"
+}
+
+## Security Enhancements
+
+rule "no-private-keys-storage" {
+  description = "Never store private keys in localStorage"
+  pattern {
+    match = "src/**/*.js"
+    forbid = [
+      "localStorage.setItem(.*privateKey"
+    ]
+  }
+  severity = "critical"
+}
+
+rule "xss-prevention" {
+  description = "Sanitize data before rendering to prevent XSS"
+  pattern {
+    match = "src/**/*.js"
+    suggest = [
+      "DOMPurify.sanitize"
+    ]
+  }
+  severity = "warning"
+}
+
+rule "input-validation" {
+  description = "Validate all user inputs"
+  pattern {
+    match = "src/features/**/*Form.js"
+    require = [
+      "validate"
+    ]
+  }
+  severity = "warning"
+}
+
+## Testing
+
+rule "component-tests" {
+  description = "Components should have corresponding test files"
+  files {
+    require_pattern = [
+      {
+        source = "src/features/**/*.js",
+        test = "src/features/**/*.test.js"
+      }
+    ]
+  }
+  severity = "warning"
+}
+
+rule "testing-library" {
+  description = "Tests should use React Testing Library"
+  pattern {
+    match = "src/**/*.test.js"
+    require = [
+      "render",
+      "screen"
+    ]
+  }
+  severity = "warning"
+}
+
+## Documentation
+
+rule "jsdoc-comments" {
+  description = "Functions should have JSDoc comments"
+  pattern {
+    match = "src/**/*.js"
+    recommend = [
+      "/\\*\\*[\\s\\S]*?\\*/"
+    ]
+  }
+  severity = "suggestion"
+}
+
+rule "readme-docs" {
+  description = "Features should have README.md files"
+  files {
+    recommend = [
+      "src/features/*/README.md"
+    ]
+  }
+  severity = "suggestion"
+}
+
+## Implementation Priorities
+
+priority "phase-1" {
+  description = "Foundation (Weeks 1-4)"
+  rules = [
+    "app-js-size",
+    "feature-based-folder-structure",
+    "component-structure",
+    "barrel-files"
+  ]
+}
+
+priority "phase-2" {
+  description = "Core Improvements (Weeks 5-8)"
+  rules = [
+    "custom-hooks",
+    "context-organization",
+    "zustand-store",
+    "form-validation",
+    "form-error-handling",
+    "no-private-keys-storage",
+    "xss-prevention",
+    "input-validation",
+    "accessibility"
+  ]
+}
+
+priority "phase-3" {
+  description = "Performance & UX (Weeks 9-12)"
+  rules = [
+    "use-memoization",
+    "implement-code-splitting",
+    "optimize-list-rendering",
+    "toast-notifications",
+    "responsive-design"
+  ]
+}
+
+priority "phase-4" {
+  description = "Polish & Launch (Weeks 13-16)"
+  rules = [
+    "component-tests",
+    "testing-library",
+    "jsdoc-comments",
+    "readme-docs"
+  ]
+}
+
+# Configuration settings
+config {
+  analyzer_mode = "aggressive"
+  report_frequency = "on_save"
+  suggestion_threshold = "medium"
+  auto_fix = false
+  ignore_patterns = [
+    "node_modules/**",
+    "build/**",
+    "dist/**"
+  ]
+} 

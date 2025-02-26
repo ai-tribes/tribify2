@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tribify Application Improvement Plan</title>
+    <style>
+        :root {
+            --primary-color: #4a6da7;
+            --secondary-color: #6c757d;
+            --accent-color: #3a506b;
+            --background-color: #f8f9fa;
+            --code-bg: #f5f5f5;
+            --border-color: #dee2e6;
+            --text-color: #343a40;
+            --link-color: #007bff;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            padding: 0;
+            margin: 0;
+        }
+        
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 300px;
+            background-color: white;
+            padding: 2rem 1rem;
+            border-right: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .content {
+            flex: 1;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        h2 {
+            color: var(--primary-color);
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+        }
+        
+        h3 {
+            color: var(--accent-color);
+            margin-top: 1.8rem;
+            margin-bottom: 0.8rem;
+            font-size: 1.4rem;
+        }
+        
+        h4 {
+            color: var(--secondary-color);
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+        
+        p {
+            margin-bottom: 1rem;
+        }
+        
+        ul, ol {
+            margin-bottom: 1rem;
+            padding-left: 2rem;
+        }
+        
+        li {
+            margin-bottom: 0.5rem;
+        }
+        
+        pre {
+            background-color: var(--code-bg);
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--code-bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        
+        pre code {
+            padding: 0;
+            background-color: transparent;
+        }
+        
+        a {
+            color: var(--link-color);
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .nav-link {
+            display: block;
+            padding: 0.5rem 0;
+            color: var(--text-color);
+            border-left: 3px solid transparent;
+            padding-left: 0.5rem;
+        }
+        
+        .nav-link:hover {
+            color: var(--primary-color);
+            border-left: 3px solid var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .nav-section {
+            font-weight: bold;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .nav-subsection {
+            font-weight: normal;
+            padding-left: 1rem;
+            font-size: 0.9em;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .divider {
+            height: 1px;
+            background-color: var(--border-color);
+            margin: 2rem 0;
+        }
+        
+        .conclusion {
+            background-color: rgba(74, 109, 167, 0.1);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+            margin-top: 2rem;
+        }
+        
+        .footer {
+            font-size: 0.8rem;
+            color: var(--secondary-color);
+            border-top: 1px solid var(--border-color);
+            margin-top: 3rem;
+            padding-top: 1rem;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding: 1rem;
+            }
+            
+            .content {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo">Tribify</div>
+            <nav>
+                <a href="#executive-summary" class="nav-link">Executive Summary</a>
+                
+                <div class="nav-section">1. Code Organization & Architecture</div>
+                <a href="#code-organization--architecture" class="nav-link nav-subsection">Current Challenges</a>
+                <a href="#proposed-improvements-1" class="nav-link nav-subsection">Proposed Improvements</a>
+                
+                <div class="nav-section">2. Performance Optimizations</div>
+                <a href="#performance-optimizations" class="nav-link nav-subsection">Current Challenges</a>
+                <a href="#proposed-improvements-2" class="nav-link nav-subsection">Proposed Improvements</a>
+                
+                <div class="nav-section">3. State Management</div>
+                <a href="#state-management" class="nav-link nav-subsection">Current Challenges</a>
+                <a href="#proposed-improvements-3" class="nav-link nav-subsection">Proposed Improvements</a>
+                
+                <div class="nav-section">4. User Experience Improvements</div>
+                <a href="#user-experience-improvements" class="nav-link nav-subsection">Current Challenges</a>
+                <a href="#proposed-improvements-4" class="nav-link nav-subsection">Proposed Improvements</a>
+                
+                <div class="nav-section">5. Security Enhancements</div>
+                <a href="#security-enhancements" class="nav-link nav-subsection">Current Challenges</a>
+                <a href="#proposed-improvements-5" class="nav-link nav-subsection">Proposed Improvements</a>
+                
+                <div class="nav-section">6. Testing Strategy</div>
+                <a href="#testing-strategy" class="nav-link nav-subsection">Current Challenges</a>
+                <a href="#proposed-improvements-6" class="nav-link nav-subsection">Proposed Improvements</a>
+                
+                <div class="nav-section">7. Documentation</div>
+                <a href="#documentation" class="nav-link nav-subsection">Current Challenges</a>
+                <a href="#proposed-improvements-7" class="nav-link nav-subsection">Proposed Improvements</a>
+                
+                <div class="nav-section">8. Implementation Roadmap</div>
+                <a href="#implementation-roadmap" class="nav-link nav-subsection">Phase 1-4</a>
+                
+                <a href="#conclusion" class="nav-link">Conclusion</a>
+            </nav>
+        </div>
+        
+        <div class="content">
+            <h1 id="executive-summary">Tribify Application Improvement Plan</h1>
+            
+            <p>This document outlines a comprehensive improvement plan for the Tribify application. The plan addresses key areas including code organization, performance optimization, state management, user experience, security, testing, and documentation. Implementation of these improvements will lead to a more maintainable, performant, and user-friendly application.</p>
+            
+            <h2 id="code-organization--architecture">1. Code Organization & Architecture</h2>
+            
+            <h3>Current Challenges</h3>
+            <ul>
+                <li>App.js is excessively large (~1700 lines) and handles too many responsibilities</li>
+                <li>Inconsistent component structure and naming conventions</li>
+                <li>Limited separation of concerns</li>
+                <li>Unclear routing structure</li>
+            </ul>
+            
+            <h3 id="proposed-improvements-1">Proposed Improvements</h3>
+            
+            <h4>1. Implement Feature-Based Folder Structure</h4>
+            <pre><code>src/
+├── features/
+│   ├── wallet/
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── utils/
+│   │   └── WalletPage.js
+│   ├── sniper/
+│   ├── staking/
+│   └── governance/
+├── common/
+│   ├── components/
+│   ├── hooks/
+│   └── utils/
+├── contexts/
+├── services/
+└── App.js</code></pre>
+            
+            <h4>2. Refactor App.js</h4>
+            <ul>
+                <li>Break App.js into smaller, focused components</li>
+                <li>Move routing logic to a dedicated Router component</li>
+                <li>Extract utility functions to separate modules</li>
+            </ul>
+            
+            <h4>3. Standardize Component Structure</h4>
+            <p>Implement consistent component organization:</p>
+            <pre><code>// Component template
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import './ComponentName.css';
+
+const ComponentName = ({ prop1, prop2 }) => {
+  // State and hooks
+  // Event handlers
+  // Render
+};
+
+ComponentName.propTypes = {
+  prop1: PropTypes.string.required,
+  prop2: PropTypes.number
+};
+
+export default ComponentName;</code></pre>
+            
+            <h4>4. Implement Barrel Files</h4>
+            <p>Use index.js files to simplify imports:</p>
+            <pre><code>// features/wallet/index.js
+export { default as WalletPage } from './WalletPage';
+export { default as FundSubwallets } from './components/FundSubwallets';
+// ... other exports</code></pre>
+            
+            <h2 id="performance-optimizations">2. Performance Optimizations</h2>
+            
+            <h3>Current Challenges</h3>
+            <ul>
+                <li>Excessive re-renders in complex components</li>
+                <li>Large component trees causing performance issues</li>
+                <li>Network requests not optimized</li>
+            </ul>
+            
+            <h3 id="proposed-improvements-2">Proposed Improvements</h3>
+            
+            <h4>1. Implement Memoization</h4>
+            <ul>
+                <li>Use React.memo for component memoization:</li>
+            </ul>
+            <pre><code>const MemoizedComponent = React.memo(Component);</code></pre>
+            <ul>
+                <li>Use useMemo/useCallback for expensive computations and callback functions:</li>
+            </ul>
+            <pre><code>const memoizedValue = useMemo(() => computeExpensiveValue(a, b), [a, b]);
+const memoizedCallback = useCallback(() => doSomething(a, b), [a, b]);</code></pre>
+            
+            <h4>2. Implement Code Splitting</h4>
+            <ul>
+                <li>Use React.lazy and Suspense for component lazy loading:</li>
+            </ul>
+            <pre><code>const WalletPage = React.lazy(() => import('./features/wallet/WalletPage'));
+
+// In router
+&lt;Suspense fallback={&lt;Loading />}>
+  &lt;Route path="/wallet" element={&lt;WalletPage />} />
+&lt;/Suspense></code></pre>
+            
+            <h4>3. Optimize List Rendering</h4>
+            <ul>
+                <li>Implement virtualization for long lists using react-window or react-virtualized</li>
+                <li>Implement pagination for large data sets</li>
+            </ul>
+            
+            <h4>4. Network Optimization</h4>
+            <ul>
+                <li>Implement request caching</li>
+                <li>Use SWR or React Query for data fetching and caching</li>
+                <li>Batch related API requests</li>
+            </ul>
+            
+            <h2 id="state-management">3. State Management</h2>
+            
+            <h3>Current Challenges</h3>
+            <ul>
+                <li>Context APIs used inconsistently</li>
+                <li>Complex state logic spread across components</li>
+                <li>Unclear data flow</li>
+            </ul>
+            
+            <h3 id="proposed-improvements-3">Proposed Improvements</h3>
+            
+            <h4>1. Enhance Context Usage</h4>
+            <ul>
+                <li>Reorganize context providers:</li>
+            </ul>
+            <pre><code>// App.js
+return (
+  &lt;TribifyProvider>
+    &lt;AuthProvider>
+      &lt;WalletProvider>
+        &lt;AppRoutes />
+      &lt;/WalletProvider>
+    &lt;/AuthProvider>
+  &lt;/TribifyProvider>
+);</code></pre>
+            
+            <h4>2. Consider Zustand for Global State</h4>
+            <ul>
+                <li>Implement Zustand for simpler global state management:</li>
+            </ul>
+            <pre><code>// store.js
+import create from 'zustand';
+
+const useWalletStore = create((set) => ({
+  wallets: [],
+  addWallet: (wallet) => set((state) => ({ 
+    wallets: [...state.wallets, wallet] 
+  })),
+  // Other actions
+}));</code></pre>
+            
+            <h4>3. Implement Custom Hooks for State Logic</h4>
+            <ul>
+                <li>Extract state logic to custom hooks:</li>
+            </ul>
+            <pre><code>// useWalletBalance.js
+const useWalletBalance = (address) => {
+  const [balance, setBalance] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  useEffect(() => {
+    // Fetch balance logic
+  }, [address]);
+  
+  return { balance, loading, error };
+};</code></pre>
+            
+            <h2 id="user-experience-improvements">4. User Experience Improvements</h2>
+            
+            <h3>Current Challenges</h3>
+            <ul>
+                <li>Limited form validation</li>
+                <li>Inconsistent error handling</li>
+                <li>Accessibility issues</li>
+                <li>Limited mobile responsiveness</li>
+            </ul>
+            
+            <h3 id="proposed-improvements-4">Proposed Improvements</h3>
+            
+            <h4>1. Enhance Form Validation</h4>
+            <ul>
+                <li>Implement Formik or React Hook Form for form management and validation:</li>
+            </ul>
+            <pre><code>import { useForm } from 'react-hook-form';
+
+const { register, handleSubmit, errors } = useForm();
+
+const onSubmit = data => {
+  // Process form data
+};
+
+return (
+  &lt;form onSubmit={handleSubmit(onSubmit)}>
+    &lt;input {...register('amount', { required: true, min: 0 })} />
+    {errors.amount && &lt;span>Amount is required&lt;/span>}
+    &lt;button type="submit">Submit&lt;/button>
+  &lt;/form>
+);</code></pre>
+            
+            <h4>2. Implement Toast Notifications</h4>
+            <ul>
+                <li>Add a toast notification system for user feedback:</li>
+            </ul>
+            <pre><code>import { ToastContainer, toast } from 'react-toastify';
+
+// In component
+const handleAction = async () => {
+  try {
+    await performAction();
+    toast.success('Action completed successfully');
+  } catch (error) {
+    toast.error(`Error: ${error.message}`);
+  }
+};
+
+// In render
+&lt;ToastContainer position="bottom-right" autoClose={5000} /></code></pre>
+            
+            <h4>3. Enhance Accessibility</h4>
+            <ul>
+                <li>Add proper ARIA attributes</li>
+                <li>Ensure keyboard navigation works for all interactive elements</li>
+                <li>Implement focus management for modals</li>
+                <li>Add screen reader support</li>
+            </ul>
+            
+            <h4>4. Improve Mobile Responsiveness</h4>
+            <ul>
+                <li>Implement a mobile-first design approach</li>
+                <li>Use CSS Grid and Flexbox for responsive layouts</li>
+                <li>Test on various device sizes</li>
+            </ul>
+            
+            <h2 id="security-enhancements">5. Security Enhancements</h2>
+            
+            <h3>Current Challenges</h3>
+            <ul>
+                <li>Sensitive information handling</li>
+                <li>Limited input validation</li>
+                <li>Potential XSS vulnerabilities</li>
+            </ul>
+            
+            <h3 id="proposed-improvements-5">Proposed Improvements</h3>
+            
+            <h4>1. Secure Key Management</h4>
+            <ul>
+                <li>Never store private keys in local storage</li>
+                <li>Implement encryption for sensitive data in memory</li>
+                <li>Enforce session timeouts</li>
+            </ul>
+            
+            <h4>2. Input Validation and Sanitization</h4>
+            <ul>
+                <li>Validate all user inputs on both client and server</li>
+                <li>Sanitize data before rendering to prevent XSS</li>
+                <li>Use DOMPurify for HTML sanitization:</li>
+            </ul>
+            <pre><code>import DOMPurify from 'dompurify';
+
+const sanitizedData = DOMPurify.sanitize(userProvidedHtml);</code></pre>
+            
+            <h4>3. Implement Rate Limiting</h4>
+            <ul>
+                <li>Add rate limiting for API requests to prevent abuse</li>
+                <li>Implement exponential backoff for failed requests</li>
+            </ul>
+            
+            <h4>4. Security Headers</h4>
+            <ul>
+                <li>Implement proper security headers:
+                    <ul>
+                        <li>Content-Security-Policy</li>
+                        <li>X-XSS-Protection</li>
+                        <li>X-Content-Type-Options</li>
+                        <li>Referrer-Policy</li>
+                    </ul>
+                </li>
+            </ul>
+            
+            <h2 id="testing-strategy">6. Testing Strategy</h2>
+            
+            <h3>Current Challenges</h3>
+            <ul>
+                <li>Limited test coverage</li>
+                <li>No automated testing</li>
+            </ul>
+            
+            <h3 id="proposed-improvements-6">Proposed Improvements</h3>
+            
+            <h4>1. Implement Unit Testing</h4>
+            <ul>
+                <li>Use Jest and React Testing Library for component testing:</li>
+            </ul>
+            <pre><code>// WalletPage.test.js
+import { render, screen, fireEvent } from '@testing-library/react';
+import WalletPage from './WalletPage';
+
+test('renders wallet page', () => {
+  render(&lt;WalletPage />);
+  expect(screen.getByText('Wallet')).toBeInTheDocument();
+});
+
+test('generates keypair when button clicked', async () => {
+  render(&lt;WalletPage />);
+  fireEvent.click(screen.getByText('Generate Keys'));
+  expect(await screen.findByText('Successfully generated wallets')).toBeInTheDocument();
+});</code></pre>
+            
+            <h4>2. Implement Integration Testing</h4>
+            <ul>
+                <li>Test key user flows from end to end</li>
+                <li>Use mock services for external dependencies</li>
+            </ul>
+            
+            <h4>3. Set Up CI/CD Pipeline</h4>
+            <ul>
+                <li>Configure GitHub Actions or similar for automated testing</li>
+                <li>Implement pre-commit hooks for code quality checks</li>
+                <li>Automate deployment process</li>
+            </ul>
+            
+            <h2 id="documentation">7. Documentation</h2>
+            
+            <h3>Current Challenges</h3>
+            <ul>
+                <li>Limited code documentation</li>
+                <li>No user documentation</li>
+            </ul>
+            
+            <h3 id="proposed-improvements-7">Proposed Improvements</h3>
+            
+            <h4>1. Add Code Documentation</h4>
+            <ul>
+                <li>Implement JSDoc for code documentation:</li>
+            </ul>
+            <pre><code>/**
+ * Fetches token balance for a given address
+ * @param {string} address - The wallet address
+ * @param {string} tokenMint - The token mint address
+ * @returns {Promise<number>} The token balance
+ */
+const fetchTokenBalance = async (address, tokenMint) => {
+  // Implementation
+};</code></pre>
+            
+            <h4>2. Create Component Storybook</h4>
+            <ul>
+                <li>Implement Storybook for component documentation and development:</li>
+            </ul>
+            <pre><code>// Button.stories.js
+export default {
+  title: 'Components/Button',
+  component: Button,
+};
+
+export const Primary = () => &lt;Button variant="primary">Primary Button&lt;/Button>;
+export const Secondary = () => &lt;Button variant="secondary">Secondary Button&lt;/Button>;</code></pre>
+            
+            <h4>3. User Documentation</h4>
+            <ul>
+                <li>Create comprehensive user guides</li>
+                <li>Add tooltips and help text in the UI</li>
+                <li>Implement an onboarding flow for new users</li>
+            </ul>
+            
+            <h2 id="implementation-roadmap">8. Implementation Roadmap</h2>
+            
+            <h3>Phase 1: Foundation (Weeks 1-4)</h3>
+            <ul>
+                <li>Refactor App.js into smaller components</li>
+                <li>Implement feature-based folder structure</li>
+                <li>Set up testing infrastructure</li>
+                <li>Add basic documentation</li>
+            </ul>
+            
+            <h3>Phase 2: Core Improvements (Weeks 5-8)</h3>
+            <ul>
+                <li>Implement state management improvements</li>
+                <li>Add form validation</li>
+                <li>Enhance security measures</li>
+                <li>Improve accessibility</li>
+            </ul>
+            
+            <h3>Phase 3: Performance & UX (Weeks 9-12)</h3>
+            <ul>
+                <li>Implement performance optimizations</li>
+                <li>Enhance mobile responsiveness</li>
+                <li>Add toast notifications</li>
+                <li>Implement code splitting</li>
+            </ul>
+            
+            <h3>Phase 4: Polish & Launch (Weeks 13-16)</h3>
+            <ul>
+                <li>Complete documentation</li>
+                <li>Conduct comprehensive testing</li>
+                <li>Fix remaining bugs</li>
+                <li>Launch improved version</li>
+            </ul>
+            
+            <div class="conclusion" id="conclusion">
+                <h2>Conclusion</h2>
+                <p>This improvement plan provides a roadmap for transforming the Tribify application into a modern, maintainable, and user-friendly React application. By systematically addressing the identified challenges and implementing the proposed improvements, we can significantly enhance the application's quality, security, and user experience.</p>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="footer">
+                <p>Document Version: 1.0</p>
+                <p>Last Updated: May 2023</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

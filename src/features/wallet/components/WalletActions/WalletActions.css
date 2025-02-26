@@ -1,0 +1,72 @@
+/* WalletActions component styles */
+.wallet-actions-container {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.action-button {
+  padding: 8px 16px;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+}
+
+.action-button:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.action-button:active {
+  transform: translateY(0);
+}
+
+.action-button:disabled {
+  background-color: var(--text-secondary);
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.7;
+}
+
+.generate-button {
+  background-color: var(--primary);
+}
+
+.refresh-button {
+  background-color: var(--info);
+}
+
+.backup-button {
+  background-color: var(--success);
+}
+
+.restore-button {
+  background-color: var(--warning);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .wallet-actions-container {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 576px) {
+  .wallet-actions-container {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .action-button {
+    width: 100%;
+  }
+} 

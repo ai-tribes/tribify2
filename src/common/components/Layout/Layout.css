@@ -1,0 +1,163 @@
+/* Layout component styles */
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Header styles */
+.layout-header {
+  background-color: #4a6da7;
+  color: white;
+  padding: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.layout-header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  height: 60px;
+}
+
+.layout-logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-right: 40px;
+}
+
+.layout-logo a {
+  color: white;
+  text-decoration: none;
+}
+
+/* Navigation styles */
+.layout-nav {
+  flex-grow: 1;
+}
+
+.layout-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+}
+
+.layout-nav li {
+  margin-right: 10px;
+}
+
+.layout-nav a {
+  color: white;
+  text-decoration: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.layout-nav a:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  opacity: 1;
+}
+
+.layout-nav a.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  opacity: 1;
+}
+
+/* Actions area (for wallet connection, theme toggle, etc.) */
+.layout-actions {
+  display: flex;
+  align-items: center;
+}
+
+/* Connection status */
+.connection-status {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-right: 15px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.connected-status {
+  color: #4ade80;
+}
+
+.disconnected-status {
+  color: #ff5252;
+}
+
+/* Theme toggle styles updated in ThemeToggle component */
+
+/* Main content area */
+.layout-main {
+  flex-grow: 1;
+  padding: 20px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Footer styles */
+.layout-footer {
+  background-color: #f5f5f5;
+  padding: 20px 0;
+  margin-top: auto;
+}
+
+body.dark .layout-footer {
+  background-color: #1a1a1a;
+  color: #ccc;
+}
+
+.layout-footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  text-align: center;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+body.dark .layout-footer-content {
+  color: #aaa;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .layout-header-content {
+    flex-direction: column;
+    height: auto;
+    padding: 10px 20px;
+  }
+  
+  .layout-logo {
+    margin-right: 0;
+    margin-bottom: 10px;
+  }
+  
+  .layout-nav {
+    width: 100%;
+    overflow-x: auto;
+  }
+  
+  .layout-nav ul {
+    display: flex;
+    width: max-content;
+  }
+  
+  .layout-actions {
+    margin-top: 10px;
+    width: 100%;
+    justify-content: space-between;
+  }
+} 

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LandingPage.css';
 import bs58 from 'bs58';
+import ThemeToggle from './ThemeToggle';
 
 // Need this for proper buffer handling
 const Buffer = require('buffer').Buffer;
@@ -9,6 +10,34 @@ const Buffer = require('buffer').Buffer;
 function LandingPage() {
   const navigate = useNavigate();
   const [isConnecting, setIsConnecting] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+    
+    // Check if already logged in and redirect if necessary
+    const parentWallet = localStorage.getItem('tribify_parent_wallet');
+    if (parentWallet) {
+      navigate('/wallet');
+    }
+  }, [navigate]);
+
+  // Theme toggle function
+  const toggleTheme = () => {
+    const isDark = document.body.classList.contains('dark');
+    if (isDark) {
+      document.body.classList.remove('dark');
+      document.body.classList.add('light');
+      localStorage.setItem('tribify_theme', 'light');
+    } else {
+      document.body.classList.remove('light');
+      document.body.classList.add('dark');
+      localStorage.setItem('tribify_theme', 'dark');
+    }
+  };
+
+  // Get current theme
+  const isDark = hasMounted ? document.body.classList.contains('dark') : true;
 
   const handleConnect = async () => {
     try {
@@ -60,7 +89,7 @@ function LandingPage() {
           throw new Error('Unexpected signature format');
         }
 
-        navigate('/app');
+        navigate('/wallet');
 
       } catch (signError) {
         console.error('Signature error:', signError);
@@ -86,9 +115,13 @@ function LandingPage() {
 
   return (
     <div className="landing-page">
+      <div className="landing-background"></div>
+      <div className="theme-toggle-landing">
+        <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
+      </div>
       <div className="landing-content">
         <h1>Welcome to Tribify</h1>
-        <p>Connect your Phantom wallet to get started</p>
+        <p>Connect your Phantom wallet to get started with the next generation trading platform</p>
         
         <button 
           onClick={handleConnect} 
@@ -100,7 +133,7 @@ function LandingPage() {
 
         <p className="security-note">
           Your wallet will be used to generate secure child wallets. 
-          Each child wallet is uniquely derived from your parent wallet.
+          Each child wallet is uniquely derived from your parent wallet for enhanced security and flexibility.
         </p>
       </div>
     </div>

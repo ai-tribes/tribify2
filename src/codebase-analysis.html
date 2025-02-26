@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tribify Codebase Analysis</title>
+    <style>
+        :root {
+            --primary-color: #3a506b;
+            --secondary-color: #5bc0be;
+            --accent-color: #0b132b;
+            --background-color: #f8f9fa;
+            --code-bg: #f5f5f5;
+            --border-color: #dee2e6;
+            --text-color: #343a40;
+            --link-color: #0b6e4f;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --danger-color: #f44336;
+            --info-color: #2196f3;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            padding: 0;
+            margin: 0;
+        }
+        
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 300px;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 2rem 1rem;
+            position: sticky;
+            top: a;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .content {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        h2 {
+            color: var(--primary-color);
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.3rem;
+        }
+        
+        h3 {
+            color: var(--primary-color);
+            margin-top: 1.8rem;
+            margin-bottom: 0.8rem;
+            font-size: 1.4rem;
+        }
+        
+        h4 {
+            color: var(--secondary-color);
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+        
+        p {
+            margin-bottom: 1rem;
+        }
+        
+        ul, ol {
+            margin-bottom: 1rem;
+            padding-left: 2rem;
+        }
+        
+        li {
+            margin-bottom: 0.5rem;
+        }
+        
+        pre {
+            background-color: var(--code-bg);
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--code-bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        
+        pre code {
+            padding: 0;
+            background-color: transparent;
+        }
+        
+        a {
+            color: var(--link-color);
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .nav-link {
+            display: block;
+            padding: 0.5rem 0;
+            color: white;
+            opacity: 0.8;
+            border-left: 3px solid transparent;
+            padding-left: 0.5rem;
+        }
+        
+        .nav-link:hover {
+            opacity: 1;
+            border-left: 3px solid var(--secondary-color);
+            text-decoration: none;
+        }
+        
+        .nav-section {
+            font-weight: bold;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            color: var(--secondary-color);
+        }
+        
+        .nav-subsection {
+            font-weight: normal;
+            padding-left: 1rem;
+            font-size: 0.9em;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .logo span {
+            color: var(--secondary-color);
+        }
+        
+        .divider {
+            height: 1px;
+            background-color: var(--border-color);
+            margin: 2rem 0;
+        }
+        
+        .footer {
+            font-size: 0.8rem;
+            color: var(--text-color);
+            border-top: 1px solid var(--border-color);
+            margin-top: 3rem;
+            padding-top: 1rem;
+            text-align: center;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card-header {
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-header h3 {
+            margin: 0;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+            text-transform: uppercase;
+        }
+        
+        .badge-high {
+            background-color: var(--danger-color);
+        }
+        
+        .badge-medium {
+            background-color: var(--warning-color);
+        }
+        
+        .badge-low {
+            background-color: var(--success-color);
+        }
+        
+        .tree {
+            margin-bottom: 2rem;
+        }
+        
+        .tree ul {
+            list-style-type: none;
+            padding-left: 2rem;
+        }
+        
+        .tree > ul {
+            padding-left: 0;
+        }
+        
+        .tree li {
+            position: relative;
+            padding-left: 1.5rem;
+        }
+        
+        .tree li::before {
+            content: "└─";
+            position: absolute;
+            left: 0;
+            color: var(--secondary-color);
+        }
+        
+        .tree .folder {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .tree .file {
+            color: var(--text-color);
+        }
+        
+        .tree .file.large {
+            color: var(--danger-color);
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 2rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 0.75rem;
+            text-align: left;
+        }
+        
+        th {
+            background-color: var(--code-bg);
+            font-weight: bold;
+        }
+        
+        tr:nth-child(even) {
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+        
+        .component-analysis {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .component-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .component-header {
+            padding: 0.75rem 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .component-header.complex {
+            background-color: var(--danger-color);
+        }
+        
+        .component-header.medium {
+            background-color: var(--warning-color);
+        }
+        
+        .component-header.simple {
+            background-color: var(--success-color);
+        }
+        
+        .component-body {
+            padding: 1rem;
+        }
+        
+        .component-stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stat {
+            flex: 1;
+            text-align: center;
+            padding: 0.5rem;
+            background-color: var(--code-bg);
+            border-radius: 4px;
+        }
+        
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--secondary-color);
+        }
+        
+        .issues {
+            margin-top: 1rem;
+        }
+        
+        .issues h4 {
+            margin-bottom: 0.5rem;
+            color: var(--danger-color);
+        }
+        
+        .issues ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .issues li {
+            padding: 0.5rem;
+            background-color: rgba(244, 67, 54, 0.1);
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .dependency-graph {
+            margin-bottom: 2rem;
+        }
+        
+        .dependency-node {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            margin: 0.25rem;
+            background-color: var(--code-bg);
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .dependency-node.core {
+            background-color: rgba(33, 150, 243, 0.2);
+            border-color: var(--info-color);
+        }
+        
+        .dependency-node.ui {
+            background-color: rgba(76, 175, 80, 0.2);
+            border-color: var(--success-color);
+        }
+        
+        .dependency-node.utility {
+            background-color: rgba(255, 152, 0, 0.2);
+            border-color: var(--warning-color);
+        }
+        
+        /* Business Logic Viz */
+        .business-logic-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .business-logic-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .business-logic-header {
+            padding: 1rem;
+            background-color: var(--accent-color);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .business-logic-body {
+            padding: 1rem;
+        }
+        
+        .business-logic-footer {
+            padding: 0.75rem 1rem;
+            background-color: var(--code-bg);
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+        }
+        
+        /* SVG Graph Styles */
+        .graph-container {
+            width: 100%;
+            height: 600px;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .node {
+            fill: var(--primary-color);
+        }
+        
+        .node.core {
+            fill: var(--info-color);
+        }
+        
+        .node.ui {
+            fill: var(--success-color);
+        }
+        
+        .node.utility {
+            fill: var(--warning-color);
+        }
+        
+        .node.large {
+            fill: var(--danger-color);
+        }
+        
+        .edge {
+            stroke: var(--border-color);
+            stroke-width: 2;
+        }
+        
+        .node-label {
+            font-size: 12px;
+            fill: var(--text-color);
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .button {
+            padding: 0.5rem 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .button:hover {
+            opacity: 0.9;
+        }
+        
+        @media (max-width: 992px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                padding: 1rem;
+            }
+            
+            .content {
+                padding: 1rem;
+            }
+            
+            .component-analysis,
+            .business-logic-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .graph-container {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo">Tribify <span>Analysis</span></div>
+            <nav>
+                <a href="#overview" class="nav-link">Overview</a>
+                <a href="#codebase-structure" class="nav-link">Codebase Structure</a>
+                <a href="#component-analysis" class="nav-link">Component Analysis</a>
+                <a href="#dependencies" class="nav-link">Dependencies</a>
+                <a href="#business-logic" class="nav-link">Business Logic</a>
+                <a href="#refactoring-plan" class="nav-link">Refactoring Plan</a>
+                <div class="nav-section">Links</div>
+                <a href="implementation-blueprint.html" class="nav-link nav-subsection">Implementation Blueprint</a>
+                <a href="improvement-plan.html" class="nav-link nav-subsection">Improvement Plan</a>
+            </nav>
+        </div>
+        
+        <div class="content">
+            <h1 id="overview">Tribify Codebase Analysis</h1>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Analysis Overview</h3>
+                </div>
+                <p>This document presents a comprehensive analysis of the Tribify codebase, identifying structural issues, components that need refactoring, key dependencies, and critical business logic that must be preserved during the improvement process.</p>
+                <p>The analysis reveals several architectural challenges that will be addressed in the <a href="implementation-blueprint.html">Implementation Blueprint</a>, including large monolithic components, inconsistent state management, and potential security concerns.</p>
+            </div>
+            
+            <h2 id="codebase-structure">Current Codebase Structure</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Directory Structure</h3>
+                </div>
+                <p>The current codebase follows a flat structure with minimal feature-based organization, leading to difficulty in navigating and maintaining the code.</p>
+                
+                <div class="tree">
+                    <ul>
+                        <li class="folder">src/</li>
+                        <ul>
+                            <li class="folder">components/</li>
+                            <ul>
+                                <li class="file large">App.js (1,742 lines)</li>
+                                <li class="file large">WalletPage.js (985 lines)</li>
+                                <li class="file large">SnipePage.js (842 lines)</li>
+                                <li class="file">StakeView.js (456 lines)</li>
+                                <li class="file">VotePage.js (324 lines)</li>
+                                <li class="file">MessagesPage.js (215 lines)</li>
+                                <li class="file">ConfigureBuyModal.js (531 lines)</li>
+                                <li class="file">FundSubwallets.js (278 lines)</li>
+                                <li class="file">TokenDistributor.js (354 lines)</li>
+                                <li class="file">ConversionModal.js (245 lines)</li>
+                                <li class="file">StakingLockModal.js (198 lines)</li>
+                                <li class="file">UnstakeConfirmationModal.js (127 lines)</li>
+                                <li class="file">MessageModal.js (89 lines)</li>
+                                <li class="file">BaseModal.js (62 lines)</li>
+                                <li class="file">Connected.js (45 lines)</li>
+                                <li class="file">Disconnect.js (28 lines)</li>
+                                <li class="file">SignPage.js (278 lines)</li>
+                                <li class="file">GraphPage.js (312 lines)</li>
+                            </ul>
+                            <li class="folder">contexts/</li>
+                            <ul>
+                                <li class="file">TribifyContext.js (387 lines)</li>
+                                <li class="file">GovernanceContext.js (256 lines)</li>
+                            </ul>
+                            <li class="folder">utils/</li>
+                            <ul>
+                                <li class="file">blockchain.js (423 lines)</li>
+                                <li class="file">formatting.js (87 lines)</li>
+                                <li class="file">validation.js (112 lines)</li>
+                                <li class="file">constants.js (94 lines)</li>
+                            </ul>
+                            <li class="folder">styles/</li>
+                            <ul>
+                                <li class="file">App.css (568 lines)</li>
+                                <li class="file">WalletPage.css (312 lines)</li>
+                                <li class="file">SnipePage.css (267 lines)</li>
+                                <li class="file">StakeView.css (189 lines)</li>
+                                <li class="file">Modals.css (246 lines)</li>
+                            </ul>
+                            <li class="file">index.js (45 lines)</li>
+                        </ul>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="graph-container">
+                <h3>Component Relationship Graph</h3>
+                <svg viewBox="0 0 800 600">
+                    <!-- App node -->
+                    <circle cx="400" cy="100" r="30" class="node large" />
+                    <text x="400" y="100" class="node-label">App</text>
+                    
+                    <!-- Main pages -->
+                    <circle cx="200" cy="250" r="25" class="node large" />
+                    <text x="200" y="250" class="node-label">WalletPage</text>
+                    
+                    <circle cx="400" cy="250" r="25" class="node large" />
+                    <text x="400" y="250" class="node-label">SnipePage</text>
+                    
+                    <circle cx="600" cy="250" r="25" class="node" />
+                    <text x="600" y="250" class="node-label">StakeView</text>
+                    
+                    <!-- Modals -->
+                    <circle cx="100" cy="400" r="20" class="node" />
+                    <text x="100" y="400" class="node-label">ConfigureBuy</text>
+                    
+                    <circle cx="200" cy="400" r="20" class="node" />
+                    <text x="200" y="400" class="node-label">FundSub</text>
+                    
+                    <circle cx="300" cy="400" r="20" class="node" />
+                    <text x="300" y="400" class="node-label">TokenDist</text>
+                    
+                    <circle cx="600" cy="400" r="20" class="node" />
+                    <text x="600" y="400" class="node-label">StakingLock</text>
+                    
+                    <!-- Contexts -->
+                    <circle cx="200" cy="500" r="15" class="node core" />
+                    <text x="200" y="500" class="node-label">TribifyCtx</text>
+                    
+                    <circle cx="600" cy="500" r="15" class="node core" />
+                    <text x="600" y="500" class="node-label">GovCtx</text>
+                    
+                    <!-- Connections -->
+                    <line x1="400" y1="130" x2="200" y2="225" class="edge" />
+                    <line x1="400" y1="130" x2="400" y2="225" class="edge" />
+                    <line x1="400" y1="130" x2="600" y2="225" class="edge" />
+                    
+                    <line x1="200" y1="275" x2="100" y2="380" class="edge" />
+                    <line x1="200" y1="275" x2="200" y2="380" class="edge" />
+                    <line x1="200" y1="275" x2="300" y2="380" class="edge" />
+                    
+                    <line x1="600" y1="275" x2="600" y2="380" class="edge" />
+                    
+                    <line x1="200" y1="275" x2="200" y2="485" class="edge" />
+                    <line x1="400" y1="275" x2="200" y2="485" class="edge" />
+                    <line x1="600" y1="275" x2="600" y2="485" class="edge" />
+                </svg>
+            </div>
+            
+            <h2 id="component-analysis">Component Analysis</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Components Requiring Refactoring</h3>
+                </div>
+                <p>The following components have been identified as candidates for refactoring based on their size, complexity, and responsibilities.</p>
+            </div>
+            
+            <div class="component-analysis">
+                <div class="component-card">
+                    <div class="component-header complex">App.js</div>
+                    <div class="component-body">
+                        <div class="component-stats">
+                            <div class="stat">
+                                <div class="stat-value">1,742</div>
+                                <div class="stat-label">Lines</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">14</div>
+                                <div class="stat-label">Components</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">High</div>
+                                <div class="stat-label">Complexity</div>
+                            </div>
+                        </div>
+                        <p>App.js is excessively large and handles too many responsibilities, including routing, state management, and business logic.</p>
+                        <div class="issues">
+                            <h4>Critical Issues:</h4>
+                            <ul>
+                                <li>Contains both routing and global state management</li>
+                                <li>Mixes UI concerns with business logic</li>
+                                <li>Lacks clear component boundaries</li>
+                                <li>Houses multiple unrelated features</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-header complex">WalletPage.js</div>
+                    <div class="component-body">
+                        <div class="component-stats">
+                            <div class="stat">
+                                <div class="stat-value">985</div>
+                                <div class="stat-label">Lines</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">8</div>
+                                <div class="stat-label">Components</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">High</div>
+                                <div class="stat-label">Complexity</div>
+                            </div>
+                        </div>
+                        <p>WalletPage handles multiple wallet-related features including key generation, token management, and transaction processing.</p>
+                        <div class="issues">
+                            <h4>Critical Issues:</h4>
+                            <ul>
+                                <li>Tightly coupled with multiple modals</li>
+                                <li>Contains complex state management logic</li>
+                                <li>Mixes wallet connection with token management</li>
+                                <li>Inconsistent error handling</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-header complex">SnipePage.js</div>
+                    <div class="component-body">
+                        <div class="component-stats">
+                            <div class="stat">
+                                <div class="stat-value">842</div>
+                                <div class="stat-label">Lines</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">6</div>
+                                <div class="stat-label">Components</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">High</div>
+                                <div class="stat-label">Complexity</div>
+                            </div>
+                        </div>
+                        <p>SnipePage handles token sniping functionality with RPC connection handling and complex transaction logic.</p>
+                        <div class="issues">
+                            <h4>Critical Issues:</h4>
+                            <ul>
+                                <li>Contains complex blockchain interaction logic</li>
+                                <li>Mixes UI with transaction processing</li>
+                                <li>Lacks proper separation of concerns</li>
+                                <li>Insufficient error handling for network issues</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-header medium">ConfigureBuyModal.js</div>
+                    <div class="component-body">
+                        <div class="component-stats">
+                            <div class="stat">
+                                <div class="stat-value">531</div>
+                                <div class="stat-label">Lines</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">3</div>
+                                <div class="stat-label">Components</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">Medium</div>
+                                <div class="stat-label">Complexity</div>
+                            </div>
+                        </div>
+                        <p>ConfigureBuyModal handles setup for token buying with complex form validation and configuration options.</p>
+                        <div class="issues">
+                            <h4>Critical Issues:</h4>
+                            <ul>
+                                <li>Form state management is overly complex</li>
+                                <li>Lacks validation abstractions</li>
+                                <li>Contains redundant code for similar fields</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-header medium">TribifyContext.js</div>
+                    <div class="component-body">
+                        <div class="component-stats">
+                            <div class="stat">
+                                <div class="stat-value">387</div>
+                                <div class="stat-label">Lines</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">1</div>
+                                <div class="stat-label">Components</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">Medium</div>
+                                <div class="stat-label">Complexity</div>
+                            </div>
+                        </div>
+                        <p>TribifyContext manages global state for wallet connection, token data, and user settings.</p>
+                        <div class="issues">
+                            <h4>Critical Issues:</h4>
+                            <ul>
+                                <li>Handles too many unrelated concerns</li>
+                                <li>Contains business logic within the context</li>
+                                <li>Poor separation between wallet and token logic</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-header medium">blockchain.js</div>
+                    <div class="component-body">
+                        <div class="component-stats">
+                            <div class="stat">
+                                <div class="stat-value">423</div>
+                                <div class="stat-label">Lines</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label">Components</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">Medium</div>
+                                <div class="stat-label">Complexity</div>
+                            </div>
+                        </div>
+                        <p>blockchain.js contains utility functions for blockchain interactions, RPC connections, and transaction building.</p>
+                        <div class="issues">
+                            <h4>Critical Issues:</h4>
+                            <ul>
+                                <li>Lacks modular organization by function type</li>
+                                <li>Insufficient error handling for network failures</li>
+                                <li>No clear separation between different blockchains</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-header medium">VotePage.js</div>
+                    <div class="component-body">
+                        <div class="component-stats">
+                            <div class="stat">
+                                <div class="stat-value">324</div>
+                                <div class="stat-label">Lines</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">5</div>
+                                <div class="stat-label">Components</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">Medium</div>
+                                <div class="stat-label">Complexity</div>
+                            </div>
+                        </div>
+                        <p>VotePage handles governance functionality including proposal viewing, creation of motions, voting mechanisms, and stake management.</p>
+                        <div class="issues">
+                            <h4>Critical Issues:</h4>
+                            <ul>
+                                <li>Complex voting logic mixed with UI components</li>
+                                <li>Lacks separation between proposal display and voting mechanisms</li>
+                                <li>Motion creation process tightly coupled with proposal listing</li>
+                                <li>Stake management logic embedded in UI components</li>
+                                <li>Insufficient abstraction of common governance patterns</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-header medium">MessagesPage.js</div>
+                    <div class="component-body">
+                        <div class="component-stats">
+                            <div class="stat">
+                                <div class="stat-value">215</div>
+                                <div class="stat-label">Lines</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">4</div>
+                                <div class="stat-label">Components</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">Medium</div>
+                                <div class="stat-label">Complexity</div>
+                            </div>
+                        </div>
+                        <p>MessagesPage handles shareholder communication with encrypted messaging and proposal creation.</p>
+                        <div class="issues">
+                            <h4>Critical Issues:</h4>
+                            <ul>
+                                <li>Complex encryption logic embedded in UI layer</li>
+                                <li>Message composition and display tightly coupled</li>
+                                <li>Shareholder data management not abstracted</li>
+                                <li>Lacks separation between messaging and proposal creation</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-header medium">GovernanceContext.js</div>
+                    <div class="component-body">
+                        <div class="component-stats">
+                            <div class="stat">
+                                <div class="stat-value">256</div>
+                                <div class="stat-label">Lines</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">1</div>
+                                <div class="stat-label">Components</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">Medium</div>
+                                <div class="stat-label">Complexity</div>
+                            </div>
+                        </div>
+                        <p>GovernanceContext manages global state for shareholder data, voting, and proposal management.</p>
+                        <div class="issues">
+                            <h4>Critical Issues:</h4>
+                            <ul>
+                                <li>Combines multiple governance concerns in one context</li>
+                                <li>Contains complex calculation logic within context</li>
+                                <li>Lacks clear separation between state and business rules</li>
+                                <li>Inefficient handling of large shareholder lists</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-header medium">SignPage.js</div>
+                    <div class="component-body">
+                        <div class="component-stats">
+                            <div class="stat">
+                                <div class="stat-value">278</div>
+                                <div class="stat-label">Lines</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">4</div>
+                                <div class="stat-label">Components</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">High</div>
+                                <div class="stat-label">Complexity</div>
+                            </div>
+                        </div>
+                        <p>SignPage handles user authentication through hashed encrypted images of passport/ID, providing secure identity verification.</p>
+                        <div class="issues">
+                            <h4>Critical Issues:</h4>
+                            <ul>
+                                <li>Complex encryption logic mixed with UI components</li>
+                                <li>Image processing and encryption tightly coupled</li>
+                                <li>Security-critical code lacks proper isolation</li>
+                                <li>Verification flow has limited error handling</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-header medium">GraphPage.js</div>
+                    <div class="component-body">
+                        <div class="component-stats">
+                            <div class="stat">
+                                <div class="stat-value">312</div>
+                                <div class="stat-label">Lines</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">3</div>
+                                <div class="stat-label">Components</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">Medium</div>
+                                <div class="stat-label">Complexity</div>
+                            </div>
+                        </div>
+                        <p>GraphPage visualizes the shareholder network and token distribution, providing insight into ownership structure.</p>
+                        <div class="issues">
+                            <h4>Critical Issues:</h4>
+                            <ul>
+                                <li>Visualization logic mixed with data fetching</li>
+                                <li>Performance issues with large shareholder datasets</li>
+                                <li>Graph rendering not optimized for different screen sizes</li>
+                                <li>Limited interactivity and filtering options</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <h2 id="dependencies">Key Dependencies</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>External Dependencies</h3>
+                </div>
+                <p>The following external libraries are critical to the application's functionality and must be maintained during refactoring.</p>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Dependency</th>
+                                <th>Version</th>
+                                <th>Purpose</th>
+                                <th>Impact</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>React</td>
+                                <td>17.0.2</td>
+                                <td>UI framework</td>
+                                <td>Core - High impact</td>
+                            </tr>
+                            <tr>
+                                <td>React Router</td>
+                                <td>6.3.0</td>
+                                <td>Navigation & routing</td>
+                                <td>Core - High impact</td>
+                            </tr>
+                            <tr>
+                                <td>@solana/web3.js</td>
+                                <td>1.73.0</td>
+                                <td>Solana blockchain interactions</td>
+                                <td>Core - High impact</td>
+                            </tr>
+                            <tr>
+                                <td>@solana/spl-token</td>
+                                <td>0.3.7</td>
+                                <td>Token interactions</td>
+                                <td>Core - High impact</td>
+                            </tr>
+                            <tr>
+                                <td>@solana/wallet-adapter</td>
+                                <td>0.19.1</td>
+                                <td>Wallet connection</td>
+                                <td>Core - High impact</td>
+                            </tr>
+                            <tr>
+                                <td>Axios</td>
+                                <td>0.27.2</td>
+                                <td>HTTP requests</td>
+                                <td>Medium impact</td>
+                            </tr>
+                            <tr>
+                                <td>Chart.js</td>
+                                <td>3.9.1</td>
+                                <td>Data visualization</td>
+                                <td>Medium impact</td>
+                            </tr>
+                            <tr>
+                                <td>Moment.js</td>
+                                <td>2.29.4</td>
+                                <td>Date handling</td>
+                                <td>Low impact - Replace with modern alternatives</td>
+                            </tr>
+                            <tr>
+                                <td>Lodash</td>
+                                <td>4.17.21</td>
+                                <td>Utility functions</td>
+                                <td>Medium impact - Consider more targeted imports</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="dependency-graph">
+                    <h4>Core Dependencies</h4>
+                    <div class="dependency-node core">React 17.0.2</div>
+                    <div class="dependency-node core">React Router 6.3.0</div>
+                    <div class="dependency-node core">@solana/web3.js 1.73.0</div>
+                    <div class="dependency-node core">@solana/spl-token 0.3.7</div>
+                    <div class="dependency-node core">@solana/wallet-adapter 0.19.1</div>
+                    
+                    <h4>UI Dependencies</h4>
+                    <div class="dependency-node ui">Chart.js 3.9.1</div>
+                    <div class="dependency-node ui">React Icons 4.4.0</div>
+                    <div class="dependency-node ui">React Toastify 9.0.8</div>
+                    
+                    <h4>Utility Dependencies</h4>
+                    <div class="dependency-node utility">Axios 0.27.2</div>
+                    <div class="dependency-node utility">Moment.js 2.29.4</div>
+                    <div class="dependency-node utility">Lodash 4.17.21</div>
+                    <div class="dependency-node utility">Big.js 6.2.1</div>
+                </div>
+            </div>
+            
+            <h2 id="business-logic">Critical Business Logic</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Business Logic to Preserve</h3>
+                </div>
+                <p>The following business logic components are critical to the application's functionality and must be carefully preserved during refactoring.</p>
+            </div>
+            
+            <div class="business-logic-container">
+                <div class="business-logic-card">
+                    <div class="business-logic-header">Wallet Management</div>
+                    <div class="business-logic-body">
+                        <ul>
+                            <li>Wallet creation and import functionality</li>
+                            <li>Private key encryption and secure storage</li>
+                            <li>Multi-wallet support with key rotation</li>
+                            <li>Wallet to wallet fund transfers</li>
+                            <li>Wallet balance aggregation</li>
+                        </ul>
+                    </div>
+                    <div class="business-logic-footer">
+                        <span>Location: WalletPage.js</span>
+                        <span>Priority: Critical</span>
+                    </div>
+                </div>
+                
+                <div class="business-logic-card">
+                    <div class="business-logic-header">Token Sniping</div>
+                    <div class="business-logic-body">
+                        <ul>
+                            <li>Multiple RPC endpoint fallback system</li>
+                            <li>Mempool monitoring for new tokens</li>
+                            <li>Token contract detection and verification</li>
+                            <li>Fast transaction assembly and signing</li>
+                            <li>Purchase timing and amount logic</li>
+                        </ul>
+                    </div>
+                    <div class="business-logic-footer">
+                        <span>Location: SnipePage.js</span>
+                        <span>Priority: Critical</span>
+                    </div>
+                </div>
+                
+                <div class="business-logic-card">
+                    <div class="business-logic-header">Token Distribution</div>
+                    <div class="business-logic-body">
+                        <ul>
+                            <li>Multi-wallet token distribution</li>
+                            <li>Distribution rules and algorithms</li>
+                            <li>Fee calculation and handling</li>
+                            <li>Transaction batching for efficiency</li>
+                            <li>Token transfer confirmation</li>
+                        </ul>
+                    </div>
+                    <div class="business-logic-footer">
+                        <span>Location: TokenDistributor.js</span>
+                        <span>Priority: High</span>
+                    </div>
+                </div>
+                
+                <div class="business-logic-card">
+                    <div class="business-logic-header">Staking Logic</div>
+                    <div class="business-logic-body">
+                        <ul>
+                            <li>Staking period calculation</li>
+                            <li>Reward rate algorithms</li>
+                            <li>Staking contract interaction</li>
+                            <li>Early unstaking penalty calculation</li>
+                            <li>Reward claiming and compounding</li>
+                        </ul>
+                    </div>
+                    <div class="business-logic-footer">
+                        <span>Location: StakeView.js</span>
+                        <span>Priority: High</span>
+                    </div>
+                </div>
+                
+                <div class="business-logic-card">
+                    <div class="business-logic-header">Token Price Fetching</div>
+                    <div class="business-logic-body">
+                        <ul>
+                            <li>Multi-source price aggregation</li>
+                            <li>Price update scheduling</li>
+                            <li>Historical price tracking</li>
+                            <li>Price change notification</li>
+                            <li>Price impact calculation for large orders</li>
+                        </ul>
+                    </div>
+                    <div class="business-logic-footer">
+                        <span>Location: blockchain.js, WalletPage.js</span>
+                        <span>Priority: Medium</span>
+                    </div>
+                </div>
+                
+                <div class="business-logic-card">
+                    <div class="business-logic-header">Transaction Management</div>
+                    <div class="business-logic-body">
+                        <ul>
+                            <li>Transaction fee calculation</li>
+                            <li>Retry logic for failed transactions</li>
+                            <li>Transaction status monitoring</li>
+                            <li>Confirmation tracking</li>
+                            <li>Transaction history management</li>
+                        </ul>
+                    </div>
+                    <div class="business-logic-footer">
+                        <span>Location: App.js, blockchain.js</span>
+                        <span>Priority: High</span>
+                    </div>
+                </div>
+                
+                <div class="business-logic-card">
+                    <div class="business-logic-header">Token as Shares Model</div>
+                    <div class="business-logic-body">
+                        <ul>
+                            <li>$TRIBIFY token representation as company shares</li>
+                            <li>Shareholder registry and management</li>
+                            <li>Token-weighted voting power calculation</li>
+                            <li>Shareholder verification mechanisms</li>
+                            <li>Dividend distribution capabilities</li>
+                        </ul>
+                    </div>
+                    <div class="business-logic-footer">
+                        <span>Location: GovernanceContext.js, VotePage.js</span>
+                        <span>Priority: Critical</span>
+                    </div>
+                </div>
+                
+                <div class="business-logic-card">
+                    <div class="business-logic-header">Encrypted Messaging System</div>
+                    <div class="business-logic-body">
+                        <ul>
+                            <li>Public-key cryptography for message encryption</li>
+                            <li>Message multiplication with recipient's public address</li>
+                            <li>Private key decryption for message reading</li>
+                            <li>Shareholder-to-shareholder direct messaging</li>
+                            <li>Broadcast messaging to all shareholders</li>
+                        </ul>
+                    </div>
+                    <div class="business-logic-footer">
+                        <span>Location: MessagesPage.js, utils/encryption.js</span>
+                        <span>Priority: Critical</span>
+                    </div>
+                </div>
+                
+                <div class="business-logic-card">
+                    <div class="business-logic-header">Governance & Voting</div>
+                    <div class="business-logic-body">
+                        <ul>
+                            <li>Proposal creation and management</li>
+                            <li>Motion submission by shareholders</li>
+                            <li>Token-weighted voting system</li>
+                            <li>Stake-based voting with risk mechanisms</li>
+                            <li>Vote tallying and result determination</li>
+                            <li>Automated stake forfeiture for losing votes</li>
+                        </ul>
+                    </div>
+                    <div class="business-logic-footer">
+                        <span>Location: VotePage.js, GovernanceContext.js</span>
+                        <span>Priority: Critical</span>
+                    </div>
+                </div>
+                
+                <div class="business-logic-card">
+                    <div class="business-logic-header">Identity Verification System</div>
+                    <div class="business-logic-body">
+                        <ul>
+                            <li>Secure hashing of passport/ID images</li>
+                            <li>Encrypted storage of identification data</li>
+                            <li>Verification workflow and approval process</li>
+                            <li>Identity-to-wallet association</li>
+                            <li>Privacy-preserving verification checks</li>
+                        </ul>
+                    </div>
+                    <div class="business-logic-footer">
+                        <span>Location: SignPage.js, utils/encryption.js</span>
+                        <span>Priority: Critical</span>
+                    </div>
+                </div>
+                
+                <div class="business-logic-card">
+                    <div class="business-logic-header">Shareholder Visualization</div>
+                    <div class="business-logic-body">
+                        <ul>
+                            <li>Network graph of shareholder relationships</li>
+                            <li>Token distribution visualization</li>
+                            <li>Interactive filtering and exploration</li>
+                            <li>Ownership concentration analysis</li>
+                            <li>Historical ownership changes tracking</li>
+                        </ul>
+                    </div>
+                    <div class="business-logic-footer">
+                        <span>Location: GraphPage.js, utils/visualization.js</span>
+                        <span>Priority: High</span>
+                    </div>
+                </div>
+            </div>
+            
+            <h2 id="refactoring-plan">Refactoring Strategy</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Primary Refactoring Focus</h3>
+                </div>
+                <p>Based on the analysis, the refactoring strategy should focus on:</p>
+                <ol>
+                    <li><strong>Component Decomposition</strong>: Breaking down large components (App.js, WalletPage.js, SnipePage.js) into smaller, focused components with clear responsibilities.</li>
+                    <li><strong>Feature Organization</strong>: Restructuring the codebase into feature-based directories that encapsulate related functionality.</li>
+                    <li><strong>State Management Improvement</strong>: Extracting complex state logic into custom hooks and potentially adopting Zustand for global state.</li>
+                    <li><strong>Business Logic Isolation</strong>: Separating core business logic into dedicated service modules that can be independently tested and maintained.</li>
+                    <li><strong>Consistent Patterns</strong>: Establishing and enforcing consistent patterns for component structure, state management, and error handling.</li>
+                    <li><strong>Governance Architecture</strong>: Creating a dedicated governance module that cleanly separates token-as-shares model, voting mechanics, and shareholder communication.</li>
+                </ol>
+                <p>This refactoring should be carried out systematically according to the <a href="implementation-blueprint.html">Implementation Blueprint</a>, ensuring that critical business logic is preserved through comprehensive testing.</p>
+            </div>
+            
+            <div class="footer">
+                <p>Tribify Codebase Analysis | Version 1.0</p>
+                <p>Last Updated: May 2023</p>
+                <p><a href="implementation-blueprint.html">Return to Implementation Blueprint</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

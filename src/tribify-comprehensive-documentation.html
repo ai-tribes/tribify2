@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tribify Comprehensive Documentation</title>
+    <style>
+        :root {
+            --primary-color: #3a506b;
+            --secondary-color: #5bc0be;
+            --accent-color: #0b132b;
+            --background-color: #f8f9fa;
+            --code-bg: #f5f5f5;
+            --border-color: #dee2e6;
+            --text-color: #343a40;
+            --link-color: #0b6e4f;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --danger-color: #f44336;
+            --info-color: #2196f3;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 5px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        header h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.2rem;
+            color: var(--secondary-color);
+        }
+        
+        nav.toc {
+            background-color: var(--code-bg);
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+        
+        nav.toc h2 {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+        
+        nav.toc ul {
+            list-style-type: none;
+        }
+        
+        nav.toc li {
+            margin-bottom: 10px;
+        }
+        
+        nav.toc a {
+            color: var(--link-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        nav.toc a:hover {
+            text-decoration: underline;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .section:last-child {
+            border-bottom: none;
+        }
+        
+        h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        h3 {
+            color: var(--accent-color);
+            margin: 25px 0 15px 0;
+        }
+        
+        h4 {
+            color: var(--secondary-color);
+            margin: 20px 0 10px 0;
+        }
+        
+        p {
+            margin-bottom: 15px;
+        }
+        
+        ul, ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        li {
+            margin-bottom: 5px;
+        }
+        
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--code-bg);
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        
+        pre {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            border: 1px solid var(--border-color);
+        }
+        
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background-color: var(--code-bg);
+            font-weight: bold;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .note {
+            background-color: #e7f5fe;
+            border-left: 4px solid var(--info-color);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .warning {
+            background-color: #fff8e6;
+            border-left: 4px solid var(--warning-color);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .success {
+            background-color: #f0f8f0;
+            border-left: 4px solid var(--success-color);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .danger {
+            background-color: #feebeb;
+            border-left: 4px solid var(--danger-color);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .reference-links {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .reference-links h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Tribify Comprehensive Documentation</h1>
+            <p>A unified guide to the Tribify application architecture, implementation plan, and development guidelines</p>
+        </header>
+        
+        <nav class="toc">
+            <h2>Table of Contents</h2>
+            <ul>
+                <li><a href="#introduction">Introduction</a></li>
+                <li><a href="#current-functionality">Current Functionality Overview</a></li>
+                <li><a href="#wallet-functionality">Wallet Functionality</a></li>
+                <li><a href="#token-distribution">Token Distribution System</a></li>
+                <li><a href="#token-sniping">Token Sniping Capabilities</a></li>
+                <li><a href="#shareholder-governance">Shareholder Governance</a></li>
+                <li><a href="#encrypted-messaging">Encrypted Messaging System</a></li>
+                <li><a href="#future-functionality">Proposed Future Functionality</a></li>
+                <li><a href="#codebase-analysis">Codebase Analysis</a></li>
+                <li><a href="#wallet-modals">Wallet Modals Analysis</a></li>
+                <li><a href="#improvement-plan">Improvement Plan</a></li>
+                <li><a href="#implementation-blueprint">Implementation Blueprint</a></li>
+                <li><a href="#tech-stack">Technology Stack</a></li>
+                <li><a href="#file-structure">File Structure</a></li>
+                <li><a href="#frontend-guidelines">Frontend Guidelines</a></li>
+                <li><a href="#backend-structure">Backend Structure</a></li>
+                <li><a href="#implementation-plan">Implementation Plan</a></li>
+            </ul>
+        </nav>
+        
+        <div class="reference-links">
+            <h3>Reference Documents</h3>
+            <ul>
+                <li><a href="codebase-analysis.html" target="_blank">Detailed Codebase Analysis</a></li>
+                <li><a href="wallet-modals-analysis.html" target="_blank">Wallet Modals Analysis</a></li>
+                <li><a href="improvement-plan.html" target="_blank">Improvement Plan</a></li>
+                <li><a href="implementation-blueprint.html" target="_blank">Implementation Blueprint</a></li>
+            </ul>
+        </div>
+
+        <section id="introduction" class="section">
+            <h2>Introduction</h2>
+            <p>This comprehensive document provides a complete reference for the Tribify application, consolidating information from multiple analysis documents, improvement plans, and implementation blueprints.</p>
+            
+            <p>Tribify is a Web3 application that serves as a wallet management system, token distribution tool, and token sniping application with integrated shareholder governance features. The application allows shareholders to make proposals, vote on them, communicate securely, and manage their tokens and wallets.</p>
+            
+            <p>This document covers both the current functionality of Tribify and the planned improvements, including code organization, performance optimization, user experience enhancements, and proposed new features like token creation.</p>
+        </section>
+
+        <section id="current-functionality" class="section">
+            <h2>Current Functionality Overview</h2>
+            <p>Tribify currently functions as a shareholder-driven company (unregistered) with several key capabilities:</p>
+            
+            <ul>
+                <li><strong>Wallet Management:</strong> Creating, importing, and managing cryptocurrency wallets</li>
+                <li><strong>Token Distribution:</strong> Tools for distributing tokens to shareholders and other wallets</li>
+                <li><strong>Token Sniping:</strong> Functionality for quickly purchasing new tokens when they become available</li>
+                <li><strong>Shareholder Governance:</strong> System for creating proposals and voting on them</li>
+                <li><strong>Encrypted Messaging:</strong> Secure communication between shareholders</li>
+                <li><strong>Identity Verification:</strong> Secure hashing of passport/ID images</li>
+            </ul>
+            
+            <p>These core functions represent the current state of the application before any of the proposed improvements or new features are implemented.</p>
+        </section>
+
+        <section id="wallet-functionality" class="section">
+            <h2>Wallet Functionality</h2>
+            <h3>Core Wallet Features</h3>
+            <p>The WalletPage component (currently ~2,800 lines) provides comprehensive wallet functionality:</p>
+            
+            <ul>
+                <li><strong>Wallet Creation:</strong> Generate new wallet keypairs</li>
+                <li><strong>Wallet Import:</strong> Import existing wallets via private keys</li>
+                <li><strong>Balance Tracking:</strong> Monitor token balances across multiple wallets</li>
+                <li><strong>Multi-wallet Support:</strong> Manage multiple wallets simultaneously</li>
+                <li><strong>Transaction History:</strong> View past transactions</li>
+            </ul>
+            
+            <h3>Wallet Security</h3>
+            <p>Tribify implements several security mechanisms for wallet management:</p>
+            
+            <ul>
+                <li><strong>Private Key Encryption:</strong> Secure storage of private keys</li>
+                <li><strong>Multi-wallet Key Rotation:</strong> Enhance security through key rotation</li>
+                <li><strong>Secure Transaction Signing:</strong> Safe transaction authorization</li>
+            </ul>
+            
+            <h3>Wallet Modal Components</h3>
+            <p>Several modal components support wallet operations:</p>
+            
+            <ul>
+                <li><strong>ConfigureBuyModal:</strong> Configure token purchase parameters</li>
+                <li><strong>FundSubwallets:</strong> Distribute funds between wallets</li>
+                <li><strong>ConversionModal:</strong> Convert between different tokens</li>
+            </ul>
+        </section>
+
+        <section id="token-distribution" class="section">
+            <h2>Token Distribution System</h2>
+            <h3>Distribution Capabilities</h3>
+            <p>Tribify's TokenDistributor component (~1,100 lines) provides powerful token distribution functionality:</p>
+            
+            <ul>
+                <li><strong>Multi-wallet Distribution:</strong> Send tokens to multiple wallets in a single operation</li>
+                <li><strong>Distribution Models:</strong> Support for equal, proportional, or custom distribution</li>
+                <li><strong>Fee Optimization:</strong> Minimize transaction fees during distribution</li>
+                <li><strong>Batch Processing:</strong> Handle distributions as single or batched transactions</li>
+            </ul>
+            
+            <h3>Shareholder Distribution</h3>
+            <p>Special functionality exists for distributing tokens to company shareholders:</p>
+            
+            <ul>
+                <li><strong>Shareholder Registry:</strong> Track token holders and their ownership</li>
+                <li><strong>Dividend Distribution:</strong> Distribute tokens as dividends to shareholders</li>
+                <li><strong>Ownership Tracking:</strong> Visualize token distribution among shareholders</li>
+            </ul>
+        </section>
+
+        <section id="token-sniping" class="section">
+            <h2>Token Sniping Capabilities</h2>
+            <h3>Sniping Functions</h3>
+            <p>The SnipePage component (~842 lines) provides sophisticated token sniping capabilities:</p>
+            
+            <ul>
+                <li><strong>Multiple RPC Endpoint Support:</strong> Use multiple RPC endpoints with fallback</li>
+                <li><strong>Mempool Monitoring:</strong> Watch for new tokens in the mempool</li>
+                <li><strong>Contract Detection:</strong> Identify and verify token contracts</li>
+                <li><strong>Fast Transaction Assembly:</strong> Quickly prepare and submit buy transactions</li>
+                <li><strong>Timing Control:</strong> Precise control over purchase timing</li>
+            </ul>
+            
+            <h3>Purchase Configuration</h3>
+            <p>ConfigureBuyModal allows detailed setup of token purchases:</p>
+            
+            <ul>
+                <li><strong>Token Selection:</strong> Choose tokens to purchase</li>
+                <li><strong>Wallet Selection:</strong> Select which wallets to use for purchases</li>
+                <li><strong>Time Settings:</strong> Configure exact purchase timing</li>
+                <li><strong>Transaction Parameters:</strong> Set slippage, price impact, and fees</li>
+            </ul>
+        </section>
+
+        <section id="shareholder-governance" class="section">
+            <h2>Shareholder Governance</h2>
+            <h3>Governance Model</h3>
+            <p>Tribify implements a token-as-shares governance model:</p>
+            
+            <ul>
+                <li><strong>Token Weighted Voting:</strong> Voting power proportional to token holdings</li>
+                <li><strong>Proposal System:</strong> Creation and management of proposals</li>
+                <li><strong>Stake-based Voting:</strong> Option to stake tokens on votes with risk mechanisms</li>
+                <li><strong>Automated Stake Forfeiture:</strong> Stake forfeiture for losing votes</li>
+            </ul>
+            
+            <h3>Voting Process</h3>
+            <p>The VotePage component (~324 lines) handles the voting process:</p>
+            
+            <ul>
+                <li><strong>Proposal Creation:</strong> Shareholders can create proposals</li>
+                <li><strong>Voting Interface:</strong> Cast votes on open proposals</li>
+                <li><strong>Vote Tallying:</strong> Count votes and determine outcomes</li>
+                <li><strong>Result Implementation:</strong> Apply the results of successful proposals</li>
+            </ul>
+        </section>
+
+        <section id="encrypted-messaging" class="section">
+            <h2>Encrypted Messaging System</h2>
+            <h3>Messaging Capabilities</h3>
+            <p>The MessagesPage component (~215 lines) provides secure communication:</p>
+            
+            <ul>
+                <li><strong>Public Key Encryption:</strong> Messages encrypted with recipient's public address</li>
+                <li><strong>Shareholder Communication:</strong> Direct messaging between shareholders</li>
+                <li><strong>Broadcast Messaging:</strong> Send messages to all shareholders</li>
+                <li><strong>Proposal Integration:</strong> Include governance proposals in messages</li>
+            </ul>
+            
+            <h3>Identity Verification</h3>
+            <p>The SignPage component (~278 lines) handles identity verification:</p>
+            
+            <ul>
+                <li><strong>Document Verification:</strong> Secure hashing of passport/ID images</li>
+                <li><strong>Encrypted Storage:</strong> Privacy-preserving storage of verification data</li>
+                <li><strong>Wallet Association:</strong> Linking identity to wallet addresses</li>
+            </ul>
+        </section>
+
+        <section id="future-functionality" class="section">
+            <h2>Proposed Future Functionality</h2>
+            <h3>Token Creation Feature</h3>
+            <p>A significant proposed enhancement is adding token creation capabilities to Tribify:</p>
+            
+            <ul>
+                <li><strong>Token Creation Interface:</strong> Tools for creating new tokens on blockchain networks</li>
+                <li><strong>Token Parameter Configuration:</strong> Setting supply, distribution, and tokenomics</li>
+                <li><strong>Community Token Tools:</strong> Features specific to community/social tokens</li>
+                <li><strong>Tokenized Community Management:</strong> Tools for managing token-based communities</li>
+            </ul>
+            
+            <div class="note">
+                <h4>Implementation Note</h4>
+                <p>The token creation feature would complement Tribify's existing functionality by allowing users to not only manage and distribute existing tokens but also create their own tokens for their communities or projects. This would transform Tribify into a more complete token ecosystem platform.</p>
+            </div>
+            
+            <h3>Additional Proposed Enhancements</h3>
+            <ul>
+                <li><strong>Enhanced Analytics:</strong> More comprehensive token and shareholder analytics</li>
+                <li><strong>Mobile Applications:</strong> Native mobile apps for iOS and Android</li>
+                <li><strong>Multi-chain Support:</strong> Expanded support for additional blockchain networks</li>
+                <li><strong>Advanced Governance Tools:</strong> More sophisticated proposal and voting mechanisms</li>
+            </ul>
+        </section>
+
+        <section id="codebase-analysis" class="section">
+            <h2>Codebase Analysis</h2>
+            <h3>Overview</h3>
+            <p>The codebase analysis reveals several architectural challenges that need to be addressed during the improvement process, as documented in the <a href="codebase-analysis.html" target="_blank">detailed codebase analysis</a>.</p>
+            
+            <h3>Key Components</h3>
+            <h4>App.js</h4>
+            <p>The main application component is approximately 1,700 lines long and handles multiple responsibilities including:</p>
+            <ul>
+                <li>User authentication</li>
+                <li>Wallet connection</li>
+                <li>Routing</li>
+                <li>State management</li>
+                <li>API calls</li>
+                <li>UI rendering</li>
+            </ul>
+            
+            <h4>WalletPage.js</h4>
+            <p>A large component (~2,800 lines) that manages wallet interactions, token transactions, and displays wallet-related UI.</p>
+            
+            <h4>SnipePage.js</h4>
+            <p>Handles token sniping functionality with RPC connection handling and complex transaction logic (~842 lines).</p>
+            
+            <h4>TokenDistributor.js</h4>
+            <p>Handles token distribution functionality, including creating and sending tokens to users (~1,100 lines).</p>
+            
+            <h3>Architectural Issues</h3>
+            <ul>
+                <li><strong>Monolithic Components:</strong> Several large components with multiple responsibilities</li>
+                <li><strong>Inconsistent State Management:</strong> Mix of prop drilling, useState, and direct DOM manipulation</li>
+                <li><strong>Tight Coupling:</strong> Business logic tightly coupled with UI components</li>
+                <li><strong>Routing Issues:</strong> Lack of proper routing structure</li>
+                <li><strong>Styling Inconsistencies:</strong> Mix of inline styles, CSS files, and CSS-in-JS</li>
+            </ul>
+            
+            <h3>Critical Business Logic</h3>
+            <p>The following business logic components are critical to the application's functionality and must be preserved during refactoring:</p>
+            
+            <ul>
+                <li><strong>Wallet Management:</strong> Creation, import, and secure storage of wallets</li>
+                <li><strong>Token Sniping:</strong> Mempool monitoring, fast transaction assembly, and timing</li>
+                <li><strong>Token Distribution:</strong> Multi-wallet distribution with various distribution rules</li>
+                <li><strong>Governance & Voting:</strong> Proposal creation, voting, and result determination</li>
+                <li><strong>Encrypted Messaging:</strong> Public-key cryptography for secure communication</li>
+                <li><strong>Identity Verification:</strong> Secure hashing and storage of verification documents</li>
+            </ul>
+        </section>
+
+        <section id="wallet-modals" class="section">
+            <h2>Wallet Modals Analysis</h2>
+            <p>A detailed analysis of the modal components in Tribify is available in the <a href="wallet-modals-analysis.html" target="_blank">wallet modals analysis</a> document. Key findings include:</p>
+            
+            <h3>Identified Modals</h3>
+            <ul>
+                <li><strong>ConfigureBuyModal (531 lines):</strong> Configures token purchase parameters</li>
+                <li><strong>FundSubwallets (278 lines):</strong> Manages funding of subwallets</li>
+                <li><strong>TokenDistributor (354 lines):</strong> Handles token distribution to multiple recipients</li>
+                <li><strong>ConversionModal (245 lines):</strong> Handles token conversion between different types</li>
+                <li><strong>StakingLockModal (198 lines):</strong> Manages token staking operations</li>
+                <li><strong>UnstakeConfirmationModal (127 lines):</strong> Confirms token unstaking operations</li>
+                <li><strong>MessageModal (89 lines):</strong> Facilitates secure messaging between shareholders</li>
+                <li><strong>ProposalCreationModal (~180 lines):</strong> Creates governance proposals</li>
+                <li><strong>VoteConfirmationModal (~140 lines):</strong> Confirms votes on proposals</li>
+                <li><strong>IDVerificationModal (~220 lines):</strong> Handles identity verification</li>
+            </ul>
+            
+            <h3>Common Issues</h3>
+            <ul>
+                <li><strong>Duplicate Code:</strong> Similar functionality repeated across multiple modal components</li>
+                <li><strong>Inconsistent Styling:</strong> Varying styling approaches and visual inconsistencies</li>
+                <li><strong>Tightly Coupled Logic:</strong> Business logic embedded within UI components</li>
+                <li><strong>Error Handling:</strong> Inconsistent or incomplete error handling</li>
+                <li><strong>Accessibility Issues:</strong> Lack of proper keyboard navigation and screen reader support</li>
+            </ul>
+            
+            <h3>Improvement Recommendations</h3>
+            <ul>
+                <li>Create a reusable BaseModal component for consistent modal behavior</li>
+                <li>Extract business logic into custom hooks or services</li>
+                <li>Standardize styling approach across all modals</li>
+                <li>Implement proper error handling and user feedback</li>
+                <li>Enhance accessibility with proper ARIA attributes and keyboard support</li>
+            </ul>
+        </section>
+
+        <section id="improvement-plan" class="section">
+            <h2>Improvement Plan</h2>
+            <p>A comprehensive improvement plan is detailed in the <a href="improvement-plan.html" target="_blank">improvement plan</a> document. Key areas for improvement include:</p>
+            
+            <h3>Code Organization & Architecture</h3>
+            <h4>Current Challenges</h4>
+            <ul>
+                <li>App.js is excessively large (~1700 lines) and handles too many responsibilities</li>
+                <li>Inconsistent component structure and naming conventions</li>
+                <li>Limited separation of concerns</li>
+                <li>Unclear routing structure</li>
+            </ul>
+            
+            <h4>Proposed Improvements</h4>
+            <ul>
+                <li>Implement feature-based folder structure</li>
+                <li>Extract reusable components into a components library</li>
+                <li>Implement proper routing with React Router</li>
+                <li>Standardize naming conventions and coding patterns</li>
+            </ul>
+            
+            <h3>Performance Optimizations</h3>
+            <h4>Proposed Improvements</h4>
+            <ul>
+                <li>Implement code splitting and lazy loading</li>
+                <li>Optimize component rendering with memoization</li>
+                <li>Implement efficient data fetching with caching</li>
+                <li>Optimize list rendering with virtualization</li>
+            </ul>
+            
+            <h3>State Management</h3>
+            <h4>Proposed Improvements</h4>
+            <ul>
+                <li>Implement consistent state management with Redux or Context API</li>
+                <li>Separate business logic from UI components</li>
+                <li>Implement custom hooks for reusable state logic</li>
+                <li>Consider Zustand for simpler global state management</li>
+            </ul>
+            
+            <h3>User Experience Improvements</h3>
+            <h4>Proposed Improvements</h4>
+            <ul>
+                <li>Enhance form validation with Formik or React Hook Form</li>
+                <li>Implement toast notifications for user feedback</li>
+                <li>Improve accessibility with ARIA attributes and keyboard support</li>
+                <li>Enhance mobile responsiveness</li>
+            </ul>
+        </section>
+
+        <section id="implementation-blueprint" class="section">
+            <h2>Implementation Blueprint</h2>
+            <p>A detailed implementation blueprint is provided in the <a href="implementation-blueprint.html" target="_blank">implementation blueprint</a> document, outlining a phased approach to implementing the improvements.</p>
+            
+            <h3>Implementation Phases</h3>
+            <h4>Phase 1: Foundation (Weeks 1-4)</h4>
+            <p>The foundation phase focuses on restructuring the codebase to establish a solid architectural foundation for all subsequent improvements.</p>
+            <ul>
+                <li><strong>Week 1:</strong> Code analysis and preparation</li>
+                <li><strong>Week 2:</strong> App.js refactoring</li>
+                <li><strong>Week 3:</strong> Feature migration (Part 1)</li>
+                <li><strong>Week 4:</strong> Feature migration (Part 2) and testing</li>
+            </ul>
+            
+            <h4>Phase 2: Core Improvements (Weeks 5-8)</h4>
+            <p>This phase focuses on implementing core functionality improvements and optimizations.</p>
+            <ul>
+                <li><strong>Week 5:</strong> State management improvements</li>
+                <li><strong>Week 6:</strong> Standardize modal components</li>
+                <li><strong>Week 7:</strong> Enhance governance and messaging systems</li>
+                <li><strong>Week 8:</strong> Implement token creation feature (optional)</li>
+            </ul>
+            
+            <h4>Phase 3: Performance & UX (Weeks 9-12)</h4>
+            <p>This phase focuses on enhancing performance and user experience.</p>
+            <ul>
+                <li><strong>Week 9:</strong> Optimize performance</li>
+                <li><strong>Week 10:</strong> Enhance user experience</li>
+                <li><strong>Week 11:</strong> Implement responsive design</li>
+                <li><strong>Week 12:</strong> Add accessibility features</li>
+            </ul>
+            
+            <h4>Phase 4: Polish & Launch (Weeks 13-16)</h4>
+            <p>The final phase focuses on polishing the application and preparing for launch.</p>
+            <ul>
+                <li><strong>Week 13:</strong> Implement testing</li>
+                <li><strong>Week 14:</strong> Enhance security</li>
+                <li><strong>Week 15:</strong> Create documentation</li>
+                <li><strong>Week 16:</strong> Prepare for deployment</li>
+            </ul>
+            
+            <h3>Token Creation Feature Implementation</h3>
+            <p>The token creation feature could be implemented as part of Phase 2 or as a separate feature phase after the core application improvements. Key implementation steps would include:</p>
+            
+            <ol>
+                <li>Design token creation interface and workflow</li>
+                <li>Implement blockchain integration for token creation</li>
+                <li>Develop token parameter configuration UI</li>
+            </ol>
+        </section>
+
+        <section id="tech-stack" class="section">
+            <h2>Technology Stack</h2>
+            <h3>Frontend</h3>
+            <ul>
+                <li><strong>Framework:</strong> React</li>
+                <li><strong>Styling:</strong> CSS, with potential transition to Tailwind CSS</li>
+                <li><strong>State Management:</strong> Context API with hooks, with potential migration to Redux or Zustand</li>
+                <li><strong>Routing:</strong> React Router</li>
+                <li><strong>Build Tool:</strong> Create React App with custom config-overrides</li>
+            </ul>
+            
+            <h3>Backend</h3>
+            <ul>
+                <li><strong>Server:</strong> Node.js with Express</li>
+                <li><strong>Database:</strong> Prisma ORM with SQL database</li>
+                <li><strong>Authentication:</strong> Web3 wallet-based authentication</li>
+                <li><strong>APIs:</strong> REST APIs for server communication</li>
+            </ul>
+            
+            <h3>Blockchain Integration</h3>
+            <ul>
+                <li><strong>Networks:</strong> Solana (primary), Ethereum (planned)</li>
+                <li><strong>Wallet Connections:</strong> Solana Wallet Adapter, Web3.js</li>
+                <li><strong>Transaction Building:</strong> @solana/web3.js, @solana/spl-token</li>
+                <li><strong>Smart Contracts:</strong> Solana Programs</li>
+            </ul>
+            
+            <h3>DevOps & Deployment</h3>
+            <ul>
+                <li><strong>Hosting:</strong> Vercel for frontend, custom server for backend</li>
+                <li><strong>CI/CD:</strong> GitHub Actions</li>
+                <li><strong>Monitoring:</strong> To be implemented</li>
+            </ul>
+        </section>
+
+        <section id="file-structure" class="section">
+            <h2>File Structure</h2>
+            <h3>Current Structure</h3>
+            <pre><code>
+tribify2/
+├── .git/
+├── .github/
+├── .vercel/
+├── api/
+├── build/
+├── lib/
+├── node_modules/
+├── pages/
+│   ├── _app.js
+│   └── api/
+├── prisma/
+├── programs/
+├── public/
+├── src/
+│   ├── components/
+│   │   ├── AuthWrapper.js
+│   │   ├── BaseModal.js
+│   │   ├── BuyConfigModal.js
+│   │   ├── ConversionModal.js
+│   │   ├── FundSubwallets.js
+│   │   ├── LandingPage.js
+│   │   ├── MessagesPage.js
+│   │   ├── SellConfigModal.js
+│   │   ├── SnipePage.js
+│   │   ├── StakeView.js
+│   │   ├── StakingLockModal.js
+│   │   ├── TokenDistributor.js
+│   │   ├── UnstakeConfirmationModal.js
+│   │   ├── VotePage.js
+│   │   └── WalletPage.js
+│   ├── context/
+│   │   ├── TribifyContext.js
+│   │   └── GovernanceContext.js
+│   ├── lib/
+│   ├── pages/
+│   ├── server/
+│   ├── utils/
+│   │   ├── blockchain.js
+│   │   ├── formatting.js
+│   │   └── validation.js
+│   ├── App.css
+│   ├── App.js
+│   ├── index.css
+│   └── index.js
+├── .env
+├── .env.example
+├── .gitignore
+├── config-overrides.js
+├── next.config.js
+├── package-lock.json
+├── package.json
+├── postcss.config.js
+├── README.md
+├── server.js
+└── tailwind.config.js
+            </code></pre>
+            
+            <h3>Proposed Structure</h3>
+            <pre><code>
+tribify2/
+├── public/
+├── src/
+│   ├── assets/
+│   │   ├── images/
+│   │   └── styles/
+│   ├── components/
+│   │   ├── common/
+│   │   │   ├── Button/
+│   │   │   ├── Input/
+│   │   │   ├── Modal/
+│   │   │   └── Card/
+│   │   └── layout/
+│   │       ├── Header/
+│   │       ├── Footer/
+│   │       └── Sidebar/
+│   ├── features/
+│   │   ├── auth/
+│   │   ├── wallet/
+│   │   ├── tokenSniper/
+│   │   ├── tokenDistribution/
+│   │   ├── staking/
+│   │   ├── governance/
+│   │   ├── messaging/
+│   │   ├── identity/
+│   │   └── tokenCreation/
+│   ├── hooks/
+│   ├── services/
+│   │   ├── api/
+│   │   ├── blockchain/
+│   │   └── storage/
+│   ├── store/
+│   ├── utils/
+│   ├── App.js
+│   └── index.js
+├── server/
+│   ├── controllers/
+│   ├── models/
+│   ├── routes/
+│   ├── services/
+│   └── index.js
+├── prisma/
+├── config/
+├── docs/
+├── tests/
+└── [config files]
+            </code></pre>
+        </section>
+
+        <section id="frontend-guidelines" class="section">
+            <h2>Frontend Guidelines</h2>
+            <h3>Coding Standards</h3>
+            <ul>
+                <li><strong>File Naming:</strong> Use PascalCase for component files, camelCase for utility files</li>
+                <li><strong>Component Structure:</strong> One component per file, export as default</li>
+                <li><strong>Props:</strong> Use prop-types for type checking, destructure props in function parameters</li>
+                <li><strong>State:</strong> Use hooks for state management, extract complex logic to custom hooks</li>
+                <li><strong>CSS:</strong> Use CSS modules or styled-components for component-scoped styles</li>
+            </ul>
+            
+            <h3>Component Guidelines</h3>
+            <ul>
+                <li><strong>Single Responsibility:</strong> Each component should have a single responsibility</li>
+                <li><strong>Size Limit:</strong> Keep components under 250 lines, extract larger components into smaller ones</li>
+                <li><strong>Presentational vs Container:</strong> Separate presentational components from container components</li>
+                <li><strong>Reusability:</strong> Design components for reusability when appropriate</li>
+                <li><strong>Performance:</strong> Use React.memo, useCallback, and useMemo for performance optimization</li>
+            </ul>
+            
+            <h3>State Management</h3>
+            <ul>
+                <li><strong>Local State:</strong> Use useState for component-specific state</li>
+                <li><strong>Shared State:</strong> Use Context API for state shared between components</li>
+                <li><strong>Global State:</strong> Consider Redux or Zustand for application-wide state management</li>
+                <li><strong>Custom Hooks:</strong> Extract complex state logic into custom hooks</li>
+            </ul>
+            
+            <h3>Accessibility</h3>
+            <ul>
+                <li><strong>Semantic HTML:</strong> Use appropriate semantic HTML elements</li>
+                <li><strong>ARIA Attributes:</strong> Include ARIA attributes for complex interactive elements</li>
+                <li><strong>Keyboard Navigation:</strong> Ensure all interactive elements are keyboard accessible</li>
+                <li><strong>Color Contrast:</strong> Maintain sufficient color contrast for text readability</li>
+            </ul>
+        </section>
+
+        <section id="backend-structure" class="section">
+            <h2>Backend Structure</h2>
+            <h3>Database Schema</h3>
+            <p>The application uses Prisma ORM with a SQL database to manage user data, token information, transactions, and other application state.</p>
+            
+            <h4>Key Models</h4>
+            <ul>
+                <li><strong>User:</strong> Stores user information and preferences</li>
+                <li><strong>Token:</strong> Represents tokens tracked by the platform</li>
+                <li><strong>Wallet:</strong> Stores wallet information linked to users</li>
+                <li><strong>Transaction:</strong> Records token transactions</li>
+                <li><strong>Message:</strong> Stores communication between users</li>
+                <li><strong>Stake:</strong> Records staking information</li>
+                <li><strong>Vote:</strong> Stores governance voting records</li>
+                <li><strong>Proposal:</strong> Stores governance proposals</li>
+                <li><strong>Identity:</strong> Stores identity verification information</li>
+            </ul>
+            
+            <h3>API Structure</h3>
+            <p>The backend provides RESTful API endpoints for client-server communication.</p>
+            
+            <h4>Key Endpoints</h4>
+            <ul>
+                <li><strong>/api/auth:</strong> Authentication-related endpoints</li>
+                <li><strong>/api/users:</strong> User management endpoints</li>
+                <li><strong>/api/wallets:</strong> Wallet management endpoints</li>
+                <li><strong>/api/tokens:</strong> Token tracking endpoints</li>
+                <li><strong>/api/transactions:</strong> Transaction-related endpoints</li>
+                <li><strong>/api/messages:</strong> Messaging endpoints</li>
+                <li><strong>/api/staking:</strong> Staking management endpoints</li>
+                <li><strong>/api/governance:</strong> Governance and voting endpoints</li>
+            </ul>
+            
+            <h3>Storage</h3>
+            <p>The application uses various storage options for different types of data:</p>
+            <ul>
+                <li><strong>Database:</strong> Stores application state, user data, and transaction records</li>
+                <li><strong>File Storage:</strong> Stores user uploads and media files</li>
+                <li><strong>Cache:</strong> Temporarily stores frequently accessed data for performance</li>
+                <li><strong>Blockchain:</strong> Stores token information and transaction data on-chain</li>
+            </ul>
+        </section>
+
+        <section id="implementation-plan" class="section">
+            <h2>Implementation Plan (Step-by-Step Guide)</h2>
+            <h3>Phase 1: Foundation (Weeks 1-4)</h3>
+            <ol>
+                <li><strong>Analyze codebase and document dependencies</strong>
+                    <ul>
+                        <li>Map current codebase structure</li>
+                        <li>Identify components for refactoring</li>
+                        <li>Document key dependencies and versions</li>
+                    </ul>
+                </li>
+                <li><strong>Set up project structure and configuration</strong>
+                    <ul>
+                        <li>Create feature-based folder structure</li>
+                        <li>Set up linting and formatting rules</li>
+                        <li>Configure build process</li>
+                    </ul>
+                </li>
+                <li><strong>Refactor App.js</strong>
+                    <ul>
+                        <li>Split into smaller components</li>
+                        <li>Extract business logic into services</li>
+                        <li>Set up proper routing</li>
+                    </ul>
+                </li>
+                <li><strong>Migrate core wallet functionality</strong>
+                    <ul>
+                        <li>Extract wallet components to feature folders</li>
+                        <li>Create wallet service for business logic</li>
+                        <li>Implement wallet-related hooks</li>
+                    </ul>
+                </li>
+                <li><strong>Migrate token sniping functionality</strong>
+                    <ul>
+                        <li>Extract sniping components to feature folders</li>
+                        <li>Create sniping service for business logic</li>
+                        <li>Implement performance optimizations for sniping operations</li>
+                    </ul>
+                </li>
+            </ol>
+            
+            <h3>Phase 2: Core Improvements (Weeks 5-8)</h3>
+            <ol>
+                <li><strong>Implement state management solution</strong>
+                    <ul>
+                        <li>Set up Context API or Redux/Zustand</li>
+                        <li>Create state slices for different features</li>
+                        <li>Migrate component state to global state</li>
+                    </ul>
+                </li>
+                <li><strong>Standardize modal components</strong>
+                    <ul>
+                        <li>Create BaseModal component</li>
+                        <li>Refactor existing modals to use BaseModal</li>
+                        <li>Extract form logic from modals to custom hooks</li>
+                    </ul>
+                </li>
+                <li><strong>Enhance governance and messaging systems</strong>
+                    <ul>
+                        <li>Refactor governance components</li>
+                        <li>Improve messaging encryption logic</li>
+                        <li>Enhance identity verification system</li>
+                    </ul>
+                </li>
+                <li><strong>Implement token creation feature (optional)</strong>
+                    <ul>
+                        <li>Design token creation workflow</li>
+                        <li>Implement blockchain integration for token creation</li>
+                        <li>Develop token parameter configuration UI</li>
+                    </ul>
+                </li>
+            </ol>
+            
+            <h3>Phase 3: Performance & UX (Weeks 9-12)</h3>
+            <ol>
+                <li><strong>Optimize performance</strong>
+                    <ul>
+                        <li>Implement component memoization</li>
+                        <li>Add code splitting and lazy loading</li>
+                        <li>Optimize list rendering with virtualization</li>
+                    </ul>
+                </li>
+                <li><strong>Enhance user experience</strong>
+                    <ul>
+                        <li>Improve form validation</li>
+                        <li>Add toast notifications for feedback</li>
+                        <li>Enhance error handling throughout the application</li>
+                    </ul>
+                </li>
+                <li><strong>Implement responsive design</strong>
+                    <ul>
+                        <li>Create mobile-friendly layouts</li>
+                        <li>Implement responsive components</li>
+                        <li>Test across different devices</li>
+                    </ul>
+                </li>
+                <li><strong>Add accessibility features</strong>
+                    <ul>
+                        <li>Add ARIA attributes</li>
+                        <li>Implement keyboard navigation</li>
+                        <li>Test with screen readers</li>
+                    </ul>
+                </li>
+            </ol>
+            
+            <h3>Phase 4: Polish & Launch (Weeks 13-16)</h3>
+            <ol>
+                <li><strong>Implement testing</strong>
+                    <ul>
+                        <li>Add unit tests for components and services</li>
+                        <li>Implement integration tests</li>
+                        <li>Set up end-to-end testing</li>
+                    </ul>
+                </li>
+                <li><strong>Enhance security</strong>
+                    <ul>
+                        <li>Implement security best practices</li>
+                        <li>Add input validation and sanitization</li>
+                        <li>Conduct security audit</li>
+                    </ul>
+                </li>
+                <li><strong>Create documentation</strong>
+                    <ul>
+                        <li>Document component library</li>
+                        <li>Create development guidelines</li>
+                        <li>Update user documentation</li>
+                    </ul>
+                </li>
+                <li><strong>Prepare for deployment</strong>
+                    <ul>
+                        <li>Set up production environment</li>
+                        <li>Configure CI/CD pipeline</li>
+                        <li>Implement monitoring and logging</li>
+                        <li>Launch application</li>
+                    </ul>
+                </li>
+            </ol>
+        </section>
+
+        <footer>
+            <p>Tribify Comprehensive Documentation &copy; 2023</p>
+            <p>Last updated: February 25, 2023</p>
+        </footer>
+    </div>
+</body>
+</html> 

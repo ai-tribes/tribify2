@@ -3,37 +3,141 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #1a1a1a;
+  background-color: #121212;
   color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+body.light .landing-page {
+  background-color: #f5f7fa;
+  color: #333;
+}
+
+.landing-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  opacity: 0.1;
+  background: radial-gradient(circle at 50% 50%, #4a6da7 0%, transparent 70%);
+  animation: pulse 10s infinite alternate;
+}
+
+body.light .landing-background {
+  opacity: 0.2;
+  background: radial-gradient(circle at 50% 50%, #4a6da7 0%, transparent 70%);
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.1); }
 }
 
 .landing-content {
   text-align: center;
   padding: 2rem;
+  z-index: 1;
+  max-width: 800px;
+  background-color: rgba(0, 0, 0, 0.7);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 3rem;
+}
+
+body.light .landing-content {
+  background-color: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .landing-content h1 {
-  font-size: 3rem;
+  font-size: 3.5rem;
   margin-bottom: 1rem;
+  font-weight: 700;
+  color: #4a6da7;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+body.light .landing-content h1 {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .landing-content p {
   font-size: 1.2rem;
   margin-bottom: 2rem;
-  color: #888;
+  color: #aaa;
+  line-height: 1.6;
+}
+
+body.light .landing-content p {
+  color: #666;
 }
 
 .connect-button {
   padding: 1rem 2rem;
   font-size: 1.2rem;
-  background-color: #4CAF50;
+  background-color: #4a6da7;
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.connect-button:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: 0.5s;
 }
 
 .connect-button:hover {
-  background-color: #45a049;
+  background-color: #395b94;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.connect-button:hover:before {
+  left: 100%;
+}
+
+.connect-button:disabled {
+  background-color: #666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.security-note {
+  margin-top: 2rem;
+  font-size: 0.9rem;
+  color: #666;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 1rem;
+}
+
+body.light .security-note {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.theme-toggle-landing {
+  position: absolute;
+  top: 20px;
+  right: 20px;
 }

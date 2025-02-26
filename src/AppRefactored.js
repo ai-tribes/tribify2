@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import './App.css';
 import { BrowserRouter } from 'react-router-dom';
 import Router from './Router';
 import { TribifyProvider } from './context/TribifyContext';
 import { GovernanceProvider } from './context/GovernanceContext';
+import { AuthProvider } from './context/AuthContext';
 
 /**
  * Main App component for the Tribify platform
@@ -16,25 +17,25 @@ import { GovernanceProvider } from './context/GovernanceContext';
  * 
  * @returns {JSX.Element} The main App component
  */
-function App() {
-  // Initialize theme on app load
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('tribify_theme') || 'dark';
-    document.body.classList.add(savedTheme);
-  }, []);
+const App = () => {
+  // The main App component is now primarily responsible for
+  // setting up context providers and rendering the Router
   
   return (
     <BrowserRouter>
-      <TribifyProvider>
-        <GovernanceProvider>
-          {/* Additional context providers can be added here as needed */}
-          <div className="App">
-            <Router />
-          </div>
-        </GovernanceProvider>
-      </TribifyProvider>
+      <AuthProvider>
+        <TribifyProvider>
+          <GovernanceProvider>
+            {/* Additional context providers can be added here as needed */}
+            <div className="App">
+              {/* Status message would be handled by the AuthContext */}
+              <Router />
+            </div>
+          </GovernanceProvider>
+        </TribifyProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
-}
+};
 
 export default App; 

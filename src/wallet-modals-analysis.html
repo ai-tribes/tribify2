@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tribify WalletPage Modals Analysis</title>
+    <style>
+        :root {
+            --primary-color: #3a506b;
+            --secondary-color: #5bc0be;
+            --accent-color: #0b132b;
+            --background-color: #f8f9fa;
+            --code-bg: #f5f5f5;
+            --border-color: #dee2e6;
+            --text-color: #343a40;
+            --link-color: #0b6e4f;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --danger-color: #f44336;
+            --info-color: #2196f3;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            padding: 0;
+            margin: 0;
+        }
+        
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 300px;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 2rem 1rem;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .content {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        h2 {
+            color: var(--primary-color);
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.3rem;
+        }
+        
+        h3 {
+            color: var(--primary-color);
+            margin-top: 1.8rem;
+            margin-bottom: 0.8rem;
+            font-size: 1.4rem;
+        }
+        
+        h4 {
+            color: var(--secondary-color);
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+        
+        p {
+            margin-bottom: 1rem;
+        }
+        
+        ul, ol {
+            margin-bottom: 1rem;
+            padding-left: 2rem;
+        }
+        
+        li {
+            margin-bottom: 0.5rem;
+        }
+        
+        pre {
+            background-color: var(--code-bg);
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--code-bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        
+        pre code {
+            padding: 0;
+            background-color: transparent;
+        }
+        
+        a {
+            color: var(--link-color);
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .nav-link {
+            display: block;
+            padding: 0.5rem 0;
+            color: white;
+            opacity: 0.8;
+            border-left: 3px solid transparent;
+            padding-left: 0.5rem;
+        }
+        
+        .nav-link:hover {
+            opacity: 1;
+            border-left: 3px solid var(--secondary-color);
+            text-decoration: none;
+        }
+        
+        .nav-section {
+            font-weight: bold;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            color: var(--secondary-color);
+        }
+        
+        .nav-subsection {
+            font-weight: normal;
+            padding-left: 1rem;
+            font-size: 0.9em;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .logo span {
+            color: var(--secondary-color);
+        }
+        
+        .divider {
+            height: 1px;
+            background-color: var(--border-color);
+            margin: 2rem 0;
+        }
+        
+        .footer {
+            font-size: 0.8rem;
+            color: var(--text-color);
+            border-top: 1px solid var(--border-color);
+            margin-top: 3rem;
+            padding-top: 1rem;
+            text-align: center;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card-header {
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-header h3 {
+            margin: 0;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+            text-transform: uppercase;
+        }
+        
+        .badge-high {
+            background-color: var(--danger-color);
+        }
+        
+        .badge-medium {
+            background-color: var(--warning-color);
+        }
+        
+        .badge-low {
+            background-color: var(--success-color);
+        }
+        
+        .modal-card {
+            border-left: 5px solid var(--secondary-color);
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 1.5rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            background-color: var(--code-bg);
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+        }
+        
+        .features-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .features-list li {
+            padding: 0.5rem 0;
+            padding-left: 2rem;
+            position: relative;
+        }
+        
+        .features-list li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--secondary-color);
+            font-weight: bold;
+        }
+        
+        .value-points {
+            background-color: rgba(91, 192, 190, 0.1);
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+        
+        .value-points h4 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+        
+        .flow-diagram {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .modal-screenshot {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 1rem auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+        
+        .implementation-notes {
+            background-color: rgba(33, 150, 243, 0.1);
+            border-left: 4px solid var(--info-color);
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 4px;
+        }
+        
+        .implementation-notes h4 {
+            color: var(--info-color);
+            margin-top: 0;
+        }
+        
+        @media (max-width: 992px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                padding: 1rem;
+            }
+            
+            .content {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo">Tribify <span>Modals</span></div>
+            <nav>
+                <a href="#overview" class="nav-link">Overview</a>
+                
+                <div class="nav-section">Wallet Modals</div>
+                <a href="#configure-buy-modal" class="nav-link nav-subsection">Configure Buy Modal</a>
+                <a href="#fund-subwallets-modal" class="nav-link nav-subsection">Fund Subwallets Modal</a>
+                <a href="#token-distributor-modal" class="nav-link nav-subsection">Token Distributor Modal</a>
+                <a href="#conversion-modal" class="nav-link nav-subsection">Conversion Modal</a>
+                <a href="#staking-lock-modal" class="nav-link nav-subsection">Staking Lock Modal</a>
+                <a href="#unstake-confirmation-modal" class="nav-link nav-subsection">Unstake Confirmation Modal</a>
+                <a href="#message-modal" class="nav-link nav-subsection">Message Modal</a>
+                
+                <div class="nav-section">Governance Modals</div>
+                <a href="#proposal-creation-modal" class="nav-link nav-subsection">Proposal Creation Modal</a>
+                <a href="#vote-confirmation-modal" class="nav-link nav-subsection">Vote Confirmation Modal</a>
+                
+                <div class="nav-section">Sign and Verification</div>
+                <a href="#id-verification-modal" class="nav-link nav-subsection">ID Verification Modal</a>
+                
+                <div class="nav-section">Links</div>
+                <a href="implementation-blueprint.html" class="nav-link nav-subsection">Implementation Blueprint</a>
+                <a href="codebase-analysis.html" class="nav-link nav-subsection">Codebase Analysis</a>
+            </nav>
+        </div>
+        
+        <div class="content">
+            <h1 id="overview">Tribify WalletPage Modals Analysis</h1>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Modal Components in Tribify</h3>
+                </div>
+                <p>The Tribify application relies heavily on modals to provide focused user interfaces for specific tasks without requiring navigation away from the main pages. This document provides a detailed analysis of each modal component, explaining its purpose, functionality, and value to the user.</p>
+                <p>Understanding these modals is critical for the refactoring process to ensure that all core functionality is maintained while improving code structure and performance.</p>
+            </div>
+            
+            <div class="flow-diagram">
+                <h3>Wallet Page Modal Flow</h3>
+                <img src="https://placeholder.com/800x400" alt="Modal Flow Diagram" class="modal-screenshot">
+                <p>The diagram above illustrates how different modals interact within the Tribify wallet ecosystem, showing the user journey through various actions.</p>
+            </div>
+            
+            <h2 id="configure-buy-modal">Configure Buy Modal</h2>
+            
+            <div class="modal-card">
+                <div class="modal-header">
+                    ConfigureBuyModal.js (531 lines)
+                </div>
+                <div class="modal-body">
+                    <h3>Purpose</h3>
+                    <p>The Configure Buy Modal is a central component for setting up automated token buying sequences. It allows users to configure and execute token purchases with precise parameters for timing, amount, and transaction settings.</p>
+                    
+                    <h3>Key Features</h3>
+                    <ul class="features-list">
+                        <li><strong>Token Selection</strong>: Allows users to select tokens for purchase, including the native $TRIBIFY token and custom tokens via contract address input.</li>
+                        <li><strong>Wallet and Amount Settings</strong>: Configure which wallets to use for purchases and how much to spend per wallet.</li>
+                        <li><strong>Time Settings</strong>: Set exact timing parameters for when to execute purchase transactions.</li>
+                        <li><strong>Transaction Parameters</strong>: Configure slippage tolerance, maximum price impact, and priority fees to optimize transaction success.</li>
+                        <li><strong>Buy Sequence Preview</strong>: Visual representation of the planned purchase sequence before execution.</li>
+                    </ul>
+                    
+                    <div class="value-points">
+                        <h4>Value to Users</h4>
+                        <ul>
+                            <li><strong>Precision</strong>: Enables precise timing for token purchases, crucial for token sniping operations when timing is critical.</li>
+                            <li><strong>Risk Management</strong>: Slippage and price impact settings help users manage risk when purchasing volatile tokens.</li>
+                            <li><strong>Automation</strong>: Reduces manual intervention by automating complex purchase sequences across multiple wallets.</li>
+                            <li><strong>Optimization</strong>: Fine-tuning of gas fees and priority ensures transactions are processed efficiently.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="implementation-notes">
+                        <h4>Implementation Considerations</h4>
+                        <ul>
+                            <li>Separate token selection, transaction configuration, and timing configuration into distinct components.</li>
+                            <li>Extract form validation logic to custom hooks.</li>
+                            <li>Consider implementing step-by-step wizard interface for improved user experience.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <span>User Flow: Wallet Page → Configure Buy → Token Purchase</span>
+                    <span>Complexity: High</span>
+                </div>
+            </div>
+            
+            <h2 id="fund-subwallets-modal">Fund Subwallets Modal</h2>
+            
+            <div class="modal-card">
+                <div class="modal-header">
+                    FundSubwallets.js (278 lines)
+                </div>
+                <div class="modal-body">
+                    <h3>Purpose</h3>
+                    <p>The Fund Subwallets Modal allows users to distribute funds (SOL) from a main wallet to multiple subwallets in a controlled and efficient manner. This is crucial for preparing wallets for token sniping and distribution operations.</p>
+                    
+                    <h3>Key Features</h3>
+                    <ul class="features-list">
+                        <li><strong>Wallet Selection</strong>: Choose which main wallet to use as the funding source.</li>
+                        <li><strong>Subwallet Management</strong>: Select which subwallets should receive funds.</li>
+                        <li><strong>Distribution Strategy</strong>: Configure how funds should be distributed - equally, proportionally, or with custom amounts.</li>
+                        <li><strong>Fee Optimization</strong>: Options to optimize transaction fees when funding multiple wallets.</li>
+                        <li><strong>Balance Preview</strong>: Visual representation of how the distribution will affect wallet balances.</li>
+                    </ul>
+                    
+                    <div class="value-points">
+                        <h4>Value to Users</h4>
+                        <ul>
+                            <li><strong>Efficiency</strong>: Rapidly fund multiple wallets with a single interface, saving time and reducing the risk of errors.</li>
+                            <li><strong>Transaction Management</strong>: Optimizes the transaction process to reduce overall fees when funding multiple wallets.</li>
+                            <li><strong>Preparation</strong>: Ensures all wallets have adequate funds for subsequent token purchases or other operations.</li>
+                            <li><strong>Control</strong>: Provides granular control over how funds are distributed across the wallet ecosystem.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="implementation-notes">
+                        <h4>Implementation Considerations</h4>
+                        <ul>
+                            <li>Extract wallet selection logic to a reusable component.</li>
+                            <li>Create dedicated services for transaction fee estimation and optimization.</li>
+                            <li>Implement real-time balance checking before transactions.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <span>User Flow: Wallet Page → Fund Subwallets → Transaction Confirmation</span>
+                    <span>Complexity: Medium</span>
+                </div>
+            </div>
+            
+            <h2 id="token-distributor-modal">Token Distributor Modal</h2>
+            
+            <div class="modal-card">
+                <div class="modal-header">
+                    TokenDistributor.js (354 lines)
+                </div>
+                <div class="modal-body">
+                    <h3>Purpose</h3>
+                    <p>The Token Distributor Modal facilitates the distribution of tokens from one wallet to multiple recipient wallets. This is essential for token management across multiple wallets and for implementing shareholder distribution strategies.</p>
+                    
+                    <h3>Key Features</h3>
+                    <ul class="features-list">
+                        <li><strong>Token Selection</strong>: Choose which token to distribute from available tokens in the source wallet.</li>
+                        <li><strong>Recipient Management</strong>: Add, remove, and organize recipient wallets.</li>
+                        <li><strong>Distribution Models</strong>: Select from various distribution models including equal distribution, percentage-based, or custom amounts.</li>
+                        <li><strong>Batch Processing</strong>: Options for processing distributions as a single transaction or as a batch of smaller transactions.</li>
+                        <li><strong>Distribution Scheduling</strong>: Set up recurring or scheduled distributions.</li>
+                    </ul>
+                    
+                    <div class="value-points">
+                        <h4>Value to Users</h4>
+                        <ul>
+                            <li><strong>Dividend Distribution</strong>: Efficiently distribute dividends to token shareholders based on their holdings.</li>
+                            <li><strong>Portfolio Management</strong>: Manage token holdings across multiple wallets for diversification and risk management.</li>
+                            <li><strong>Team Payments</strong>: Distribute tokens to team members, partners, or service providers in a controlled manner.</li>
+                            <li><strong>Automation</strong>: Reduce manual effort in managing complex token distribution tasks.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="implementation-notes">
+                        <h4>Implementation Considerations</h4>
+                        <ul>
+                            <li>Create dedicated distribution strategy components for different distribution models.</li>
+                            <li>Implement robust error handling for failed transactions within a batch.</li>
+                            <li>Consider gas optimization strategies for large distribution operations.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <span>User Flow: Wallet Page → Token Distributor → Distribution Confirmation</span>
+                    <span>Complexity: High</span>
+                </div>
+            </div>
+            
+            <h2 id="conversion-modal">Conversion Modal</h2>
+            
+            <div class="modal-card">
+                <div class="modal-header">
+                    ConversionModal.js (245 lines)
+                </div>
+                <div class="modal-body">
+                    <h3>Purpose</h3>
+                    <p>The Conversion Modal allows users to convert between different tokens, including $TRIBIFY and other tokens in their wallet. It provides a streamlined interface for token swaps with built-in price discovery and slippage protection.</p>
+                    
+                    <h3>Key Features</h3>
+                    <ul class="features-list">
+                        <li><strong>Token Pair Selection</strong>: Select source and destination tokens for conversion.</li>
+                        <li><strong>Price Discovery</strong>: Automatically fetch and display current exchange rates.</li>
+                        <li><strong>Conversion Amount</strong>: Specify amount to convert with automatic calculation of the resulting amount.</li>
+                        <li><strong>Slippage Protection</strong>: Set slippage tolerance to protect against price movement during transaction confirmation.</li>
+                        <li><strong>Price Impact Warning</strong>: Alert users when their transaction might significantly impact token price.</li>
+                    </ul>
+                    
+                    <div class="value-points">
+                        <h4>Value to Users</h4>
+                        <ul>
+                            <li><strong>Liquidity Management</strong>: Easily convert between tokens to manage portfolio liquidity.</li>
+                            <li><strong>Price Protection</strong>: Slippage settings protect users from unfavorable price movements during transaction processing.</li>
+                            <li><strong>Convenience</strong>: Perform conversions without leaving the Tribify application.</li>
+                            <li><strong>Transparency</strong>: Clear display of rates, fees, and expected outcomes before confirming transactions.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="implementation-notes">
+                        <h4>Implementation Considerations</h4>
+                        <ul>
+                            <li>Extract price fetching logic to a dedicated service.</li>
+                            <li>Implement caching for frequently accessed price data.</li>
+                            <li>Create reusable components for token selection and amount input.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <span>User Flow: Wallet Page → Conversion Modal → Transaction Confirmation</span>
+                    <span>Complexity: Medium</span>
+                </div>
+            </div>
+            
+            <h2 id="staking-lock-modal">Staking Lock Modal</h2>
+            
+            <div class="modal-card">
+                <div class="modal-header">
+                    StakingLockModal.js (198 lines)
+                </div>
+                <div class="modal-body">
+                    <h3>Purpose</h3>
+                    <p>The Staking Lock Modal allows users to stake their $TRIBIFY tokens for a specified period to earn rewards and participate in governance. This modal handles the configuration of staking parameters and commitment periods.</p>
+                    
+                    <h3>Key Features</h3>
+                    <ul class="features-list">
+                        <li><strong>Stake Amount</strong>: Select how many tokens to stake.</li>
+                        <li><strong>Lock Period</strong>: Choose how long to lock tokens, with longer periods typically offering higher rewards.</li>
+                        <li><strong>Reward Preview</strong>: View projected rewards based on the selected amount and lock period.</li>
+                        <li><strong>Voting Power</strong>: Display how staking will affect the user's voting power in governance.</li>
+                        <li><strong>Risk Disclosure</strong>: Clear explanation of the implications of locking tokens, including early withdrawal penalties.</li>
+                    </ul>
+                    
+                    <div class="value-points">
+                        <h4>Value to Users</h4>
+                        <ul>
+                            <li><strong>Passive Income</strong>: Earn rewards on held tokens without active trading.</li>
+                            <li><strong>Governance Participation</strong>: Increase voting power and influence in platform governance decisions.</li>
+                            <li><strong>Long-term Commitment</strong>: Demonstrate commitment to the platform and potentially benefit from token value appreciation.</li>
+                            <li><strong>Risk Management</strong>: Clear understanding of the trade-offs between different staking periods and reward rates.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="implementation-notes">
+                        <h4>Implementation Considerations</h4>
+                        <ul>
+                            <li>Create dedicated components for staking period selection with visual feedback.</li>
+                            <li>Implement real-time reward calculation based on current staking parameters.</li>
+                            <li>Ensure clear integration with the governance voting system.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <span>User Flow: Wallet Page → Staking Lock → Stake Confirmation</span>
+                    <span>Complexity: Medium</span>
+                </div>
+            </div>
+            
+            <h2 id="unstake-confirmation-modal">Unstake Confirmation Modal</h2>
+            
+            <div class="modal-card">
+                <div class="modal-header">
+                    UnstakeConfirmationModal.js (127 lines)
+                </div>
+                <div class="modal-body">
+                    <h3>Purpose</h3>
+                    <p>The Unstake Confirmation Modal allows users to withdraw their staked tokens, providing clear information about potential penalties for early withdrawal and confirming their decision to unstake.</p>
+                    
+                    <h3>Key Features</h3>
+                    <ul class="features-list">
+                        <li><strong>Stake Details</strong>: Display information about the current stake, including amount, lock period, and elapsed time.</li>
+                        <li><strong>Penalty Calculation</strong>: Clearly show any penalties for early withdrawal.</li>
+                        <li><strong>Reward Summary</strong>: Display accrued rewards and whether they will be forfeited or paid out.</li>
+                        <li><strong>Confirmation Process</strong>: Multi-step confirmation to prevent accidental unstaking.</li>
+                        <li><strong>Governance Impact</strong>: Information about how unstaking will affect voting power.</li>
+                    </ul>
+                    
+                    <div class="value-points">
+                        <h4>Value to Users</h4>
+                        <ul>
+                            <li><strong>Liquidity Access</strong>: Regain access to tokens when needed, despite lock periods.</li>
+                            <li><strong>Informed Decisions</strong>: Clear understanding of the financial implications of early unstaking.</li>
+                            <li><strong>Governance Awareness</strong>: Understanding of how unstaking affects participation in platform governance.</li>
+                            <li><strong>Penalty Avoidance</strong>: Option to continue staking if penalties are deemed too high.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="implementation-notes">
+                        <h4>Implementation Considerations</h4>
+                        <ul>
+                            <li>Implement clear visual feedback for penalty calculations.</li>
+                            <li>Create reusable confirmation components with consistent styling.</li>
+                            <li>Ensure proper integration with staking contract interactions.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <span>User Flow: Wallet Page → Staking View → Unstake Confirmation</span>
+                    <span>Complexity: Low</span>
+                </div>
+            </div>
+            
+            <h2 id="message-modal">Message Modal</h2>
+            
+            <div class="modal-card">
+                <div class="modal-header">
+                    MessageModal.js (89 lines)
+                </div>
+                <div class="modal-body">
+                    <h3>Purpose</h3>
+                    <p>The Message Modal facilitates secure communication between shareholders using the platform's encrypted messaging system. It allows users to compose, encrypt, and send messages to other shareholders in a privacy-preserving manner.</p>
+                    
+                    <h3>Key Features</h3>
+                    <ul class="features-list">
+                        <li><strong>Recipient Selection</strong>: Choose individual shareholders or broadcast to all shareholders.</li>
+                        <li><strong>Public Key Encryption</strong>: Messages are encrypted using the recipient's public address.</li>
+                        <li><strong>Message Composition</strong>: Rich text editor for creating formatted messages.</li>
+                        <li><strong>Attachment Support</strong>: Option to attach files with encryption.</li>
+                        <li><strong>Proposal Integration</strong>: Ability to include governance proposals in messages.</li>
+                    </ul>
+                    
+                    <div class="value-points">
+                        <h4>Value to Users</h4>
+                        <ul>
+                            <li><strong>Secure Communication</strong>: Privacy-preserving messaging between shareholders without third-party access.</li>
+                            <li><strong>Governance Coordination</strong>: Facilitate discussions about governance proposals and voting strategies.</li>
+                            <li><strong>Community Building</strong>: Foster a sense of community among token holders and shareholders.</li>
+                            <li><strong>Decentralized Communication</strong>: Communication that doesn't rely on external platforms or services.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="implementation-notes">
+                        <h4>Implementation Considerations</h4>
+                        <ul>
+                            <li>Extract encryption logic to a dedicated service.</li>
+                            <li>Create reusable components for recipient selection.</li>
+                            <li>Implement robust error handling for encryption/decryption failures.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <span>User Flow: Wallet Page or Messages Page → Message Modal → Send Confirmation</span>
+                    <span>Complexity: Medium</span>
+                </div>
+            </div>
+            
+            <h2 id="proposal-creation-modal">Proposal Creation Modal</h2>
+            
+            <div class="modal-card">
+                <div class="modal-header">
+                    ProposalCreationModal.js (estimated 180 lines)
+                </div>
+                <div class="modal-body">
+                    <h3>Purpose</h3>
+                    <p>The Proposal Creation Modal allows shareholders to create governance proposals for voting. It provides structured input for proposal details, voting parameters, and stake requirements.</p>
+                    
+                    <h3>Key Features</h3>
+                    <ul class="features-list">
+                        <li><strong>Proposal Title and Description</strong>: Detailed information about the proposal.</li>
+                        <li><strong>Voting Parameters</strong>: Set voting duration, quorum requirements, and vote counting method.</li>
+                        <li><strong>Stake Requirements</strong>: Configure staking requirements for proposal creation and voting.</li>
+                        <li><strong>Outcome Actions</strong>: Define actions to be taken based on voting results.</li>
+                        <li><strong>Discussion Thread</strong>: Option to create a linked discussion thread for the proposal.</li>
+                    </ul>
+                    
+                    <div class="value-points">
+                        <h4>Value to Users</h4>
+                        <ul>
+                            <li><strong>Governance Participation</strong>: Direct involvement in platform governance and decision-making.</li>
+                            <li><strong>Transparent Process</strong>: Structured approach to proposal creation with clear parameters.</li>
+                            <li><strong>Stake-Based Voting</strong>: System that respects token ownership levels in governance influence.</li>
+                            <li><strong>Community Consensus</strong>: Mechanism for reaching community consensus on important decisions.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="implementation-notes">
+                        <h4>Implementation Considerations</h4>
+                        <ul>
+                            <li>Implement multi-step wizard interface for complex proposal creation.</li>
+                            <li>Create reusable components for voting parameter configuration.</li>
+                            <li>Ensure proper integration with the governance system.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <span>User Flow: Vote Page → Proposal Creation → Submission Confirmation</span>
+                    <span>Complexity: High</span>
+                </div>
+            </div>
+            
+            <h2 id="vote-confirmation-modal">Vote Confirmation Modal</h2>
+            
+            <div class="modal-card">
+                <div class="modal-header">
+                    VoteConfirmationModal.js (estimated 140 lines)
+                </div>
+                <div class="modal-body">
+                    <h3>Purpose</h3>
+                    <p>The Vote Confirmation Modal facilitates secure voting on governance proposals, including stake-based voting where users agree to lose their stake if they vote against the majority.</p>
+                    
+                    <h3>Key Features</h3>
+                    <ul class="features-list">
+                        <li><strong>Proposal Summary</strong>: Display key information about the proposal being voted on.</li>
+                        <li><strong>Voting Options</strong>: Present available voting choices (Yes, No, Abstain).</li>
+                        <li><strong>Stake Configuration</strong>: Allow users to specify how much to stake on their vote.</li>
+                        <li><strong>Risk Disclosure</strong>: Clear explanation of stake forfeiture conditions.</li>
+                        <li><strong>Voting Power Display</strong>: Show the user's voting power based on token holdings and stake.</li>
+                    </ul>
+                    
+                    <div class="value-points">
+                        <h4>Value to Users</h4>
+                        <ul>
+                            <li><strong>Governance Voice</strong>: Mechanism to express opinions on platform direction and decisions.</li>
+                            <li><strong>Skin in the Game</strong>: Stake-based voting ensures participants are committed to their voting choices.</li>
+                            <li><strong>Proportional Influence</strong>: Voting power proportional to shareholding respects investment levels.</li>
+                            <li><strong>Transparent Process</strong>: Clear understanding of voting implications before confirming votes.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="implementation-notes">
+                        <h4>Implementation Considerations</h4>
+                        <ul>
+                            <li>Create visual components to represent voting power and stake amounts.</li>
+                            <li>Implement clear risk warnings for stake-based voting.</li>
+                            <li>Ensure secure vote recording and tamper-resistant storage.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <span>User Flow: Vote Page → Proposal Details → Vote Confirmation</span>
+                    <span>Complexity: Medium</span>
+                </div>
+            </div>
+            
+            <h2 id="id-verification-modal">ID Verification Modal</h2>
+            
+            <div class="modal-card">
+                <div class="modal-header">
+                    IDVerificationModal.js (estimated 220 lines)
+                </div>
+                <div class="modal-body">
+                    <h3>Purpose</h3>
+                    <p>The ID Verification Modal allows users to verify their identity using encrypted images of their passport or ID. This provides an additional layer of security and accountability while preserving privacy.</p>
+                    
+                    <h3>Key Features</h3>
+                    <ul class="features-list">
+                        <li><strong>Document Upload</strong>: Interface for uploading passport or ID images.</li>
+                        <li><strong>Hashed Encryption</strong>: Images are hashed and encrypted for privacy preservation.</li>
+                        <li><strong>Verification Status</strong>: Display current verification status and history.</li>
+                        <li><strong>Privacy Controls</strong>: Options for controlling what verification information is shared.</li>
+                        <li><strong>Integration with Sign Page</strong>: Connects with the Sign page for document signing with verified identity.</li>
+                    </ul>
+                    
+                    <div class="value-points">
+                        <h4>Value to Users</h4>
+                        <ul>
+                            <li><strong>Identity Verification</strong>: Provide proof of identity while maintaining privacy.</li>
+                            <li><strong>Enhanced Security</strong>: Add security to high-value transactions or governance actions.</li>
+                            <li><strong>Compliance</strong>: Meet regulatory requirements in certain jurisdictions while preserving blockchain ethos.</li>
+                            <li><strong>Trust Building</strong>: Foster trust among community members for important interactions.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="implementation-notes">
+                        <h4>Implementation Considerations</h4>
+                        <ul>
+                            <li>Implement secure document handling with client-side encryption.</li>
+                            <li>Create clear status indicators for verification progress.</li>
+                            <li>Ensure proper integration with the Sign page functionality.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <span>User Flow: Sign Page → ID Verification → Confirmation</span>
+                    <span>Complexity: High</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Modal Architecture Recommendations</h3>
+                </div>
+                <p>Based on the analysis of these modals, we recommend the following architectural improvements:</p>
+                <ol>
+                    <li><strong>Modal Base Component</strong>: Develop a consistent BaseModal component that all specific modals extend, ensuring consistent behavior, styling, and accessibility.</li>
+                    <li><strong>Form Abstraction</strong>: Extract common form patterns into reusable components and hooks to reduce duplication across modals.</li>
+                    <li><strong>State Management</strong>: Move modal state management to dedicated contexts or Zustand stores to improve maintainability.</li>
+                    <li><strong>Service Layer</strong>: Extract business logic from modals into service functions that can be tested independently.</li>
+                    <li><strong>Modal Flow Management</strong>: Implement a centralized modal manager to handle modal sequences and transitions.</li>
+                </ol>
+                <p>These improvements will help maintain the critical functionality of each modal while significantly improving code quality and user experience.</p>
+            </div>
+            
+            <div class="footer">
+                <p>Tribify WalletPage Modals Analysis | Version 1.0</p>
+                <p>Last Updated: May 2023</p>
+                <p><a href="implementation-blueprint.html">Return to Implementation Blueprint</a> | <a href="codebase-analysis.html">View Codebase Analysis</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

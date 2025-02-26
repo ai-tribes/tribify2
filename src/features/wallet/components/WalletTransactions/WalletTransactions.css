@@ -1,0 +1,125 @@
+/* WalletTransactions component styles */
+.wallet-transactions {
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.dark-mode .wallet-transactions {
+  background-color: var(--card-bg-dark);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.wallet-transactions h2 {
+  font-size: 1.4rem;
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+.transactions-table {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 130px 100px 100px 80px 100px;
+  gap: 10px;
+}
+
+.transaction-header {
+  font-weight: bold;
+  color: var(--text-secondary);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.transaction-row {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.transaction-row:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.dark-mode .transaction-row:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.transaction-row:last-child {
+  border-bottom: none;
+}
+
+.transaction-row .tx-amount {
+  font-weight: 600;
+}
+
+.transaction-row .tx-amount.send {
+  color: var(--error);
+}
+
+.transaction-row .tx-amount.receive {
+  color: var(--success);
+}
+
+.transaction-row .tx-status {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.transaction-row .tx-status.confirmed {
+  background-color: rgba(0, 200, 83, 0.15);
+  color: var(--success);
+}
+
+.transaction-row .tx-status.pending {
+  background-color: rgba(255, 171, 0, 0.15);
+  color: var(--warning);
+}
+
+.transaction-row .tx-status.failed {
+  background-color: rgba(255, 0, 0, 0.15);
+  color: var(--error);
+}
+
+.transactions-loading,
+.no-transactions {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .transactions-table {
+    grid-template-columns: 100px minmax(60px, 1fr) minmax(60px, 1fr) 70px;
+  }
+  
+  .transaction-header:nth-child(5),
+  .transaction-row div:nth-child(5) {
+    display: none;
+  }
+}
+
+@media (max-width: 576px) {
+  .transactions-table {
+    grid-template-columns: 90px minmax(50px, 1fr) 70px;
+    font-size: 0.9rem;
+  }
+  
+  .transaction-header:nth-child(4),
+  .transaction-row div:nth-child(4),
+  .transaction-header:nth-child(5),
+  .transaction-row div:nth-child(5) {
+    display: none;
+  }
+  
+  .wallet-transactions {
+    padding: 16px;
+  }
+} 
