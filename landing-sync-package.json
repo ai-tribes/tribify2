@@ -1,0 +1,30 @@
+{
+  "name": "tribify-landing-sync",
+  "version": "1.0.0",
+  "description": "Tool to keep TRIBIFY.AI landing page in sync with actual features",
+  "main": "sync-landing-page.js",
+  "scripts": {
+    "sync": "node sync-landing-page.js",
+    "validate": "node sync-landing-page.js validate",
+    "discover": "node sync-landing-page.js discover",
+    "check-links": "node sync-landing-page.js nav",
+    "check-branding": "node sync-landing-page.js branding",
+    "check-all": "node sync-landing-page.js all",
+    "help": "node sync-landing-page.js help",
+    "install-hooks": "node install-git-hooks.js"
+  },
+  "keywords": [
+    "tribify",
+    "landing-page",
+    "sync",
+    "validation"
+  ],
+  "author": "TRIBIFY.AI Team",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "chalk": "^4.1.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+} 

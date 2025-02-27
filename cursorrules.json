@@ -1,0 +1,295 @@
+{
+  "version": "1.0",
+  "name": "TRIBIFY.AI Landing Page Sync",
+  "description": "Rules for maintaining accuracy of TRIBIFY.AI landing page content with actual implementation",
+  "rules": [
+    {
+      "name": "feature-implementation-validation",
+      "description": "Validates that features advertised on the landing page are implemented in the codebase",
+      "pattern": {
+        "landing-features": [
+          {
+            "section": "AI Tools",
+            "features": [
+              {
+                "name": "AI Sniper",
+                "implementation": [
+                  "src/features/sniper",
+                  "src/components/SniperView.js"
+                ]
+              },
+              {
+                "name": "Smart Bundler",
+                "implementation": [
+                  "src/features/bundler",
+                  "src/components/BundlerView.js"
+                ]
+              },
+              {
+                "name": "Auto-Distribute",
+                "implementation": [
+                  "src/features/distribute",
+                  "src/components/DistributeView.js"
+                ]
+              },
+              {
+                "name": "AI Recovery",
+                "implementation": [
+                  "src/features/recovery",
+                  "src/components/RecoveryView.js"
+                ]
+              }
+            ]
+          },
+          {
+            "section": "Business Features",
+            "features": [
+              {
+                "name": "Share Tokenization",
+                "implementation": [
+                  "src/features/tokenization",
+                  "src/components/TokenizationView.js"
+                ]
+              },
+              {
+                "name": "Secure Shareholder Communication",
+                "implementation": [
+                  "src/features/communication",
+                  "src/components/CommunicationView.js"
+                ]
+              },
+              {
+                "name": "Equity Management Dashboard",
+                "implementation": [
+                  "src/features/equity",
+                  "src/components/EquityDashboard.js"
+                ]
+              },
+              {
+                "name": "Governance Tools",
+                "implementation": [
+                  "src/features/governance",
+                  "src/components/GovernanceView.js"
+                ]
+              },
+              {
+                "name": "Airdrop Management",
+                "implementation": [
+                  "src/features/airdrop",
+                  "src/components/AirdropView.js"
+                ]
+              },
+              {
+                "name": "Dividend Distribution",
+                "implementation": [
+                  "src/features/dividends",
+                  "src/components/DividendView.js",
+                  "src/features/governance/components/RevenueDistribution.js"
+                ]
+              }
+            ]
+          },
+          {
+            "section": "Staking",
+            "features": [
+              {
+                "name": "Flexible Lock Periods",
+                "implementation": [
+                  "src/features/staking/lock-periods",
+                  "src/components/StakingLockView.js"
+                ]
+              },
+              {
+                "name": "Governance Weight Multipliers",
+                "implementation": [
+                  "src/features/staking/governance",
+                  "src/components/StakingGovernance.js"
+                ]
+              },
+              {
+                "name": "Auto-Compounding",
+                "implementation": [
+                  "src/features/staking/compounding",
+                  "src/components/StakingCompound.js"
+                ]
+              },
+              {
+                "name": "Analytics Dashboard",
+                "implementation": [
+                  "src/features/staking/analytics",
+                  "src/components/StakingAnalytics.js"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "fix-type": "notification",
+      "severity": "warning"
+    },
+    {
+      "name": "feature-discovery",
+      "description": "Scans codebase for potentially new features that should be added to the landing page",
+      "pattern": {
+        "feature-directories": [
+          "src/features",
+          "src/components"
+        ],
+        "feature-file-patterns": [
+          "*View.js",
+          "*Page.js",
+          "features/*/index.js"
+        ]
+      },
+      "fix-type": "suggestion",
+      "severity": "info"
+    },
+    {
+      "name": "branding-consistency",
+      "description": "Ensures brand name is consistently displayed as TRIBIFY.AI throughout the landing page",
+      "pattern": {
+        "consistent-branding": {
+          "correct-forms": ["TRIBIFY.AI"],
+          "incorrect-forms": ["Tribify", "TRIBIFY", "tribify"]
+        },
+        "color-scheme": {
+          "primary": "#00FF41",
+          "secondary": "#1E3A8A",
+          "background": "#0F172A"
+        }
+      },
+      "fix-type": "auto-fix",
+      "severity": "error"
+    },
+    {
+      "name": "feature-description-accuracy",
+      "description": "Validates that feature descriptions on the landing page align with actual implementation",
+      "pattern": {
+        "feature-descriptions": {
+          "AI Sniper": [
+            "src/features/sniper/README.md",
+            "src/components/SniperView.js"
+          ],
+          "Smart Bundler": [
+            "src/features/bundler/README.md",
+            "src/components/BundlerView.js"
+          ],
+          "Auto-Distribute": [
+            "src/features/distribute/README.md",
+            "src/components/DistributeView.js"
+          ],
+          "AI Recovery": [
+            "src/features/recovery/README.md",
+            "src/components/RecoveryView.js"
+          ],
+          "Share Tokenization": [
+            "src/features/tokenization/README.md",
+            "src/components/TokenizationView.js"
+          ],
+          "Secure Shareholder Communication": [
+            "src/features/communication/README.md",
+            "src/components/CommunicationView.js"
+          ],
+          "Airdrop Management": [
+            "src/features/airdrop/README.md",
+            "src/components/AirdropView.js"
+          ],
+          "Dividend Distribution": [
+            "src/features/dividends/README.md",
+            "src/components/DividendView.js",
+            "src/features/governance/components/RevenueDistribution.js"
+          ]
+        }
+      },
+      "fix-type": "suggestion",
+      "severity": "warning"
+    },
+    {
+      "name": "landing-page-responsiveness",
+      "description": "Ensures the landing page remains responsive after changes",
+      "pattern": {
+        "responsive-checks": [
+          {
+            "viewport": "mobile",
+            "width": 375,
+            "height": 667
+          },
+          {
+            "viewport": "tablet",
+            "width": 768,
+            "height": 1024
+          },
+          {
+            "viewport": "desktop",
+            "width": 1440,
+            "height": 900
+          }
+        ],
+        "responsive-elements": [
+          ".landing-page",
+          ".hero-section",
+          ".features-section",
+          ".business-section",
+          ".staking-section"
+        ]
+      },
+      "fix-type": "warning",
+      "severity": "warning"
+    },
+    {
+      "name": "section-id-validation",
+      "description": "Ensures all navigation links on the landing page point to valid sections",
+      "pattern": {
+        "sections": [
+          "hero",
+          "features",
+          "business",
+          "staking",
+          "about",
+          "contact"
+        ],
+        "navigation-selector": "nav a[href^='#']"
+      },
+      "fix-type": "auto-fix",
+      "severity": "error"
+    },
+    {
+      "name": "orphaned-styles",
+      "description": "Identifies unused CSS classes in the landing page styles",
+      "pattern": {
+        "style-file": "src/components/LandingPage.css",
+        "component-file": "src/components/LandingPage.js"
+      },
+      "fix-type": "suggestion",
+      "severity": "info"
+    },
+    {
+      "name": "feature-image-validation",
+      "description": "Checks if images referenced on the landing page exist",
+      "pattern": {
+        "image-directory": "public/images",
+        "image-formats": [".png", ".jpg", ".svg", ".webp"]
+      },
+      "fix-type": "warning",
+      "severity": "warning"
+    },
+    {
+      "name": "update-copyright-year",
+      "description": "Automatically updates the copyright year in the footer to the current year",
+      "pattern": {
+        "copyright-regex": "© [0-9]{4}",
+        "selector": ".footer-copyright"
+      },
+      "fix-type": "auto-fix",
+      "severity": "info"
+    }
+  ],
+  "hooks": {
+    "pre-commit": ["feature-implementation-validation", "branding-consistency", "section-id-validation"],
+    "post-merge": ["feature-discovery", "landing-page-responsiveness"]
+  },
+  "notifications": {
+    "in-editor": true,
+    "terminal": true
+  }
+} 

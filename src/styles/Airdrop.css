@@ -1,0 +1,202 @@
+.airdrop-view {
+  padding: 20px 0;
+}
+
+.airdrop-container {
+  background-color: #111827;
+  color: #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.airdrop-title {
+  padding: 20px;
+  margin: 0;
+  background-color: #1e293b;
+  color: #00FF41;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #334155;
+}
+
+.airdrop-tabs {
+  background-color: #1e293b;
+  padding: 0 20px;
+}
+
+.airdrop-tab-content {
+  padding: 24px;
+}
+
+.airdrop-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.airdrop-status-indicator {
+  margin-left: 12px;
+}
+
+.airdrop-success-indicator {
+  color: #10b981;
+  font-size: 24px;
+  margin-left: 12px;
+}
+
+/* Distribution list styles */
+.distribution-list {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  margin-top: 20px;
+}
+
+.distribution-header {
+  display: grid;
+  grid-template-columns: 40px 2fr 1fr 1fr;
+  padding: 12px 16px;
+  background-color: #1e293b;
+  font-weight: 500;
+  border-bottom: 1px solid #334155;
+}
+
+.distribution-item {
+  display: grid;
+  grid-template-columns: 40px 2fr 1fr 1fr;
+  padding: 12px 16px;
+  border-bottom: 1px solid #334155;
+  align-items: center;
+}
+
+.distribution-item:last-child {
+  border-bottom: none;
+}
+
+.distribution-item:hover {
+  background-color: #1e293b;
+}
+
+/* Rules and schedule sections */
+.rules-container, .schedule-container {
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.rules-title, .schedule-title {
+  margin-top: 0;
+  color: #00FF41;
+  margin-bottom: 16px;
+}
+
+.rule-item, .schedule-option {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #334155;
+}
+
+.rule-item:last-child, .schedule-option:last-child {
+  border-bottom: none;
+}
+
+/* Execution section */
+.execution-summary {
+  background-color: #1e293b;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.execution-detail {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #334155;
+}
+
+.execution-detail:last-child {
+  border-bottom: none;
+}
+
+.execution-warning {
+  color: #ef4444;
+  margin: 20px 0;
+  padding: 12px;
+  background-color: rgba(239, 68, 68, 0.1);
+  border-radius: 4px;
+  border-left: 4px solid #ef4444;
+}
+
+/* History section */
+.history-item {
+  background-color: #1e293b;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.history-status {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.status-completed {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.status-pending {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.status-scheduled {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+/* Advanced mode toggle */
+.advanced-mode-toggle {
+  margin-top: 20px;
+  padding: 12px;
+  background-color: #1e293b;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .distribution-header,
+  .distribution-item {
+    grid-template-columns: 40px 2fr 1fr;
+  }
+  
+  .history-item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .airdrop-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .airdrop-actions button {
+    margin-top: 8px;
+  }
+} 

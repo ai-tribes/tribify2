@@ -1,0 +1,267 @@
+.dividend-view {
+  padding: 20px 0;
+}
+
+.dividend-container {
+  background-color: #111827;
+  color: #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.dividend-title {
+  padding: 20px;
+  margin: 0;
+  background-color: #1e293b;
+  color: #00FF41;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #334155;
+}
+
+.dividend-tabs {
+  background-color: #1e293b;
+  padding: 0 20px;
+}
+
+.dividend-tab-content {
+  padding: 24px;
+}
+
+.dividend-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.dividend-status-indicator {
+  margin-left: 12px;
+}
+
+.dividend-success-indicator {
+  color: #10b981;
+  font-size: 24px;
+  margin-left: 12px;
+}
+
+/* Financial summary card */
+.financial-summary-card {
+  margin-top: 24px;
+  background-color: #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.financial-summary-grid {
+  padding: 16px;
+}
+
+.financial-summary-card .MuiDivider-root {
+  background-color: #334155;
+}
+
+/* Preview grid styles */
+.dividend-preview-grid {
+  margin: 24px 0;
+  background-color: #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Dividend Preview Table Styles */
+.dividend-preview-container {
+  margin: 24px 0;
+  background-color: #1e293b;
+  border-radius: 8px;
+  overflow: auto;
+  max-height: 400px;
+}
+
+.dividend-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #e2e8f0;
+}
+
+.dividend-preview-table th,
+.dividend-preview-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #334155;
+}
+
+.dividend-preview-table th {
+  background-color: #1e293b;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.dividend-preview-table tr:hover td {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.dividend-preview-table tfoot {
+  font-weight: 600;
+}
+
+.dividend-preview-table tfoot td {
+  background-color: #1e293b;
+  border-top: 2px solid #334155;
+}
+
+.dividend-section-title {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  color: #00FF41;
+}
+
+/* Charts section */
+.dividend-charts {
+  margin-top: 30px;
+}
+
+/* Execute section */
+.dividend-execute-summary {
+  background-color: #1e293b;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.dividend-divider {
+  background-color: #334155;
+  margin: 16px 0;
+}
+
+.dividend-warning {
+  color: #ef4444;
+  margin: 20px 0;
+  padding: 12px;
+  background-color: rgba(239, 68, 68, 0.1);
+  border-radius: 4px;
+  border-left: 4px solid #ef4444;
+}
+
+.dividend-execute-actions {
+  margin-top: 30px;
+}
+
+/* History section */
+.dividend-history-table {
+  background-color: #1e293b;
+  margin-top: 24px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.dividend-history {
+  margin-top: 20px;
+}
+
+.dividend-history-list {
+  margin-top: 20px;
+}
+
+.dividend-history-list .history-item {
+  background-color: #1e293b;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.dividend-history-detail {
+  background-color: #1e293b;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 24px;
+}
+
+.dividend-history-row {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dividend-history-row:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.dividend-status {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.status-completed {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.status-pending {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.status-scheduled {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+/* MUI Data Grid overrides */
+.MuiDataGrid-root {
+  border: none !important;
+  color: #e2e8f0 !important;
+}
+
+.MuiDataGrid-columnHeaders {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+.MuiDataGrid-cell {
+  border-bottom: 1px solid #334155 !important;
+}
+
+.MuiTablePagination-root {
+  color: #e2e8f0 !important;
+}
+
+.MuiDataGrid-row:hover {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dividend-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .dividend-actions button {
+    margin-top: 8px;
+  }
+  
+  .financial-summary-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .dividend-charts {
+    flex-direction: column;
+  }
+  
+  .dividend-history-list .history-item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+} 
