@@ -704,15 +704,60 @@
             
             <div class="description">
                 <h2>About Tribify</h2>
-                <p>Tribify is a Solana-based token management platform that enables users to create and manage multiple subwallets, distribute $TRIBIFY tokens across wallets, convert between $TRIBIFY, SOL, and USDC, manage token distributions and recoveries, and monitor wallet balances and transactions.</p>
+                <p>Tribify is a comprehensive Solana-based token management and community platform that combines advanced wallet management, token operations, staking mechanics, and secure communication features. The platform is built with Next.js, React, and integrates directly with the Solana blockchain.</p>
                 
-                <h3>Key Features:</h3>
+                <h3>Core Features:</h3>
                 <ul>
-                    <li><strong>Wallet Management</strong> - Create up to 100 subwallets, generate and backup wallet keys, view all wallet balances (SOL, TRIBIFY, USDC), recover SOL from subwallets, close ATA accounts</li>
-                    <li><strong>Token Operations</strong> - Distribute $TRIBIFY to subwallets, convert between tokens (TRIBIFY ↔ SOL ↔ USDC), batch transfer capabilities, token recovery and consolidation</li>
-                    <li><strong>Advanced Features</strong> - Random distribution mode, batch processing (4 wallets at a time), ATA (Associated Token Account) management, private key security</li>
-                    <li><strong>Staking Implementation</strong> - Stake tokens with customizable lock periods, earn APY based on staking duration, governance participation</li>
-                    <li><strong>Real-Time Messaging</strong> - Holder-to-holder encrypted messaging, proposal voting system, shareholder coordination</li>
+                    <li><strong>AI Integration</strong> - /tribify.ai assistant for guided platform interaction and automated operations</li>
+                    <li><strong>Advanced Wallet Management</strong>
+                        <ul>
+                            <li>Create and manage up to 100 subwallets</li>
+                            <li>Real-time balance tracking for SOL, TRIBIFY, and USDC</li>
+                            <li>Secure key generation and backup systems</li>
+                            <li>Automated SOL recovery from subwallets</li>
+                        </ul>
+                    </li>
+                    <li><strong>Token Operations</strong>
+                        <ul>
+                            <li>Strategic $TRIBIFY distribution with randomization options</li>
+                            <li>Multi-token conversion (TRIBIFY ↔ SOL ↔ USDC)</li>
+                            <li>Batch processing capabilities (4 wallets simultaneously)</li>
+                            <li>Automated ATA (Associated Token Account) management</li>
+                        </ul>
+                    </li>
+                    <li><strong>Staking and Governance</strong>
+                        <ul>
+                            <li>Flexible staking with customizable lock periods</li>
+                            <li>Dynamic APY based on staking duration</li>
+                            <li>Governance participation and voting system</li>
+                            <li>Real-time staking analytics and rewards tracking</li>
+                        </ul>
+                    </li>
+                    <li><strong>Shareholder Features</strong>
+                        <ul>
+                            <li>End-to-end encrypted messaging system</li>
+                            <li>Real-time holder tracking and visualization</li>
+                            <li>Custom nickname system for wallet addresses</li>
+                            <li>Online presence tracking for active holders</li>
+                        </ul>
+                    </li>
+                    <li><strong>Security Features</strong>
+                        <ul>
+                            <li>Wallet-based authentication</li>
+                            <li>End-to-end message encryption</li>
+                            <li>Secure transaction signing</li>
+                            <li>Role-based access control</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h3>Technical Stack:</h3>
+                <ul>
+                    <li><strong>Frontend</strong>: Next.js, React, D3.js for visualizations</li>
+                    <li><strong>State Management</strong>: React Context API with custom providers</li>
+                    <li><strong>Backend Services</strong>: Next.js API routes, Prisma for data management</li>
+                    <li><strong>Blockchain</strong>: Solana Web3.js, Custom Solana Programs</li>
+                    <li><strong>Real-time Features</strong>: WebSocket integration, Pusher for messaging</li>
                 </ul>
             </div>
             
@@ -735,50 +780,108 @@
             
             <div id="frontend-architecture" class="mermaid-container">
                 <h2>Frontend Architecture</h2>
-                <p>The frontend is built with React.js and Next.js, utilizing a component-based architecture:</p>
+                <p>The frontend is built with Next.js and React, implementing a modular component architecture with context-based state management:</p>
                 
                 <div class="mermaid-wrapper">
                     <div class="mermaid">
 graph TD
     App[App Component] --> Layout[Main App Layout]
-    Layout --> Nav[Navigation Components]
+    Layout --> Nav[Navigation]
     Layout --> Content[Content Area]
-    Layout --> Footer[Footer Components]
     
-    Content --> Auth[Auth Wrapper]
-    Auth --> WalletPages[Wallet Pages]
-    Auth --> TokenPages[Token Management]
-    Auth --> StakingPages[Staking Interface]
-    Auth --> MessagePages[Messaging System]
+    Content --> AI[/tribify.ai Terminal]
+    Content --> Wallet[Wallet Management]
+    Content --> Stake[Staking Interface]
+    Content --> Messages[Messaging System]
+    Content --> Vote[Governance]
+    Content --> Snipe[Token Operations]
+    Content --> Chart[Analytics]
     
     subgraph State Management
-        Context[Context Providers]
-        Hooks[Custom Hooks]
+        TribifyContext[Tribify Context]
+        GovernanceContext[Governance Context]
+        ChatContext[Chat Context]
     end
     
-    WalletPages --> Context
-    TokenPages --> Context
-    StakingPages --> Context
-    MessagePages --> Context
+    AI --> TribifyContext
+    Wallet --> TribifyContext
+    Stake --> GovernanceContext
+    Messages --> ChatContext
+    Vote --> GovernanceContext
     
-    Context --> API[API Requests]
+    subgraph Real-time Updates
+        WebSocket[WebSocket Connection]
+        Pusher[Pusher Service]
+    end
+    
+    Messages --> Pusher
+    Chart --> WebSocket
     
     style App fill:#9b59b6,stroke:#8e44ad,color:white
     style Layout fill:#9b59b6,stroke:#8e44ad,color:white
-    style Auth fill:#9b59b6,stroke:#8e44ad,color:white
     style Content fill:#9b59b6,stroke:#8e44ad,color:white
-    style Context fill:#2980b9,stroke:#2c3e50,color:white
+    style TribifyContext fill:#2980b9,stroke:#2c3e50,color:white
+    style GovernanceContext fill:#2980b9,stroke:#2c3e50,color:white
+    style ChatContext fill:#2980b9,stroke:#2c3e50,color:white
                     </div>
                 </div>
                 
                 <div class="architecture-content">
                     <h3>Key Components</h3>
                     <ul>
-                        <li><strong>MainAppLayout</strong> - Core layout wrapper for authenticated content</li>
-                        <li><strong>WalletPage</strong> - Interface for wallet management operations</li>
-                        <li><strong>ChartView</strong> - Data visualization components</li>
-                        <li><strong>StakeView</strong> - Staking interface and rewards management</li>
-                        <li><strong>MessagesPage</strong> - Shareholder communication interface</li>
+                        <li><strong>AI Terminal (/tribify.ai)</strong>
+                            <ul>
+                                <li>Interactive AI assistant interface</li>
+                                <li>Command processing and responses</li>
+                                <li>Guided platform navigation</li>
+                            </ul>
+                        </li>
+                        <li><strong>Wallet Management</strong>
+                            <ul>
+                                <li>Subwallet creation and management</li>
+                                <li>Balance monitoring and updates</li>
+                                <li>Token distribution interface</li>
+                            </ul>
+                        </li>
+                        <li><strong>Staking Interface</strong>
+                            <ul>
+                                <li>Stake amount configuration</li>
+                                <li>Lock period management</li>
+                                <li>Rewards tracking</li>
+                            </ul>
+                        </li>
+                        <li><strong>Messaging System</strong>
+                            <ul>
+                                <li>Real-time chat interface</li>
+                                <li>Encryption handling</li>
+                                <li>Online status tracking</li>
+                            </ul>
+                        </li>
+                        <li><strong>Analytics</strong>
+                            <ul>
+                                <li>Token holder visualization</li>
+                                <li>Transaction monitoring</li>
+                                <li>Network statistics</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="architecture-content">
+                    <h3>State Management</h3>
+                    <ul>
+                        <li><strong>TribifyContext</strong> - Core token and wallet operations</li>
+                        <li><strong>GovernanceContext</strong> - Staking and voting management</li>
+                        <li><strong>ChatContext</strong> - Messaging and real-time updates</li>
+                    </ul>
+                </div>
+
+                <div class="architecture-content">
+                    <h3>Real-time Features</h3>
+                    <ul>
+                        <li><strong>WebSocket Integration</strong> - Live balance and transaction updates</li>
+                        <li><strong>Pusher Service</strong> - Real-time messaging and notifications</li>
+                        <li><strong>Online Presence</strong> - Active user tracking</li>
                     </ul>
                 </div>
             </div>
@@ -874,50 +977,70 @@ graph TD
             
             <div id="data-flow" class="mermaid-container">
                 <h2>Data Flow Architecture</h2>
-                <p>The data flow in Tribify follows a structured pattern to ensure consistency and real-time updates:</p>
+                <p>The data flow in Tribify is designed for real-time responsiveness and reliability:</p>
                 
                 <div class="mermaid-wrapper">
                     <div class="mermaid">
 sequenceDiagram
     participant User as User Interface
     participant Context as Context Providers
+    participant Cache as Local Cache
     participant API as API Services
-    participant DB as Database
+    participant Queue as Transaction Queue
     participant BC as Blockchain
     
     User->>+Context: User Action
-    Context->>+API: API Request
+    Context->>Cache: Check Cache
     
-    alt Database Operation
-        API->>DB: Query/Update
-        DB-->>API: Response
-    else Blockchain Operation
-        API->>BC: Submit Transaction
-        BC-->>API: Confirmation
+    alt Cached Data Available
+        Cache-->>Context: Return Cached Data
+        Context-->>User: Update UI
+    else No Cache
+        Context->>+API: API Request
+        API->>Queue: Queue Transaction
+        Queue->>BC: Submit Transaction
+        BC-->>Queue: Confirm
+        Queue-->>API: Update Status
+        API-->>-Context: Return Result
+        Context->>Cache: Update Cache
+        Context-->>-User: Update UI
     end
     
-    API-->>-Context: Response
-    Context-->>-User: Update UI
-    
-    Note over User,BC: Real-time updates via WebSockets
+    Note over User,BC: WebSocket updates for real-time data
                     </div>
                 </div>
                 
                 <div class="architecture-content">
-                    <h3>Key Data Flows</h3>
+                    <h3>Data Flow Components</h3>
                     <ul>
-                        <li><strong>User Actions</strong> - Interface events that trigger context updates</li>
-                        <li><strong>API Communication</strong> - Structured requests to backend services</li>
-                        <li><strong>Blockchain Transactions</strong> - On-chain operations with cryptographic verification</li>
-                        <li><strong>Real-time Updates</strong> - WebSocket-based communication for immediate data propagation</li>
-                        <li><strong>State Management</strong> - Centralized context structure for consistent application state</li>
+                        <li><strong>Client-Side Flow</strong>
+                            <ul>
+                                <li>Context-based state management</li>
+                                <li>Local caching strategy</li>
+                                <li>Optimistic UI updates</li>
+                            </ul>
+                        </li>
+                        <li><strong>Server-Side Flow</strong>
+                            <ul>
+                                <li>API route handling</li>
+                                <li>Transaction queueing</li>
+                                <li>RPC endpoint management</li>
+                            </ul>
+                        </li>
+                        <li><strong>Real-time Updates</strong>
+                            <ul>
+                                <li>WebSocket connections</li>
+                                <li>Pusher integration</li>
+                                <li>Event-based updates</li>
+                            </ul>
+                        </li>
                     </ul>
                 </div>
             </div>
             
             <div id="security-model" class="mermaid-container">
                 <h2>Security Architecture</h2>
-                <p>Tribify implements a comprehensive security model to protect user assets and information:</p>
+                <p>Tribify implements a comprehensive security model with multiple layers of protection:</p>
                 
                 <div class="mermaid-wrapper">
                     <div class="mermaid">
@@ -927,17 +1050,17 @@ graph TD
     Security --> Access[Access Control]
     Security --> Transaction[Transaction Security]
     
-    Auth --> WalletAuth[Wallet-based Auth]
+    Auth --> WalletAuth[Phantom Wallet Auth]
     Auth --> SessionMgmt[Session Management]
     
-    Encryption --> MessageEnc[Message Encryption]
-    Encryption --> KeyEnc[Key Encryption]
+    Encryption --> MessageEnc[E2E Message Encryption]
+    Encryption --> KeyEnc[Private Key Security]
     
     Access --> RoleBasedAccess[Role-based Access]
-    Access --> OwnershipValidation[Ownership Validation]
+    Access --> OwnershipValidation[Token Ownership Validation]
     
-    Transaction --> SignatureVerification[Signature Verification]
-    Transaction --> TransactionValidation[Transaction Validation]
+    Transaction --> SignatureVerification[Solana Signatures]
+    Transaction --> TransactionValidation[Multi-level Validation]
     
     style Security fill:#c0392b,stroke:#e74c3c,color:white
     style Auth fill:#9b59b6,stroke:#8e44ad,color:white
@@ -947,13 +1070,62 @@ graph TD
                 </div>
                 
                 <div class="architecture-content">
-                    <h3>Key Security Components</h3>
+                    <h3>Authentication & Authorization</h3>
                     <ul>
-                        <li><strong>Wallet-based Authentication</strong> - Cryptographic proof of identity using wallet signatures</li>
-                        <li><strong>End-to-End Encryption</strong> - Secure messaging between users</li>
-                        <li><strong>Private Key Security</strong> - Proper management of cryptographic keys</li>
-                        <li><strong>Transaction Verification</strong> - Multi-level validation of blockchain operations</li>
-                        <li><strong>Role-based Access Control</strong> - Appropriate permissions based on user roles</li>
+                        <li><strong>Phantom Wallet Integration</strong>
+                            <ul>
+                                <li>Secure wallet connection and signature verification</li>
+                                <li>Public key-based identity management</li>
+                                <li>Session persistence with secure storage</li>
+                            </ul>
+                        </li>
+                        <li><strong>Access Control</strong>
+                            <ul>
+                                <li>Token-based authorization for features</li>
+                                <li>Role-based permissions system</li>
+                                <li>Protected route implementation</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="architecture-content">
+                    <h3>Encryption & Privacy</h3>
+                    <ul>
+                        <li><strong>Message Security</strong>
+                            <ul>
+                                <li>End-to-end encryption for all messages</li>
+                                <li>Secure key exchange protocol</li>
+                                <li>Encrypted storage of sensitive data</li>
+                            </ul>
+                        </li>
+                        <li><strong>Wallet Security</strong>
+                            <ul>
+                                <li>Secure key generation and storage</li>
+                                <li>Encrypted backup system</li>
+                                <li>Recovery mechanism for subwallets</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="architecture-content">
+                    <h3>Transaction Security</h3>
+                    <ul>
+                        <li><strong>Blockchain Operations</strong>
+                            <ul>
+                                <li>Multi-signature transaction support</li>
+                                <li>Transaction validation and verification</li>
+                                <li>Rate limiting and spam protection</li>
+                            </ul>
+                        </li>
+                        <li><strong>Error Handling</strong>
+                            <ul>
+                                <li>Graceful error recovery</li>
+                                <li>Transaction retry mechanisms</li>
+                                <li>Automatic RPC endpoint failover</li>
+                            </ul>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -1178,6 +1350,116 @@ classDiagram
     User "1" --> "*" Stake : creates
     User "1" --> "*" Message : sends/receives
                     </div>
+                </div>
+            </div>
+            
+            <div id="ai-integration" class="mermaid-container">
+                <h2>AI Integration & Automation</h2>
+                <p>The /tribify.ai terminal provides an intelligent interface for platform interaction and automation:</p>
+                
+                <div class="mermaid-wrapper">
+                    <div class="mermaid">
+graph TD
+    AI[/tribify.ai Terminal] --> Commands[Command Processing]
+    AI --> Automation[Automation Engine]
+    AI --> Analytics[Analytics Engine]
+    
+    Commands --> Parser[Command Parser]
+    Commands --> Executor[Command Executor]
+    Commands --> Help[Help System]
+    
+    Automation --> TokenDist[Token Distribution]
+    Automation --> WalletOps[Wallet Operations]
+    Automation --> StakeOps[Staking Operations]
+    
+    Analytics --> Market[Market Analysis]
+    Analytics --> Holder[Holder Analysis]
+    Analytics --> Network[Network Analysis]
+    
+    style AI fill:#9b59b6,stroke:#8e44ad,color:white
+    style Commands fill:#2980b9,stroke:#2c3e50,color:white
+    style Automation fill:#27ae60,stroke:#16a085,color:white
+    style Analytics fill:#e67e22,stroke:#d35400,color:white
+                    </div>
+                </div>
+                
+                <div class="architecture-content">
+                    <h3>AI Terminal Features</h3>
+                    <ul>
+                        <li><strong>Command System</strong>
+                            <ul>
+                                <li>Natural language command processing</li>
+                                <li>Context-aware responses</li>
+                                <li>Interactive help and documentation</li>
+                            </ul>
+                        </li>
+                        <li><strong>Automation Capabilities</strong>
+                            <ul>
+                                <li>Automated token distribution strategies</li>
+                                <li>Batch wallet operations</li>
+                                <li>Scheduled tasks and monitoring</li>
+                            </ul>
+                        </li>
+                        <li><strong>Analytics Integration</strong>
+                            <ul>
+                                <li>Real-time market analysis</li>
+                                <li>Holder behavior insights</li>
+                                <li>Network health monitoring</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="architecture-content">
+                    <h3>AI Response System</h3>
+                    <div class="mermaid">
+sequenceDiagram
+    participant User as User
+    participant Terminal as AI Terminal
+    participant Parser as Command Parser
+    participant Context as Context Provider
+    participant Action as Action Engine
+    
+    User->>Terminal: Enter Command
+    Terminal->>Parser: Parse Input
+    Parser->>Context: Get Context
+    Context-->>Parser: Current State
+    Parser->>Action: Execute Command
+    Action-->>Terminal: Action Result
+    Terminal-->>User: Formatted Response
+    
+    Note over Terminal,Action: Intelligent command processing
+                    </div>
+                </div>
+
+                <div class="architecture-content">
+                    <h3>Available Commands</h3>
+                    <ul>
+                        <li><strong>Wallet Operations</strong>
+                            <ul>
+                                <li>/create - Create new subwallets</li>
+                                <li>/distribute - Distribute tokens</li>
+                                <li>/recover - Recover tokens</li>
+                                <li>/balance - Check balances</li>
+                            </ul>
+                        </li>
+                        <li><strong>Token Operations</strong>
+                            <ul>
+                                <li>/convert - Convert between tokens</li>
+                                <li>/stake - Manage staking</li>
+                                <li>/transfer - Transfer tokens</li>
+                                <li>/snipe - Configure sniping</li>
+                            </ul>
+                        </li>
+                        <li><strong>System Commands</strong>
+                            <ul>
+                                <li>/help - Show help</li>
+                                <li>/status - System status</li>
+                                <li>/backup - Backup wallets</li>
+                                <li>/restore - Restore wallets</li>
+                            </ul>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </main>

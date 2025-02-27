@@ -356,405 +356,37 @@ const MessageModal = ({ isOpen, onClose, recipient, recipientName, messages, onS
 
 function App() {
   const navigate = useNavigate();
-  // Add all state declarations at the top of App
-  const [isLoading, setIsLoading] = useState(false);
-  const [wallets, setWallets] = useState([]);
-  const [publicKey, setPublicKey] = useState(null);
-  const [tokenHolders, setTokenHolders] = useState([]);
-  const [isRandomized, setIsRandomized] = useState(true);
-  const [status, setStatus] = useState('');
+  const [activeView, setActiveView] = useState('ai');
   const [isConnected, setIsConnected] = useState(false);
-  const [balance, setBalance] = useState(null);
-  const [showDocs, setShowDocs] = useState(false);
-  const [nicknames, setNicknames] = useState({
-    'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv': 'Treasury',
-    '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7': 'Liquidity Pool'
-  });
-  const [editingNickname, setEditingNickname] = useState(null);
-  const [treasuryBalances, setTreasuryBalances] = useState({
-    sol: 0,
-    usdc: 0,
-    tribify: 0
-  });
-  const [activeChat, setActiveChat] = useState(null);  // Will hold the address we're chatting with
-  const [messages, setMessages] = useState({});  // Object to store messages by chat address
-  const [messageInput, setMessageInput] = useState('');  // For the input field
-  const [hasPaid, setHasPaid] = useState(false);
-  const [unreadCounts, setUnreadCounts] = useState({});  // { address: count }
-  const [showInbox, setShowInbox] = useState(false);
-  const [showAllMessages, setShowAllMessages] = useState(false);
+  const [tokenHolders, setTokenHolders] = useState([]);
+  const [nicknames, setNicknames] = useState({});
+  const [subwallets, setSubwallets] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Add state for custom dialog
-  const [dialogConfig, setDialogConfig] = useState({
-    show: false,
-    message: '',
-    onConfirm: null
-  });
-
-  // Add WebSocket connection for real-time updates
-  const [socket, setSocket] = useState(null);
-
-  // Add state for password
-  const [friendPassword, setFriendPassword] = useState(localStorage.getItem('friend_password'));
-
-  // Add new state for online users
-  const [onlineUsers, setOnlineUsers] = useState(new Set());
-
-  // Add new state for tribify prompt
-  const [showTribifyPrompt, setShowTribifyPrompt] = useState(false);
-
-  // Update the initial tribifyResponses state
-  const [tribifyResponses, setTribifyResponses] = useState([
-    {
-      type: 'response',
-      text: `Welcome to /tribify.ai! 👋 
-
-I'm your AI assistant for managing TRIBIFY tokens and wallets. I can help you:
-• Create and manage up to 100 wallets
-• Distribute TRIBIFY tokens strategically
-• Convert between TRIBIFY, SOL, and USDC
-• Monitor your token holder community
-
-What would you like to explore first? You can:
-• Type /help to see all commands
-• Ask about any feature
-• Start with a quick tutorial
-• Learn about wallet management`
-    }
-  ]);
-  const [tribifyInput, setTribifyInput] = useState('');
-
-  // Add state for connection debugging
-  const [debugState, setDebugState] = useState({
-    connectionState: 'disconnected',
-    socketId: null,
-    authAttempts: 0,
-    authErrors: [],
-    lastAuthError: null
-  });
-
-  // Add new state for message encryption
-  const [encryptedMessages, setEncryptedMessages] = useState({});
-
-  // Move isCollapsed state from TokenHolderGraph to App
-  const [isCollapsed, setIsCollapsed] = useState(true);
-
-  // Add new state near the top with other states
-  const [showStatus, setShowStatus] = useState(false);
-
-  // Add state for message modal
-  const [messageModal, setMessageModal] = useState({ 
-    isOpen: false, 
-    recipient: null 
-  });
-
-  // Add state to control views (near other state declarations)
-  const [activeView, setActiveView] = useState('ai'); // Options: 'ai', 'holders', 'graph', 'messages'
-
-  // Add subwallets state at App level
-  const [subwallets, setSubwallets] = useState(() => {
-    // Instead of scraping DOM, get from localStorage or state
-    const stored = localStorage.getItem('subwallets');
-    try {
-      const parsed = stored ? JSON.parse(stored) : [];
-      console.log('Loading subwallets:', parsed);
-      return parsed;
-    } catch (err) {
-      console.error('Error loading subwallets:', err);
-      return [];
-    }
-  });
-
-  // Debug log when subwallets change
-  useEffect(() => {
-    console.log('Current subwallets:', {
-      count: subwallets?.length,
-      wallets: subwallets?.map(w => w.publicKey)
-    });
-  }, [subwallets]);
-
-  // When WalletPage updates subwallets, it will call setSubwallets
-  const handleSubwalletsUpdate = (newWallets) => {
-    setSubwallets(newWallets);
-    localStorage.setItem('subwallets', JSON.stringify(newWallets));
-  };
-
-  // Define WalletTable component inside App to access state and functions
-  const WalletTable = ({ wallets, onCopy }) => {
-    if (isLoading) {
-      return (
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <div className="loading-text">Fetching wallet balances...</div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="wallet-container">
-        <div className="wallet-controls">
-          <button 
-            className="refresh-button"
-            onClick={refreshWallets}
-            disabled={wallets.length === 0}
-          >
-            ↻ Refresh Balances
-          </button>
-        </div>
-        <div className="wallet-table">
-          <div className="table-header">
-            <div className="col-index">#</div>
-            <div className="col-private">Address</div>
-            <div className="col-public">$TRIBIFY Shareholders</div>
-            <div className="col-tribify">Share</div>
-            <div className="col-sol">SOL</div>
-            <div className="col-usdc">USDC</div>
-            <div className="col-message">Message</div>
-          </div>
-          {wallets.map((wallet, index) => (
-            <div key={index} className="table-row">
-              <span className="col-index">{index + 1}</span>
-              <span 
-                className="col-private" 
-                onClick={() => onCopy(wallet.privateKey, 'private')}
-              >
-                {wallet.privateKey}
-              </span>
-              <span 
-                className="col-public" 
-                onClick={() => onCopy(wallet.publicKey, 'public')}
-              >
-                {wallet.publicKey}
-              </span>
-              <span className="col-tribify">
-                {wallet.tribifyBalance || 0} TRIBIFY
-              </span>
-              <span className="col-sol">
-                {(wallet.solBalance || 0).toFixed(4)} SOL
-              </span>
-              <span className="col-usdc">
-                ${(wallet.usdcBalance || 0).toFixed(2)}
-              </span>
-              <span className="col-message">
-                {wallet.address !== '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' && (
-                  <button onClick={() => onCopy(wallet.address, 'address')}>
-                    Message
-                  </button>
-                )}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  // Define refresh function
-  const refreshWallets = async () => {
-    if (wallets.length === 0) return;
-    
-    setIsLoading(true);
-    try {
-      const updatedWallets = await fetchBalances(wallets);
-      setWallets(updatedWallets);
-      setStatus('Balances refreshed successfully');
-    } catch (error) {
-      console.error('Error refreshing balances:', error);
-      setStatus('Error refreshing balances: ' + error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Update Pusher initialization code
-  const pusher = React.useMemo(() => {
-    if (!publicKey) return null;
-
-    const pusherClient = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
-      cluster: process.env.REACT_APP_PUSHER_CLUSTER,
-      authEndpoint: process.env.NODE_ENV === 'production'
-        ? 'https://tribify-richardboase-ai-tribes.vercel.app/api/pusher/auth'  // Production
-        : 'http://localhost:3001/api/pusher/auth',  // Development
-      auth: {
-        headers: { 'Content-Type': 'application/json' },
-        params: { publicKey }
-      }
-    });
-
-    const channel = pusherClient.subscribe('presence-tribify');
-    
-    channel.bind('pusher:subscription_succeeded', (members) => {
-      console.log('Subscription succeeded:', members);
-      const online = new Set();
-      members.each(member => online.add(member.id));
-      setOnlineUsers(online);
-    });
-
-    return pusherClient;
-  }, [publicKey]);
-
-  // Core functions
-  const handleConnection = async () => {
-    try {
-      if (!window.phantom?.solana?.isPhantom) {
-        setStatus('Please install Phantom wallet');
-        return;
-      }
-
-      const resp = await window.phantom.solana.connect();
-      const userPublicKey = resp.publicKey.toString();
-
-      // Add ourselves to online users immediately
-      setOnlineUsers(prev => new Set([...prev, userPublicKey]));
-
-      // Treasury path
-      if (userPublicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv') {
-        setIsConnected(true);
-        setPublicKey(userPublicKey);
-        await updateBalance(userPublicKey);
-        fetchTokenHolders();
-        return;
-      }
-
-      // Friend wallet path
-      if (userPublicKey === 'Aycm5thyEQXMFR6CNVKL5f6SRJ3KVTCGA3HYoRTHN2kN') {
-        if (!friendPassword) {
-          // First time setup - ONE payment then set password
-          try {
-            setStatus('First time setup - please approve 0.001 SOL payment');
-            const transaction = new Transaction().add(
-              SystemProgram.transfer({
-                fromPubkey: resp.publicKey,
-                toPubkey: new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
-                lamports: LAMPORTS_PER_SOL * 0.001
-              })
-            );
-
-            const { blockhash } = await connection.getLatestBlockhash('processed');
-            transaction.recentBlockhash = blockhash;
-            transaction.feePayer = resp.publicKey;
-            const signed = await window.phantom.solana.signTransaction(transaction);
-            await connection.sendRawTransaction(signed.serialize());
-
-            // After payment, show password setup form
-            setDialogConfig({
-              show: true,
-              message: (
-                <>
-                  <h3>Set Password</h3>
-                  <form id="setupForm">
-                    <input type="text" name="username" value={userPublicKey} readOnly style={{display: 'none'}} />
-                    <input 
-                      type="password" 
-                      name="password" 
-                      placeholder="Set your password"
-                      autoFocus
-                    />
-                  </form>
-                </>
-              ),
-              onConfirm: () => {
-                const form = document.getElementById('setupForm');
-                const password = form.password.value;
-                if (password) {
-                  localStorage.setItem('friend_password', password);
-                  setFriendPassword(password);
-                  setIsConnected(true);
-                  setPublicKey(userPublicKey);
-                  setStatus('Welcome! Password set successfully');
-                  updateBalance(userPublicKey);
-                  fetchTokenHolders();
-                }
-              }
-            });
-          } catch (error) {
-            setStatus('Setup failed: ' + error.message);
-          }
-        } else {
-          // Returning user - just login
-          setDialogConfig({
-            show: true,
-            message: (
-              <>
-                <h3>Login</h3>
-                <form id="loginForm">
-                  <input type="text" name="username" value={userPublicKey} style={{display: 'none'}} />
-                  <input 
-                    type="password" 
-                    name="password"
-                    placeholder="Enter your password"
-                    autoFocus
-                  />
-                </form>
-              </>
-            ),
-            onConfirm: () => {
-              const form = document.getElementById('loginForm');
-              if (!form) return;
-              
-              const password = form.elements.password.value;
-              if (password === friendPassword) {
-                setIsConnected(true);
-                setPublicKey(userPublicKey);
-                setStatus('Welcome back!');
-                updateBalance(userPublicKey);
-                fetchTokenHolders();
-              } else {
-                setStatus('Incorrect password');
-              }
-            },
-            confirmText: 'Login'
-          });
-        }
-        return;
-      }
-
-      // Regular user path
-      const hasTokenAccount = await checkTokenAccount(userPublicKey);
-      if (!hasTokenAccount) {
-        // New user - needs to pay
-        setStatus('Please approve payment (0.001 SOL) to receive 100 $TRIBIFY...');
-        // ... payment logic ...
-      } else {
-        // Returning user
-        setIsConnected(true);
-        setPublicKey(userPublicKey);
-        setStatus('Welcome back!');
-        await updateBalance(userPublicKey);
-        fetchTokenHolders();
-      }
-    } catch (error) {
-      console.error('Connection error:', error);
-      setStatus('Error: ' + error.message);
-    }
-  };
-
+  // Fetch token holders
   const fetchTokenHolders = async () => {
     try {
-      console.log('Starting fetchTokenHolders for connected wallet:', publicKey);
+      setIsLoading(true);
+      console.log('Fetching token holders...');
+      
       const mintPubkey = new PublicKey(TRIBIFY_TOKEN_MINT);
       const usdcMint = new PublicKey(USDC_MINT);
       
       // Get all token accounts for TRIBIFY
-      console.log('Getting token accounts for mint:', TRIBIFY_TOKEN_MINT);
       const largestAccounts = await connection.getTokenLargestAccounts(mintPubkey);
-      console.log('Found token accounts:', largestAccounts);
       
       if (!largestAccounts.value.length) {
-        console.log('No token accounts found!');
+        console.log('No token accounts found');
         return;
       }
 
       const holders = await Promise.all(
         largestAccounts.value.map(async (account) => {
-          console.log('Processing account:', account.address.toString());
           const accountInfo = await connection.getParsedAccountInfo(account.address);
           const address = accountInfo.value.data.parsed.info.owner;
-          console.log('Found holder address:', address);
           
           // Get SOL balance
           const solBalance = await connection.getBalance(new PublicKey(address));
-          console.log('SOL balance for', address, ':', solBalance / LAMPORTS_PER_SOL);
           
           // Get USDC balance
           let usdcBalance = 0;
@@ -762,7 +394,6 @@ What would you like to explore first? You can:
             const usdcAta = await getAssociatedTokenAddress(usdcMint, new PublicKey(address));
             const usdcAccount = await connection.getTokenAccountBalance(usdcAta);
             usdcBalance = usdcAccount.value.uiAmount || 0;
-            console.log('USDC balance for', address, ':', usdcBalance);
           } catch (e) {
             console.log('No USDC account for:', address);
           }
@@ -770,954 +401,221 @@ What would you like to explore first? You can:
           return {
             address,
             tokenBalance: (account.amount / Math.pow(10, 6)) || 0,
-            solBalance: (solBalance / LAMPORTS_PER_SOL) || 0,
+            solBalance: (solBalance / Math.pow(10, 9)) || 0,
             usdcBalance: usdcBalance || 0
           };
         })
       );
 
-      console.log('Final processed holders:', holders);
-      
-      // Randomize the order of holders before setting state
-      const randomizedHolders = holders
+      // Filter out zero balances and sort by token balance
+      const filteredHolders = holders
         .filter(h => h.tokenBalance > 0)
-        .sort(() => Math.random() - 0.5);
-        
-      setTokenHolders(randomizedHolders);
+        .sort((a, b) => b.tokenBalance - a.tokenBalance);
+
+      console.log('Fetched holders:', filteredHolders);
+      setTokenHolders(filteredHolders);
     } catch (error) {
-      console.error('Failed to fetch holders:', error);
-      console.error('Error details:', error.message);
+      console.error('Error fetching token holders:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Add function to get SOL balance
-  const updateBalance = async (pubKey) => {
-    try {
-      const bal = await connection.getBalance(new PublicKey(pubKey));
-      setBalance(bal / LAMPORTS_PER_SOL);
-    } catch (error) {
-      console.error('Balance error:', error);
-    }
-  };
-
-  // Add function to check token account
-  const checkTokenAccount = async (walletAddress) => {
-    try {
-      const mintPubkey = new PublicKey(TRIBIFY_TOKEN_MINT);
-      const ata = await getAssociatedTokenAddress(
-        mintPubkey,
-        new PublicKey(walletAddress)
-      );
+  useEffect(() => {
+    // Check if wallet is connected
+    const checkConnection = async () => {
+      const isPhantomConnected = window.phantom?.solana?.isConnected;
+      const hasParentWallet = localStorage.getItem('tribify_parent_wallet');
+      setIsConnected(isPhantomConnected && hasParentWallet);
       
-      const account = await connection.getAccountInfo(ata);
-      return !!account;  // true if account exists
-    } catch {
-      return false;
-    }
-  };
-
-  // Add function to fetch treasury balances
-  const fetchTreasuryBalances = async () => {
-    try {
-      const treasuryPubkey = new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv');
-      const usdcMint = new PublicKey(USDC_MINT);
-      const tribifyMint = new PublicKey(TRIBIFY_TOKEN_MINT);
-
-      // Get SOL balance
-      const solBalance = await connection.getBalance(treasuryPubkey);
-      
-      // Get USDC balance
-      let usdcBalance = 0;
-      try {
-        const usdcAta = await getAssociatedTokenAddress(usdcMint, treasuryPubkey);
-        const usdcAccount = await connection.getTokenAccountBalance(usdcAta);
-        usdcBalance = usdcAccount.value.uiAmount || 0;
-      } catch {}
-
-      // Get TRIBIFY balance
-      let tribifyBalance = 0;
-      try {
-        const tribifyAta = await getAssociatedTokenAddress(tribifyMint, treasuryPubkey);
-        const tribifyAccount = await connection.getTokenAccountBalance(tribifyAta);
-        tribifyBalance = tribifyAccount.value.uiAmount || 0;
-      } catch {}
-
-      setTreasuryBalances({
-        sol: solBalance / LAMPORTS_PER_SOL,
-        usdc: usdcBalance,
-        tribify: tribifyBalance
-      });
-    } catch (error) {
-      console.error('Failed to fetch treasury balances:', error);
-    }
-  };
-
-  // Call it in useEffect
-  useEffect(() => {
-    fetchTreasuryBalances();
-  }, []);
-
-  // Add new function to fetch undelivered messages
-  const fetchUndeliveredMessages = async () => {
-    if (!publicKey) return;
-
-    try {
-      const response = await fetch(`/api/messages?address=${publicKey}`);
-      const messages = await response.json();
-
-      // Process each undelivered message
-      for (const msg of messages) {
-        try {
-          // Get recipient's private key from Phantom
-          const privateKey = await window.phantom.solana.request({
-            method: 'signMessage',
-            params: {
-              message: 'Decrypt incoming message',
-              display: 'utf8'
-            }
-          });
-
-          // Decrypt message
-          const decryptedText = await decrypt(
-            msg.content,
-            privateKey,
-            msg.fromAddress
-          );
-
-          // Add to messages state
-          setMessages(prev => ({
-            ...prev,
-            [msg.fromAddress]: [
-              ...(prev[msg.fromAddress] || []),
-              {
-                ...msg,
-                text: decryptedText,
-                decrypted: true
-              }
-            ]
-          }));
-
-          // Mark message as delivered
-          await fetch(`/api/messages/${msg.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ delivered: true })
-          });
-
-          // Update unread count
-          setUnreadCounts(prev => ({
-            ...prev,
-            [msg.fromAddress]: (prev[msg.fromAddress] || 0) + 1
-          }));
-        } catch (error) {
-          console.error('Failed to process message:', error);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch undelivered messages:', error);
-    }
-  };
-
-  // Update handleOpenChat
-  const handleOpenChat = (address) => {
-    setMessageModal({
-      isOpen: true,
-      recipient: address
-    });
-  };
-
-  // Add handleCloseChat
-  const handleCloseChat = () => {
-    setMessageModal({
-      isOpen: false,
-      recipient: null
-    });
-  };
-
-  // Add handleSendMessage
-  const handleSendMessage = (message) => {
-    if (!messageModal.recipient || !message.trim()) return;
-    
-    // Your existing message sending logic here
-    console.log('Sending message to:', messageModal.recipient, message);
-  };
-
-  // Add effect to fetch undelivered messages on connect
-  useEffect(() => {
-    if (isConnected && publicKey) {
-      fetchUndeliveredMessages();
-    }
-  }, [isConnected, publicKey]);
-
-  // Add disconnect handler
-  const handleDisconnect = async () => {
-    try {
-      await window.phantom.solana.disconnect();
-      setIsConnected(false);
-      setPublicKey(null);
-      setBalance(null);
-      setHasPaid(false);
-      setStatus('');
-      setOnlineUsers(new Set());
-      setSubwallets([]);
-    } catch (error) {
-      console.error('Failed to disconnect:', error);
-    }
-  };
-
-  // Add inbox click handler
-  const handleInboxClick = (address) => {
-    setShowInbox(true);
-    setActiveChat(address);
-  };
-
-  // Add helper function to get total unread
-  const getTotalUnread = () => {
-    return Object.values(unreadCounts).reduce((a, b) => a + b, 0);
-  };
-
-  // Add at the top with other useEffects
-  useEffect(() => {
-    // Load nicknames when app starts
-    const savedNicknames = localStorage.getItem('tribify-nicknames');
-    if (savedNicknames) {
-      setNicknames(JSON.parse(savedNicknames));
-    }
-  }, []);
-
-  // Add effect to save nicknames when they change
-  useEffect(() => {
-    // Save nicknames whenever they change
-    localStorage.setItem('tribify-nicknames', JSON.stringify(nicknames));
-  }, [nicknames]);
-
-  // Add backup/restore functions
-  const backupNicknames = () => {
-    const data = JSON.stringify(nicknames);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'tribify-nicknames-backup.json';
-    a.click();
-  };
-
-  const restoreNicknames = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const restored = JSON.parse(e.target.result);
-          setNicknames(restored);
-          setStatus('Nicknames restored successfully!');
-        } catch (error) {
-          setStatus('Error restoring nicknames. Is this a valid backup file?');
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
-
-  // Update nickname submit to use custom dialog
-  const handleNicknameSubmit = (e, address) => {
-    e.preventDefault();
-    const nickname = e.target.nickname.value;
-    
-    setDialogConfig({
-      show: true,
-      onConfirm: () => {
-        const updatedNicknames = {...nicknames, [address]: nickname};
-        setNicknames(updatedNicknames);
-        setStatus('Nickname saved! Remember to backup your nicknames to keep them safe.');
-        setEditingNickname(null);
-      }
-    });
-  };
-
-  useEffect(() => {
-    if (isConnected) {
-      fetchTokenHolders();
-    }
-  }, [isConnected]);
-
-  // Add auto-reconnect on page load
-  useEffect(() => {
-    const autoConnect = async () => {
-      try {
-        if (window.phantom?.solana?.isConnected) {
-          const resp = await window.phantom.solana.connect({ onlyIfTrusted: true });
-          const userPublicKey = resp.publicKey.toString();
-          setIsConnected(true);
-          setPublicKey(userPublicKey);
-          await updateBalance(userPublicKey);
-          await fetchTokenHolders();
-        }
-      } catch (error) {
-        console.log('No existing connection');
+      // If connected, fetch token holders
+      if (isPhantomConnected && hasParentWallet) {
+        fetchTokenHolders();
       }
     };
-
-    autoConnect();
+    
+    checkConnection();
   }, []);
 
-  // Update the tribify prompt handler
-  const handleTribifyPrompt = async (e) => {
-    e.preventDefault();
-    
-    if (!tribifyInput.trim()) return;
-
-    // Add user input to responses
-    setTribifyResponses(prev => [...prev, { type: 'input', text: tribifyInput }]);
-    
-    // Process the command
-    const input = tribifyInput.toLowerCase().trim();
-
-    // Handle greetings
-    if (['hi', 'hey', 'hello', 'hel', 'sup'].includes(input)) {
-      setTribifyResponses(prev => [...prev, {
-        type: 'response',
-        text: `Hey there! 👋 Welcome to Tribify.ai!
-
-I'm your AI assistant for managing TRIBIFY tokens and wallets. I can help you:
-• Create and manage up to 100 wallets
-• Distribute TRIBIFY tokens strategically
-• Convert between TRIBIFY, SOL, and USDC
-• Monitor your token holder community
-
-What would you like to explore first? You can:
-• Type /help to see all commands
-• Ask about any feature
-• Start with a quick tutorial
-• Learn about wallet management`
-      }]);
-      setTribifyInput('');
-      return;
-    }
-
-    // Rest of your existing command handling...
-    let response = '';
-
-    if (input.startsWith('/')) {
-      switch (input) {
-        case '/help':
-          response = `Available commands:
-• /help - Show this help message
-• /holders - View shareholder information
-• /wallet - Learn about wallet features
-• /buy - Get buying instructions
-• /sell - Get selling instructions
-• /distribute - Learn about token distribution
-• /stats - View current statistics`;
-          break;
-
-        case '/holders':
-          const totalHolders = tokenHolders.length;
-          const totalSupply = tokenHolders.reduce((sum, h) => sum + h.tokenBalance, 0);
-          response = `Shareholder Statistics:
-• Total Holders: ${totalHolders}
-• Total Supply: ${totalSupply.toLocaleString()} $TRIBIFY
-• Largest Holder: ${tokenHolders[0]?.tokenBalance.toLocaleString()} $TRIBIFY
-• Treasury Balance: ${tokenHolders.find(h => h.address === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv')?.tokenBalance.toLocaleString()} $TRIBIFY
-
-Use the Shareholders button to view the complete list.`;
-          break;
-
-        case '/wallet':
-          response = `Wallet Features:
-1. Generate Keys - Create new wallets
-2. Download Keys - Backup your wallet data
-3. Restore Keys - Recover from backup
-4. Fund Wallets - Distribute funds
-5. Configure Buy/Sell - Set up automated trading
-6. Buy/Sell Sequence - Execute trades
-7. Distribute Tokens - Send tokens to multiple wallets
-
-Need more details about any feature? Just ask!`;
-          break;
-
-        case '/buy':
-          response = `How to Buy $TRIBIFY:
-
-1. Configure Buy Settings:
-   • Set amount range (min/max)
-   • Choose number of wallets
-   • Set time interval
-   • Adjust slippage and fees
-
-2. Start Buying:
-   • Use "Buy Sequence" for automated purchases
-   • Monitor transactions in real-time
-   • View balances in wallet page
-
-Need help with specific settings? Just ask!`;
-          break;
-
-        case '/sell':
-          response = `How to Sell $TRIBIFY:
-
-1. Configure Sell Settings:
-   • Set amount range (min/max)
-   • Choose number of wallets
-   • Set time interval
-   • Adjust slippage and fees
-
-2. Start Selling:
-   • Use "Sell Sequence" for automated sales
-   • Monitor transactions in real-time
-   • Track proceeds in wallet page
-
-Need help with specific settings? Just ask!`;
-          break;
-
-        case '/distribute':
-          response = `Token Distribution Guide:
-
-1. Access Distribution:
-   • Click "Distribute Tokens" button
-   • Choose source wallet (parent or external)
-   • Set distribution parameters
-
-2. Distribution Options:
-   • Fixed amount per wallet
-   • Random amounts within range
-   • Scheduled distribution
-   • Batch processing
-
-Need help setting up distribution? Just ask!`;
-          break;
-
-        default:
-          response = "I don't recognize that command. Try /help to see available commands.";
-      }
-    } else {
-      // Enhanced natural language handling
-      if (input.includes('help') || input.includes('how')) {
-        response = `I can help you with:
-• Managing wallets and tokens
-• Distributing TRIBIFY
-• Converting between currencies
-• Monitoring holders
-
-Try asking about one of these topics or use /help to see all commands!`;
-      } else if (input.includes('buy') || input.includes('purchase')) {
-        response = "To buy tokens, you can use the Configure Buy button to set up your purchase parameters, or use /buy for more details.";
-      } else if (input.includes('sell')) {
-        response = "To sell tokens, you can use the Configure Sell button to set up your sale parameters, or use /sell for more details.";
-      } else if (input.includes('wallet') || input.includes('keys')) {
-        response = "The Wallet page lets you manage your keys, fund wallets, and execute trades. Use /wallet for more details.";
-      } else if (input.includes('holder') || input.includes('shareholder')) {
-        response = "You can view all shareholders and their balances using the Shareholders button. Use /holders for statistics.";
-      } else {
-        response = "I can help you with managing wallets, distributing tokens, converting currencies, or monitoring holders. What would you like to know more about?";
-      }
-    }
-
-    // Add AI response
-    setTribifyResponses(prev => [...prev, { type: 'response', text: response }]);
-    
-    // Clear input
-    setTribifyInput('');
+  const handleConnection = async () => {
+    navigate('/');
   };
 
-  // Move fetchBalances inside App component
-  const fetchBalances = async (wallets) => {
-    const connection = new Connection(clusterApiUrl('mainnet-beta'));
-    const usdcMint = new PublicKey(USDC_MINT);
-
-    return Promise.all(wallets.map(async (wallet) => {
-      try {
-        // Fetch SOL balance
-        const solBalance = await connection.getBalance(new PublicKey(wallet.publicKey));
-        
-        // Fetch USDC balance
-        let usdcBalance = 0;
-        try {
-          const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-            new PublicKey(wallet.publicKey),
-            { mint: usdcMint }
-          );
-          if (tokenAccounts.value.length > 0) {
-            usdcBalance = tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount;
-          }
-        } catch (e) {
-          console.error('Error fetching USDC balance:', e);
-        }
-
-        return {
-          ...wallet,
-          solBalance: solBalance / LAMPORTS_PER_SOL,
-          usdcBalance: usdcBalance
-        };
-      } catch (e) {
-        console.error('Error fetching balances:', e);
-        return wallet;
-      }
-    }));
+  const handleDisconnect = async () => {
+    if (window.phantom?.solana) {
+      await window.phantom.solana.disconnect();
+    }
+    localStorage.removeItem('tribify_parent_wallet');
+    navigate('/');
   };
-
-  const { subwallets: contextSubwallets } = useContext(TribifyContext);
-
-  // Just show welcome screen when not connected
-  if (!publicKey) {
-    return (
-      <div className="welcome-container">
-        <h1>Welcome to Tribify</h1>
-        <p>Connect your Phantom wallet to get started</p>
-        <button onClick={handleConnection} className="connect-button">
-          Connect Phantom Wallet
-        </button>
-        <p className="info-text">
-          Your wallet will be used to generate secure child wallets. 
-          Each child wallet is uniquely derived from your parent wallet.
-        </p>
-      </div>
-    );
-  }
 
   // Show main app when connected
   return (
     <div className="App">
-      {!isConnected && (
+      {!isConnected ? (
         <div className="connection-group">
           <div className="tribify-text">/tribify.ai</div>
           <button onClick={handleConnection}>Connect</button>
         </div>
-      )}
-
-      {isConnected && (
+      ) : (
         <>
-          <div className="desktop-nav">
-            <button 
-              className="tribify-button" 
-              onClick={() => setActiveView('ai')}
-            >
-              /tribify.ai
-            </button>
-            <button 
-              className="holders-button"
-              onClick={() => setActiveView('holders')}
-            >
-              Shareholders
-            </button>
-            <button 
-              className="wallet-button"
-              onClick={() => navigate('/wallet')}
-            >
-              Wallet
-            </button>
-            <button 
-              className={activeView === 'stake' ? 'active' : ''}
-              onClick={() => setActiveView('stake')}
-            >
-              Stake
-            </button>
-            <button 
-              className={activeView === 'snipe' ? 'active' : ''}
-              onClick={() => setActiveView('snipe')}
-            >
-              Snipe
-            </button>
-            <button 
-              className={activeView === 'sign' ? 'active' : ''}
-              onClick={() => setActiveView('sign')}
-            >
-              Sign
-            </button>
-            <button 
-              className={activeView === 'vote' ? 'active' : ''}
-              onClick={() => setActiveView('vote')}
-            >
-              Vote
-            </button>
-            <Password onClick={() => {
-              if (friendPassword) {
-                // Has password - show change form
-                setDialogConfig({
-                  show: true,
-                  message: (
-                    <>
-                      <h3>Change Password</h3>
-                      <div className="password-form">
-                        <div className="password-field">
-                          <label>Username</label>
-                          <input 
-                            type="text"
-                            name="username"
-                            value={publicKey}
-                            readOnly
-                          />
-                        </div>
-                        <div className="password-field">
-                          <label>Current Password</label>
-                          <input 
-                            type="text" 
-                            value={friendPassword}
-                            disabled
-                            style={{ opacity: 0.7 }}
-                          />
-                        </div>
-                        <div className="password-field">
-                          <label>New Password</label>
-                          <input 
-                            type="password"
-                            id="newPassword"
-                            name="password"
-                            autoComplete="new-password"
-                            placeholder="Enter new password"
-                          />
-                        </div>
-                        <div className="password-field">
-                          <label>Confirm New Password</label>
-                          <input 
-                            type="password"
-                            id="confirmPassword"
-                            name={`${publicKey}-confirm`}
-                            autoComplete="new-password"
-                            placeholder="Confirm new password"
-                          />
-                        </div>
-                      </div>
-                    </>
-                  ),
-                  onConfirm: async () => {
-                    const newPassword = document.getElementById('newPassword').value;
-                    const confirmPassword = document.getElementById('confirmPassword').value;
-
-                    if (newPassword !== confirmPassword) {
-                      setStatus('New passwords do not match');
-                      return;
-                    }
-
-                    try {
-                      // Payment for password change
-                      setStatus('Please approve payment (0.001 SOL) to change your password...');
-                      const transaction = new Transaction().add(
-                        SystemProgram.transfer({
-                          fromPubkey: new PublicKey(publicKey),
-                          toPubkey: new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
-                          lamports: LAMPORTS_PER_SOL * 0.001
-                        })
-                      );
-
-                      const { blockhash } = await connection.getLatestBlockhash('processed');
-                      transaction.recentBlockhash = blockhash;
-                      transaction.feePayer = new PublicKey(publicKey);
-                      const signed = await window.phantom.solana.signTransaction(transaction);
-                      await connection.sendRawTransaction(signed.serialize());
-
-                      localStorage.setItem('friend_password', newPassword);
-                      setFriendPassword(newPassword);
-                      setStatus('Password updated successfully!');
-                    } catch (error) {
-                      setStatus('Failed to change password: ' + error.message);
-                    }
-                  },
-                  confirmText: 'Change Password'
-                });
-              } else {
-                // No password - offer to create
-                setDialogConfig({
-                  show: true,
-                  message: (
-                    <>
-                      <h3>Create Password</h3>
-                      <p>Would you like to create a password? This will cost 0.001 SOL.</p>
-                      <p className="dialog-note">A password lets you access special features.</p>
-                    </>
-                  ),
-                  onConfirm: async () => {
-                    try {
-                      // Payment for new password
-                      setStatus('Please approve payment (0.001 SOL) to create your password...');
-                      const transaction = new Transaction().add(
-                        SystemProgram.transfer({
-                          fromPubkey: new PublicKey(publicKey),
-                          toPubkey: new PublicKey('DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv'),
-                          lamports: LAMPORTS_PER_SOL * 0.001
-                        })
-                      );
-
-                      const { blockhash } = await connection.getLatestBlockhash('processed');
-                      transaction.recentBlockhash = blockhash;
-                      transaction.feePayer = new PublicKey(publicKey);
-                      const signed = await window.phantom.solana.signTransaction(transaction);
-                      await connection.sendRawTransaction(signed.serialize());
-
-                      // After payment, set password
-                      const newPassword = prompt('Payment received! Enter your password:');
-                      if (newPassword) {
-                        localStorage.setItem('friend_password', newPassword);
-                        setFriendPassword(newPassword);
-                        setStatus('Password created successfully!');
-                      }
-                    } catch (error) {
-                      setStatus('Failed to create password: ' + error.message);
-                    }
-                  },
-                  confirmText: 'Yes, Create Password',
-                  cancelText: 'No, Cancel'
-                });
-              }
-            }} />
-            <Messages onClick={() => {
-              setActiveView('messages');
-            }} />
-            <Backup onClick={backupNicknames} />
-            <Restore onClick={() => document.getElementById('restore-input').click()} />
-            <button className="docs-button" onClick={() => setShowDocs(!showDocs)}>Docs</button>
-            <button 
-              className="graph-toggle-button" 
-              onClick={() => setActiveView('graph')}
-            >
-              Graph
-            </button>
-            <button className="status-toggle-button" onClick={() => setShowStatus(!showStatus)}>Connection</button>
-            <Disconnect onClick={handleDisconnect} />
-          </div>
-
-          <div className="user-info-card">
-            <div className="user-info-content">
-              <span className="user-address">◈ {publicKey}</span>
-              {publicKey === 'DRJMA5AgMTGP6jL3uwgwuHG2SZRbNvzHzU8w8twjDnBv' && (
-                <span className="user-label">(Treasury)</span>
-              )}
-              <span className="balance-dot">•</span>
-              <span className="balance-item">
-                {tokenHolders.find(h => h.address === publicKey)?.tokenBalance.toLocaleString()} $TRIBIFY
-              </span>
-              <span className="balance-dot">•</span>
-              <span className="balance-item">{balance} SOL</span>
-              <span className="balance-dot">•</span>
-              <span className="balance-item">
-                ${tokenHolders.find(h => h.address === publicKey)?.usdcBalance.toLocaleString()} USDC
-              </span>
+          <nav className="desktop-nav">
+            <div className="nav-buttons">
+              <button 
+                className={`nav-button tribify-button ${activeView === 'ai' ? 'active' : ''}`}
+                onClick={() => setActiveView('ai')}
+              >
+                /tribify.ai
+              </button>
+              <button 
+                className={`nav-button ${activeView === 'shareholders' ? 'active' : ''}`}
+                onClick={() => setActiveView('shareholders')}
+              >
+                Shareholders
+              </button>
+              <button 
+                className={`nav-button wallet-button ${activeView === 'wallet' ? 'active' : ''}`}
+                onClick={() => setActiveView('wallet')}
+              >
+                Wallet
+              </button>
+              <button 
+                className={`nav-button stake-button ${activeView === 'stake' ? 'active' : ''}`}
+                onClick={() => setActiveView('stake')}
+              >
+                Stake
+              </button>
+              <button 
+                className={`nav-button ${activeView === 'snipe' ? 'active' : ''}`}
+                onClick={() => setActiveView('snipe')}
+              >
+                Snipe
+              </button>
+              <button 
+                className={`nav-button ${activeView === 'sign' ? 'active' : ''}`}
+                onClick={() => setActiveView('sign')}
+              >
+                Sign
+              </button>
+              <button 
+                className={`nav-button ${activeView === 'vote' ? 'active' : ''}`}
+                onClick={() => setActiveView('vote')}
+              >
+                Vote
+              </button>
+              <button 
+                className="nav-button"
+                onClick={handleDisconnect}
+              >
+                Disconnect
+              </button>
             </div>
-          </div>
+          </nav>
 
-          <div className="main-layout">
+          <main className="main-content">
             {activeView === 'ai' && (
-              <div className="ai-terminal">
+              <div className="terminal-container">
                 <div className="terminal-header">
-                  <span>/tribify.ai</span>
-                  <button onClick={() => setShowTribifyPrompt(false)}>×</button>
-                </div>
-                <div className="terminal-content">
-                  {tribifyResponses.map((response, i) => (
-                    <div key={i} className={`terminal-message ${response.type}`}>
-                      {response.type === 'input' && '> '}
-                      {response.text}
+                  <div className="wallet-info">
+                    <span className="wallet-address">
+                      {localStorage.getItem('tribify_parent_wallet')?.slice(0, 4)}...
+                      {localStorage.getItem('tribify_parent_wallet')?.slice(-4)}
+                    </span>
+                    <div className="balance-info">
+                      <span className="balance-item tribify">32,071,767.199 $TRIBIFY</span>
+                      <span className="balance-item sol">0.46602528 SOL</span>
+                      <span className="balance-item usdc">$0 USDC</span>
                     </div>
-                  ))}
+                  </div>
+                  <button className="close-terminal">×</button>
                 </div>
-                <form className="terminal-input" onSubmit={handleTribifyPrompt}>
-                  <input 
-                    type="text"
-                    value={tribifyInput}
-                    onChange={(e) => setTribifyInput(e.target.value)}
-                    placeholder="Enter a prompt..."
-                    autoFocus
+
+                <div className="welcome-message">
+                  Welcome to /tribify.ai! I'm your AI assistant for managing TRIBIFY tokens and wallets. I can help you:
+                  • Create and manage up to 100 subwallets
+                  • Distribute TRIBIFY tokens strategically
+                  • Convert between TRIBIFY, SOL, and USDC
+                  • Monitor your token holder community
+                </div>
+
+                <input
+                  type="text"
+                  className="terminal-input"
+                  placeholder="Enter a command or ask for help..."
+                />
+
+                <div className="terminal-output">
+                  Type /help to see all commands
+                </div>
+              </div>
+            )}
+
+            {activeView === 'shareholders' && (
+              <div className="shareholders-container">
+                {isLoading ? (
+                  <div className="loading-overlay">
+                    <div className="loading-spinner"></div>
+                  </div>
+                ) : (
+                  <Shareholders 
+                    holders={tokenHolders}
+                    nicknames={nicknames}
+                    setNicknames={setNicknames}
+                    setActiveView={setActiveView}
+                    publicKey={localStorage.getItem('tribify_parent_wallet')}
                   />
-                </form>
+                )}
               </div>
             )}
 
-            {activeView === 'holders' && (
-              <div className="token-holders">
-                <h3>$TRIBIFY Shareholders</h3>
-                <Shareholders 
-                  holders={tokenHolders}
-                  nicknames={nicknames}
-                  setNicknames={setNicknames}
-                  setActiveView={setActiveView}
-                  publicKey={publicKey?.toString()}
+            {activeView === 'wallet' && (
+              <div className="wallet-container">
+                <WalletPage 
+                  subwallets={subwallets}
+                  setSubwallets={setSubwallets}
                 />
               </div>
-            )}
-
-            {activeView === 'graph' && (
-              <div className="graph-container">
-                <TokenHolderGraph 
-                  holders={tokenHolders.map(holder => ({
-                    id: holder.address,
-                    value: holder.tokenBalance,
-                    name: nicknames[holder.address] || holder.address,
-                    address: holder.address
-                  }))}
-                  width={window.innerWidth - 40}  // Full width minus margins
-                  height={window.innerHeight - 200}  // Full height minus header space
-                />
-              </div>
-            )}
-
-            {activeView === 'messages' && (
-              <MessagesPage 
-                tokenHolders={tokenHolders}
-                publicKey={publicKey}
-                messages={messages}
-                nicknames={nicknames}
-                unreadCounts={unreadCounts}
-                onSendMessage={handleSendMessage}
-                onClose={() => setActiveView('ai')}
-              />
             )}
 
             {activeView === 'stake' && (
-              <StakeView 
-                parentWallet={{
-                  publicKey: publicKey?.toString(),
-                  tribifyBalance: tokenHolders.find(h => h.address === publicKey?.toString())?.tokenBalance || 0
-                }}
-                tokenHolders={tokenHolders}
-              />
+              <div className="stake-container">
+                <StakeView 
+                  parentWallet={{
+                    publicKey: localStorage.getItem('tribify_parent_wallet'),
+                    tribifyBalance: tokenHolders.find(h => h.address === localStorage.getItem('tribify_parent_wallet'))?.tokenBalance || 0
+                  }}
+                  tokenHolders={tokenHolders}
+                />
+              </div>
             )}
 
             {activeView === 'snipe' && (
-              <div className="page-container">
+              <div className="snipe-container">
                 <SnipePage 
-                  publicKey={publicKey}
-                  parentBalance={0.067453326}
-                  subwallets={subwallets || []} 
+                  publicKey={localStorage.getItem('tribify_parent_wallet')}
+                  parentBalance={0.46602528}
+                  subwallets={subwallets}
                 />
               </div>
             )}
 
             {activeView === 'sign' && (
               <div className="sign-container">
-                <h3>Sign Messages</h3>
-                {/* Sign component content will go here */}
+                <Sign />
               </div>
             )}
 
             {activeView === 'vote' && (
-              <VotePage tokenHolders={tokenHolders} />
+              <div className="vote-container">
+                <VotePage 
+                  tokenHolders={tokenHolders}
+                  publicKey={localStorage.getItem('tribify_parent_wallet')}
+                />
+              </div>
             )}
-          </div>
-
-          {showAllMessages && (
-            <div className="messages-box">
-              <div className="messages-header">
-                <h3>Messages</h3>
-                <button onClick={() => setShowAllMessages(false)}>×</button>
-              </div>
-              <div className="messages-list">
-                {getTotalUnread() === 0 ? (
-                  <div className="empty-messages">
-                    No Messages! Your inbox is empty!
-                  </div>
-                ) : (
-                  tokenHolders.map(holder => (
-                    unreadCounts[holder.address] > 0 && (
-                      <div key={holder.address} className="message-item" onClick={() => {
-                        handleInboxClick(holder.address);
-                        setShowAllMessages(false);
-                      }}>
-                        <div className="message-from">
-                          {nicknames[holder.address] || holder.address}
-                        </div>
-                        <div className="unread-count">
-                          {unreadCounts[holder.address]} unread
-                        </div>
-                      </div>
-                    )
-                  ))
-                )}
-              </div>
-            </div>
-          )}
+          </main>
         </>
       )}
-
-      {status && (
-        <div className="status">
-          {status}
-        </div>
-      )}
-
-      {showStatus && (
-        <div className="connection-status-panel">
-          <div className="status-details">
-            <div className="status-item">
-              <span className="status-label">Connection State:</span>
-              <span className={`status-value ${debugState.connectionState}`}>
-                {debugState.connectionState}
-              </span>
-            </div>
-            <div className="status-item">
-              <span className="status-label">Socket ID:</span>
-              <span className="status-value">{debugState.socketId || 'Not connected'}</span>
-            </div>
-            <div className="status-item">
-              <span className="status-label">Auth Attempts:</span>
-              <span className="status-value">{debugState.authAttempts}</span>
-            </div>
-            {debugState.lastAuthError && (
-              <div className="status-item error">
-                <span className="status-label">Last Error:</span>
-                <span className="status-value error">{debugState.lastAuthError}</span>
-              </div>
-            )}
-            <div className="status-item">
-              <span className="status-label">Online Users:</span>
-              <span className="status-value">
-                {Array.from(onlineUsers).join(', ') || 'None'}
-              </span>
-            </div>
-            <div className="status-actions">
-              <button onClick={() => {
-                if (socket) {
-                  socket.disconnect();
-                  socket.connect();
-                }
-              }}>
-                Reconnect
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {dialogConfig.show && (
-        <div className="dialog-overlay">
-          <div className="dialog-box">
-            <div className="dialog-content">
-              {dialogConfig.message}
-            </div>
-            <div className="dialog-buttons">
-              <button onClick={() => {
-                dialogConfig.onConfirm?.();
-                setDialogConfig({ show: false });
-              }}>
-                {dialogConfig.confirmText || 'Save'}
-              </button>
-              <button onClick={() => {
-                setDialogConfig({ show: false });
-                setEditingNickname(null);
-              }}>
-                {dialogConfig.cancelText || 'Cancel'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <MessageModal 
-        isOpen={messageModal.isOpen}
-        onClose={handleCloseChat}
-        recipient={messageModal.recipient}
-        recipientName={messageModal.recipient ? nicknames[messageModal.recipient] : ''}
-        messages={messageModal.recipient ? messages[messageModal.recipient] : []}
-        onSendMessage={handleSendMessage}
-      />
-
-      <Routes>
-        <Route path="/wallet" element={
-          <WalletPage 
-            subwallets={contextSubwallets} 
-            setSubwallets={handleSubwalletsUpdate}
-          />
-        }/>
-      </Routes>
     </div>
   );
 }
