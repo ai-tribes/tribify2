@@ -1,0 +1,94 @@
+.theme-toggle-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle-button {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  padding: 0;
+  position: relative;
+  border-radius: 24px;
+  outline: none;
+  height: 36px;
+  width: 36px;
+  box-shadow: none;
+  transition: all 0.25s ease;
+}
+
+.theme-toggle-button:focus-visible {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
+}
+
+.toggle-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  display: flex;
+  height: 36px;
+  width: 36px;
+  position: relative;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+.toggle-indicator {
+  height: 100%;
+  width: 100%;
+  border-radius: 50%;
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.indicator-inner {
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  font-size: 16px;
+  line-height: 0;
+  transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.theme-toggle-button.dark .indicator-inner {
+  transform: rotate(0deg);
+  color: #FFEB3B;
+}
+
+.theme-toggle-button.light .indicator-inner {
+  transform: rotate(90deg);
+  color: #FF7043;
+}
+
+.theme-toggle-button.dark .toggle-track {
+  background: rgba(30, 30, 60, 0.5);
+}
+
+.theme-toggle-button.light .toggle-track {
+  background: rgba(200, 200, 255, 0.2);
+}
+
+.theme-toggle-button:hover .toggle-track {
+  background: linear-gradient(45deg, rgba(252, 70, 107, 0.2), rgba(63, 94, 251, 0.2));
+  border-color: rgba(252, 70, 107, 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle-button,
+  .toggle-track,
+  .toggle-indicator,
+  .indicator-inner {
+    transition: none;
+  }
+} 

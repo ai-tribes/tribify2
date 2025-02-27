@@ -1,0 +1,34 @@
+<svg width="800" height="500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0e17;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1f2c;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#45a049;stop-opacity:0.8" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#grad1)" />
+  <g fill="none" stroke="url(#grad2)" stroke-width="2">
+    <circle cx="400" cy="250" r="100" opacity="0.5" />
+    <circle cx="400" cy="250" r="150" opacity="0.3" />
+    <circle cx="400" cy="250" r="200" opacity="0.1" />
+  </g>
+  <g fill="url(#grad2)" opacity="0.7">
+    <circle cx="300" cy="350" r="20" />
+    <circle cx="500" cy="350" r="15" />
+    <circle cx="350" cy="200" r="25" />
+    <circle cx="450" cy="200" r="18" />
+    <circle cx="400" cy="300" r="22" />
+  </g>
+  <g stroke="url(#grad2)" stroke-width="3" opacity="0.5">
+    <line x1="300" y1="350" x2="350" y2="200" />
+    <line x1="350" y1="200" x2="400" y2="300" />
+    <line x1="400" y1="300" x2="450" y2="200" />
+    <line x1="450" y1="200" x2="500" y2="350" />
+    <line x1="500" y1="350" x2="300" y2="350" />
+  </g>
+  <text x="400" y="250" font-family="Arial" font-size="24" text-anchor="middle" fill="#4CAF50">AI Demo</text>
+  <text x="400" y="280" font-family="Arial" font-size="16" text-anchor="middle" fill="#d0d0d0">Click to generate</text>
+</svg> 
