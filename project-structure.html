@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tribify Project Structure</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        header {
+            background-color: #8e44ad;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+        
+        .main-container {
+            display: flex;
+            flex: 1;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px 0;
+            overflow-y: auto;
+            height: calc(100vh - 60px);
+            position: sticky;
+            top: 60px;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-header {
+            padding: 0 20px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 10px;
+        }
+        
+        .sidebar-title {
+            font-size: 1.2rem;
+            color: #9b59b6;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+        }
+        
+        .sidebar-menu li {
+            padding: 10px 20px;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .sidebar-menu li:hover {
+            background-color: rgba(155, 89, 182, 0.1);
+            border-left-color: #9b59b6;
+        }
+        
+        .sidebar-menu li.active {
+            background-color: rgba(155, 89, 182, 0.2);
+            border-left-color: #9b59b6;
+            font-weight: bold;
+        }
+        
+        .sidebar-menu li i {
+            margin-right: 8px;
+            color: #9b59b6;
+        }
+        
+        /* Category headers in sidebar */
+        .sidebar-category {
+            font-size: 0.8rem;
+            color: #9b59b6;
+            padding: 15px 20px 8px;
+            border-bottom: 1px solid rgba(155, 89, 182, 0.3);
+            margin-top: 15px;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+            background-color: rgba(155, 89, 182, 0.1);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* Category toggle indicator */
+        .sidebar-category .toggle-indicator {
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+        }
+        
+        .sidebar-category.collapsed .toggle-indicator {
+            transform: rotate(-90deg);
+        }
+        
+        /* Category collapsible content */
+        .category-content {
+            transition: all 0.3s ease;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        
+        .category-content.hidden {
+            display: none;
+        }
+        
+        /* First category doesn't need top margin */
+        .sidebar-category:first-of-type {
+            margin-top: 0;
+        }
+        
+        /* Add a subtle divider between sections */
+        .sidebar-divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(155, 89, 182, 0.5), transparent);
+            margin: 10px 10px;
+        }
+        
+        /* Toggle Button */
+        .sidebar-toggle {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: #8e44ad;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+        
+        /* Main Content Styles */
+        .content-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .search-container {
+            margin-bottom: 20px;
+            display: flex;
+            max-width: 600px;
+        }
+        
+        #search-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            font-size: 16px;
+            border-right: none;
+        }
+        
+        #search-button {
+            padding: 10px 15px;
+            background-color: #8e44ad;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+        }
+        
+        .button-container {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .expand-all, .collapse-all {
+            padding: 8px 15px;
+            background-color: #8e44ad;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin-left: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .expand-all:hover, .collapse-all:hover {
+            background-color: #9b59b6;
+            transform: translateY(-2px);
+        }
+        
+        .project-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .directory {
+            margin-left: 20px;
+        }
+        
+        .directory-name {
+            cursor: pointer;
+            font-weight: bold;
+            color: #2980b9;
+            display: block;
+            margin: 8px 0;
+            transition: all 0.2s ease;
+        }
+        
+        .directory-name:hover {
+            color: #3498db;
+            transform: translateX(2px);
+        }
+        
+        .directory-name::before {
+            content: "📁 ";
+        }
+        
+        .directory-name.open::before {
+            content: "📂 ";
+        }
+        
+        .file {
+            margin-left: 25px;
+            margin-bottom: 5px;
+            color: #333;
+            transition: all 0.2s ease;
+        }
+        
+        .file:hover {
+            transform: translateX(2px);
+        }
+        
+        .file::before {
+            content: "📄 ";
+        }
+        
+        .js-file::before {
+            content: "📜 ";
+            color: #f39c12;
+        }
+        
+        .css-file::before {
+            content: "🎨 ";
+            color: #2ecc71;
+        }
+        
+        .jsx-file::before {
+            content: "⚛️ ";
+            color: #3498db;
+        }
+        
+        .json-file::before {
+            content: "🔧 ";
+            color: #95a5a6;
+        }
+        
+        .md-file::before {
+            content: "📝 ";
+            color: #7f8c8d;
+        }
+        
+        .html-file::before {
+            content: "🌐 ";
+            color: #e74c3c;
+        }
+
+        .env-file::before {
+            content: "🔒 ";
+            color: #27ae60;
+        }
+
+        .rs-file::before {
+            content: "🦀 ";
+            color: #e67e22;
+        }
+
+        .hidden {
+            display: none;
+        }
+        
+        .highlight {
+            background-color: #fff176;
+            padding: 2px;
+            border-radius: 3px;
+        }
+
+        .description {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #eee;
+            border-radius: 8px;
+            border-left: 5px solid #8e44ad;
+        }
+        
+        /* Mermaid Diagram Styles */
+        .mermaid-container {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mermaid-wrapper {
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        
+        .mermaid-wrapper h3 {
+            margin-bottom: 15px;
+            color: #8e44ad;
+        }
+        
+        .mermaid {
+            font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+        }
+        
+        /* Architecture Content Styles */
+        .architecture-content {
+            margin: 25px 0;
+            padding: 20px;
+            background-color: rgba(155, 89, 182, 0.05);
+            border-radius: 8px;
+            border-left: 4px solid #8e44ad;
+        }
+        
+        .architecture-content h3 {
+            color: #8e44ad;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .architecture-content ul {
+            padding-left: 20px;
+        }
+        
+        .architecture-content li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .architecture-content strong {
+            color: #2c3e50;
+        }
+        
+        /* Stats Card */
+        .stats-container {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #8e44ad;
+            margin: 5px 0;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                top: 0;
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 99;
+                height: calc(100% - 60px);
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .sidebar-toggle {
+                display: flex;
+            }
+            
+            .content-area {
+                width: 100%;
+            }
+            
+            .button-container {
+                flex-direction: column;
+                align-items: flex-end;
+            }
+            
+            .expand-all, .collapse-all {
+                margin: 5px 0;
+                width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Tribify Project Structure</h1>
+    </header>
+    
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2 class="sidebar-title">Project Explorer</h2>
+            </div>
+            <ul class="sidebar-menu" id="sidebar-menu">
+                <li class="sidebar-category" data-target="files-content">Files <span class="toggle-indicator">▼</span></li>
+                <ul class="category-content" id="files-content">
+                    <li class="active" data-target="root"><i>📁</i> Root</li>
+                    <li data-target="src"><i>📁</i> src</li>
+                    <li data-target="src-components"><i>📁</i> src/components</li>
+                    <li data-target="src-context"><i>📁</i> src/context</li>
+                    <li data-target="src-lib"><i>📁</i> src/lib</li>
+                    <li data-target="src-pages"><i>📁</i> src/pages</li>
+                    <li data-target="src-utils"><i>📁</i> src/utils</li>
+                    <li data-target="api"><i>📁</i> api</li>
+                    <li data-target="public"><i>📁</i> public</li>
+                    <li data-target="prisma"><i>📁</i> prisma</li>
+                    <li data-target="programs"><i>📁</i> programs</li>
+                </ul>
+                
+                <li class="sidebar-divider"></li>
+                <li class="sidebar-category" data-target="architecture-content">Architecture <span class="toggle-indicator">▼</span></li>
+                <ul class="category-content" id="architecture-content">
+                    <li data-target="system-overview"><i>🔍</i> System Overview</li>
+                    <li data-target="frontend-architecture"><i>🖥️</i> Frontend</li>
+                    <li data-target="backend-services"><i>⚙️</i> Backend Services</li>
+                    <li data-target="blockchain-integration"><i>⛓️</i> Blockchain</li>
+                    <li data-target="data-flow"><i>📊</i> Data Flow</li>
+                    <li data-target="security-model"><i>🔒</i> Security Model</li>
+                    <li data-target="routes"><i>🔀</i> Routes</li>
+                </ul>
+                
+                <li class="sidebar-divider"></li>
+                <li class="sidebar-category" data-target="diagrams-content">Diagrams <span class="toggle-indicator">▼</span></li>
+                <ul class="category-content" id="diagrams-content">
+                    <li data-target="architecture-diagram"><i>📊</i> Architecture Diagram</li>
+                </ul>
+            </ul>
+        </aside>
+        
+        <!-- Toggle Button for Mobile -->
+        <button class="sidebar-toggle" id="sidebar-toggle">≡</button>
+        
+        <!-- Main Content Area -->
+        <main class="content-area">
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search files and directories...">
+                <button id="search-button">Search</button>
+            </div>
+            
+            <div class="button-container">
+                <button class="expand-all">Expand All</button>
+                <button class="collapse-all">Collapse All</button>
+            </div>
+            
+            <!-- Project Statistics -->
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-value">65+</div>
+                    <div class="stat-label">Components</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">12</div>
+                    <div class="stat-label">Main Directories</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">150+</div>
+                    <div class="stat-label">Total Files</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">10K+</div>
+                    <div class="stat-label">Lines of Code</div>
+                </div>
+            </div>
+            
+            <div class="project-container">
+                <span class="directory-name open" id="root">📁 tribify2</span>
+                <div class="directory">
+                    <!-- Root files -->
+                    <div class="file env-file">.env</div>
+                    <div class="file env-file">.env.example</div>
+                    <div class="file">.gitignore</div>
+                    <div class="file js-file">config-overrides.js</div>
+                    <div class="file js-file">next.config.js</div>
+                    <div class="file json-file">package.json</div>
+                    <div class="file js-file">postcss.config.js</div>
+                    <div class="file md-file">README.md</div>
+                    <div class="file js-file">server.js</div>
+                    <div class="file js-file">tailwind.config.js</div>
+                    <div class="file md-file">worklist.md</div>
+                    
+                    <!-- src directory -->
+                    <span class="directory-name" id="src">src</span>
+                    <div class="directory hidden">
+                        <div class="file css-file">App.css</div>
+                        <div class="file js-file">App.js</div>
+                        <div class="file css-file">index.css</div>
+                        <div class="file js-file">index.js</div>
+                        
+                        <!-- src/components directory -->
+                        <span class="directory-name" id="src-components">components</span>
+                        <div class="directory hidden">
+                            <div class="file js-file">AuthWrapper.js</div>
+                            <div class="file js-file">Backup.js</div>
+                            <div class="file css-file">BuyConfigModal.css</div>
+                            <div class="file js-file">BuyConfigModal.js</div>
+                            <div class="file css-file">ChartView.css</div>
+                            <div class="file js-file">ChartView.js</div>
+                            <div class="file css-file">Chat.css</div>
+                            <div class="file js-file">Chat.js</div>
+                            <div class="file js-file">Connected.js</div>
+                            <div class="file css-file">ConversionModal.css</div>
+                            <div class="file js-file">ConversionModal.js</div>
+                            <div class="file js-file">Disconnect.js</div>
+                            <div class="file css-file">FundSubwallets.css</div>
+                            <div class="file js-file">FundSubwallets.js</div>
+                            <div class="file js-file">HamburgerMenu.js</div>
+                            <div class="file css-file">LandingPage.css</div>
+                            <div class="file js-file">LandingPage.js</div>
+                            <div class="file css-file">LoadingIndicator.css</div>
+                            <div class="file js-file">LoadingIndicator.js</div>
+                            <div class="file js-file">MainAppLayout.js</div>
+                            <div class="file js-file">MessageModal.js</div>
+                            <div class="file js-file">Messages.js</div>
+                            <div class="file css-file">MessagesPage.css</div>
+                            <div class="file js-file">MessagesPage.js</div>
+                            <div class="file css-file">Modal.css</div>
+                            <div class="file js-file">Modal.js</div>
+                            <div class="file js-file">Password.js</div>
+                            <div class="file js-file">Refresh.js</div>
+                            <div class="file js-file">Restore.js</div>
+                            <div class="file css-file">SellConfigModal.css</div>
+                            <div class="file js-file">SellConfigModal.js</div>
+                            <div class="file css-file">Shareholders.css</div>
+                            <div class="file js-file">Shareholders.js</div>
+                            <div class="file css-file">Sign.css</div>
+                            <div class="file js-file">Sign.js</div>
+                            <div class="file css-file">SnipePage.css</div>
+                            <div class="file js-file">SnipePage.js</div>
+                            <div class="file css-file">SolRecovery.css</div>
+                            <div class="file css-file">StakeView.css</div>
+                            <div class="file js-file">StakeView.js</div>
+                            <div class="file css-file">StakingLockModal.css</div>
+                            <div class="file js-file">StakingLockModal.js</div>
+                            <div class="file js-file">ThemeToggle.js</div>
+                            <div class="file css-file">TokenDistributor.css</div>
+                            <div class="file js-file">TokenDistributor.js</div>
+                            <div class="file js-file">TokenHolderGraph.js</div>
+                            <div class="file css-file">UnstakeConfirmationModal.css</div>
+                            <div class="file js-file">UnstakeConfirmationModal.js</div>
+                            <div class="file css-file">VotePage.css</div>
+                            <div class="file js-file">VotePage.js</div>
+                            <div class="file css-file">WalletPage.css</div>
+                            <div class="file js-file">WalletPage.js</div>
+                        </div>
+                        
+                        <!-- src/context directory -->
+                        <span class="directory-name" id="src-context">context</span>
+                        <div class="directory hidden">
+                            <div class="file jsx-file">ChatContext.jsx</div>
+                            <div class="file js-file">GovernanceContext.js</div>
+                            <div class="file js-file">TribifyContext.js</div>
+                        </div>
+                        
+                        <!-- src/lib directory -->
+                        <span class="directory-name" id="src-lib">lib</span>
+                        <div class="directory hidden">
+                            <div class="file js-file">encryption.js</div>
+                            <div class="file js-file">prisma.js</div>
+                            <div class="file js-file">solana.js</div>
+                        </div>
+                        
+                        <!-- src/pages directory -->
+                        <span class="directory-name" id="src-pages">pages</span>
+                        <div class="directory hidden">
+                            <span class="directory-name">api</span>
+                            <div class="directory hidden">
+                                <span class="directory-name">messages</span>
+                                <div class="directory hidden">
+                                    <div class="file js-file">[id].js</div>
+                                    <div class="file js-file">index.js</div>
+                                </div>
+                                <span class="directory-name">pusher</span>
+                                <div class="directory hidden">
+                                    <div class="file js-file">auth.js</div>
+                                    <div class="file js-file">webhook.js</div>
+                                </div>
+                                <div class="file js-file">online-users.js</div>
+                                <div class="file js-file">send-message.js</div>
+                                <div class="file js-file">send-notification.js</div>
+                                <div class="file js-file">send-tribify.js</div>
+                            </div>
+                            <div class="file js-file">_app.js</div>
+                        </div>
+                        
+                        <!-- src/server directory -->
+                        <span class="directory-name">server</span>
+                        <div class="directory hidden">
+                            <div class="file js-file">websocket.js</div>
+                        </div>
+                        
+                        <!-- src/utils directory -->
+                        <span class="directory-name" id="src-utils">utils</span>
+                        <div class="directory hidden">
+                            <div class="file js-file">pumpUpdate.js</div>
+                            <div class="file js-file">staking.js</div>
+                            <div class="file js-file">trading.js</div>
+                        </div>
+                    </div>
+                    
+                    <!-- api directory -->
+                    <span class="directory-name" id="api">api</span>
+                    <div class="directory hidden">
+                        <div class="file js-file">send-tribify.js</div>
+                    </div>
+                    
+                    <!-- public directory -->
+                    <span class="directory-name" id="public">public</span>
+                    <div class="directory hidden">
+                        <div class="file html-file">index.html</div>
+                        <div class="file json-file">manifest.json</div>
+                        <div class="file">robots.txt</div>
+                        <div class="file js-file">service-worker.js</div>
+                    </div>
+                    
+                    <!-- prisma directory -->
+                    <span class="directory-name" id="prisma">prisma</span>
+                    <div class="directory hidden">
+                        <div class="file">schema.prisma</div>
+                    </div>
+                    
+                    <!-- programs directory -->
+                    <span class="directory-name" id="programs">programs</span>
+                    <div class="directory hidden">
+                        <span class="directory-name">tribify-staking</span>
+                        <div class="directory hidden">
+                            <span class="directory-name">src</span>
+                            <div class="directory hidden">
+                                <div class="file rs-file">lib.rs</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="description">
+                <h2>About Tribify</h2>
+                <p>Tribify is a Solana-based token management platform that enables users to create and manage multiple subwallets, distribute $TRIBIFY tokens across wallets, convert between $TRIBIFY, SOL, and USDC, manage token distributions and recoveries, and monitor wallet balances and transactions.</p>
+                
+                <h3>Key Features:</h3>
+                <ul>
+                    <li><strong>Wallet Management</strong> - Create up to 100 subwallets, generate and backup wallet keys, view all wallet balances (SOL, TRIBIFY, USDC), recover SOL from subwallets, close ATA accounts</li>
+                    <li><strong>Token Operations</strong> - Distribute $TRIBIFY to subwallets, convert between tokens (TRIBIFY ↔ SOL ↔ USDC), batch transfer capabilities, token recovery and consolidation</li>
+                    <li><strong>Advanced Features</strong> - Random distribution mode, batch processing (4 wallets at a time), ATA (Associated Token Account) management, private key security</li>
+                    <li><strong>Staking Implementation</strong> - Stake tokens with customizable lock periods, earn APY based on staking duration, governance participation</li>
+                    <li><strong>Real-Time Messaging</strong> - Holder-to-holder encrypted messaging, proposal voting system, shareholder coordination</li>
+                </ul>
+            </div>
+            
+            <!-- Architecture Sections -->
+            <div id="system-overview" class="mermaid-container">
+                <h2>System Overview</h2>
+                <p>Tribify implements a multi-layered architecture that connects web frontend components to Solana blockchain functionality:</p>
+                
+                <div class="architecture-content">
+                    <h3>Key Architectural Principles</h3>
+                    <ul>
+                        <li><strong>Component-Based Design</strong> - Modular React components for UI flexibility and reusability</li>
+                        <li><strong>Context-Based State Management</strong> - React Context API for centralized state across components</li>
+                        <li><strong>API Gateway Pattern</strong> - Centralized API endpoints for backend service communication</li>
+                        <li><strong>Blockchain Integration</strong> - Direct integration with Solana programs for token and wallet operations</li>
+                        <li><strong>Real-Time Communication</strong> - WebSocket connections for instant messaging and updates</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div id="frontend-architecture" class="mermaid-container">
+                <h2>Frontend Architecture</h2>
+                <p>The frontend is built with React.js and Next.js, utilizing a component-based architecture:</p>
+                
+                <div class="mermaid-wrapper">
+                    <div class="mermaid">
+graph TD
+    App[App Component] --> Layout[Main App Layout]
+    Layout --> Nav[Navigation Components]
+    Layout --> Content[Content Area]
+    Layout --> Footer[Footer Components]
+    
+    Content --> Auth[Auth Wrapper]
+    Auth --> WalletPages[Wallet Pages]
+    Auth --> TokenPages[Token Management]
+    Auth --> StakingPages[Staking Interface]
+    Auth --> MessagePages[Messaging System]
+    
+    subgraph State Management
+        Context[Context Providers]
+        Hooks[Custom Hooks]
+    end
+    
+    WalletPages --> Context
+    TokenPages --> Context
+    StakingPages --> Context
+    MessagePages --> Context
+    
+    Context --> API[API Requests]
+    
+    style App fill:#9b59b6,stroke:#8e44ad,color:white
+    style Layout fill:#9b59b6,stroke:#8e44ad,color:white
+    style Auth fill:#9b59b6,stroke:#8e44ad,color:white
+    style Content fill:#9b59b6,stroke:#8e44ad,color:white
+    style Context fill:#2980b9,stroke:#2c3e50,color:white
+                    </div>
+                </div>
+                
+                <div class="architecture-content">
+                    <h3>Key Components</h3>
+                    <ul>
+                        <li><strong>MainAppLayout</strong> - Core layout wrapper for authenticated content</li>
+                        <li><strong>WalletPage</strong> - Interface for wallet management operations</li>
+                        <li><strong>ChartView</strong> - Data visualization components</li>
+                        <li><strong>StakeView</strong> - Staking interface and rewards management</li>
+                        <li><strong>MessagesPage</strong> - Shareholder communication interface</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div id="backend-services" class="mermaid-container">
+                <h2>Backend Services</h2>
+                <p>The backend architecture consists of several specialized services that handle different aspects of the platform:</p>
+                
+                <div class="mermaid-wrapper">
+                    <div class="mermaid">
+graph TD
+    API[API Gateway] --> Auth[Authentication Service]
+    API --> Wallet[Wallet Service]
+    API --> Token[Token Service]
+    API --> Staking[Staking Service]
+    API --> Messaging[Messaging Service]
+    
+    Auth --> Database[(Database)]
+    Wallet --> Database
+    Token --> Database
+    Staking --> Database
+    Messaging --> Database
+    
+    Wallet --> Blockchain[Blockchain Integration]
+    Token --> Blockchain
+    Staking --> Blockchain
+    
+    Messaging --> Realtime[Realtime Updates]
+    
+    style API fill:#2980b9,stroke:#2c3e50,color:white
+    style Database fill:#e67e22,stroke:#d35400,color:white
+    style Blockchain fill:#27ae60,stroke:#16a085,color:white
+                    </div>
+                </div>
+                
+                <div class="architecture-content">
+                    <h3>Key Services</h3>
+                    <ul>
+                        <li><strong>Authentication Service</strong> - Manages wallet connections and session management</li>
+                        <li><strong>Wallet Service</strong> - Handles subwallet creation, key management, and balance tracking</li>
+                        <li><strong>Token Service</strong> - Manages token distributions, conversions, and transfers</li>
+                        <li><strong>Staking Service</strong> - Processes staking operations and reward calculations</li>
+                        <li><strong>Messaging Service</strong> - Handles encrypted communication between shareholders</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div id="blockchain-integration" class="mermaid-container">
+                <h2>Blockchain Integration</h2>
+                <p>Tribify integrates directly with the Solana blockchain, utilizing custom programs and account structures:</p>
+                
+                <div class="mermaid-wrapper">
+                    <div class="mermaid">
+graph TD
+    App[Application Layer] --> Lib[Solana.js Library]
+    Lib --> RPC[RPC Connection]
+    RPC --> Programs[Solana Programs]
+    
+    Programs --> Accounts[Program Accounts]
+    Programs --> Instructions[Program Instructions]
+    
+    subgraph Program Operations
+        TokenOps[Token Operations]
+        StakingOps[Staking Operations]
+        WalletOps[Wallet Operations]
+    end
+    
+    Instructions --> TokenOps
+    Instructions --> StakingOps
+    Instructions --> WalletOps
+    
+    Accounts --> TokenAccounts[Token Accounts]
+    Accounts --> StakingAccounts[Staking Accounts]
+    Accounts --> DataAccounts[Data Storage Accounts]
+    
+    style Programs fill:#27ae60,stroke:#16a085,color:white
+    style Accounts fill:#e67e22,stroke:#d35400,color:white
+    style Instructions fill:#9b59b6,stroke:#8e44ad,color:white
+                    </div>
+                </div>
+                
+                <div class="architecture-content">
+                    <h3>Key Blockchain Components</h3>
+                    <ul>
+                        <li><strong>Solana Programs</strong> - Custom on-chain programs (smart contracts) that execute token and staking logic</li>
+                        <li><strong>Program Accounts</strong> - On-chain data storage for user information and operational state</li>
+                        <li><strong>Associated Token Accounts (ATAs)</strong> - Specialized accounts for holding token balances</li>
+                        <li><strong>Program Instructions</strong> - Structured operations that can be executed on the blockchain</li>
+                        <li><strong>Transaction Signing</strong> - Cryptographic verification of user operations</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div id="data-flow" class="mermaid-container">
+                <h2>Data Flow Architecture</h2>
+                <p>The data flow in Tribify follows a structured pattern to ensure consistency and real-time updates:</p>
+                
+                <div class="mermaid-wrapper">
+                    <div class="mermaid">
+sequenceDiagram
+    participant User as User Interface
+    participant Context as Context Providers
+    participant API as API Services
+    participant DB as Database
+    participant BC as Blockchain
+    
+    User->>+Context: User Action
+    Context->>+API: API Request
+    
+    alt Database Operation
+        API->>DB: Query/Update
+        DB-->>API: Response
+    else Blockchain Operation
+        API->>BC: Submit Transaction
+        BC-->>API: Confirmation
+    end
+    
+    API-->>-Context: Response
+    Context-->>-User: Update UI
+    
+    Note over User,BC: Real-time updates via WebSockets
+                    </div>
+                </div>
+                
+                <div class="architecture-content">
+                    <h3>Key Data Flows</h3>
+                    <ul>
+                        <li><strong>User Actions</strong> - Interface events that trigger context updates</li>
+                        <li><strong>API Communication</strong> - Structured requests to backend services</li>
+                        <li><strong>Blockchain Transactions</strong> - On-chain operations with cryptographic verification</li>
+                        <li><strong>Real-time Updates</strong> - WebSocket-based communication for immediate data propagation</li>
+                        <li><strong>State Management</strong> - Centralized context structure for consistent application state</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div id="security-model" class="mermaid-container">
+                <h2>Security Architecture</h2>
+                <p>Tribify implements a comprehensive security model to protect user assets and information:</p>
+                
+                <div class="mermaid-wrapper">
+                    <div class="mermaid">
+graph TD
+    Security[Security Model] --> Auth[Authentication]
+    Security --> Encryption[Encryption]
+    Security --> Access[Access Control]
+    Security --> Transaction[Transaction Security]
+    
+    Auth --> WalletAuth[Wallet-based Auth]
+    Auth --> SessionMgmt[Session Management]
+    
+    Encryption --> MessageEnc[Message Encryption]
+    Encryption --> KeyEnc[Key Encryption]
+    
+    Access --> RoleBasedAccess[Role-based Access]
+    Access --> OwnershipValidation[Ownership Validation]
+    
+    Transaction --> SignatureVerification[Signature Verification]
+    Transaction --> TransactionValidation[Transaction Validation]
+    
+    style Security fill:#c0392b,stroke:#e74c3c,color:white
+    style Auth fill:#9b59b6,stroke:#8e44ad,color:white
+    style Encryption fill:#2980b9,stroke:#2c3e50,color:white
+    style Transaction fill:#27ae60,stroke:#16a085,color:white
+                    </div>
+                </div>
+                
+                <div class="architecture-content">
+                    <h3>Key Security Components</h3>
+                    <ul>
+                        <li><strong>Wallet-based Authentication</strong> - Cryptographic proof of identity using wallet signatures</li>
+                        <li><strong>End-to-End Encryption</strong> - Secure messaging between users</li>
+                        <li><strong>Private Key Security</strong> - Proper management of cryptographic keys</li>
+                        <li><strong>Transaction Verification</strong> - Multi-level validation of blockchain operations</li>
+                        <li><strong>Role-based Access Control</strong> - Appropriate permissions based on user roles</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Add the Routes section -->
+            <div id="routes" class="mermaid-container">
+                <h2>Routes Architecture</h2>
+                <p>Tribify utilizes a combination of frontend page routes and backend API endpoints to organize its application structure:</p>
+                
+                <div class="mermaid-wrapper">
+                    <div class="mermaid">
+graph TD
+    subgraph Frontend_Routes [Frontend Routes]
+        Root["/"] --> Dashboard["/dashboard"]
+        Root --> Auth["/auth"]
+        Dashboard --> Wallet["/wallet"]
+        Dashboard --> Staking["/staking"]
+        Dashboard --> Messaging["/messages"]
+        Dashboard --> Vote["/vote"]
+    end
+    
+    subgraph API_Routes [API Routes]
+        API["/api"] --> Messages["/api/messages"]
+        API --> Pusher["/api/pusher"]
+        API --> OnlineUsers["/api/online-users"]
+        API --> SendMessage["/api/send-message"]
+        API --> SendNotification["/api/send-notification"]
+        API --> SendTribify["/api/send-tribify"]
+        
+        Messages --> MessageId["/api/messages/[id]"]
+        Messages --> MessagesIndex["/api/messages/index"]
+        
+        Pusher --> PusherAuth["/api/pusher/auth"]
+        Pusher --> PusherWebhook["/api/pusher/webhook"]
+    end
+    
+    style Frontend_Routes fill:#9b59b6,stroke:#8e44ad,color:white
+    style API_Routes fill:#2980b9,stroke:#2c3e50,color:white
+                    </div>
+                </div>
+                
+                <div class="architecture-content">
+                    <h3>Frontend Routes</h3>
+                    <ul>
+                        <li><strong>/ (Root)</strong> - Landing page with authentication options</li>
+                        <li><strong>/dashboard</strong> - Main application dashboard after authentication</li>
+                        <li><strong>/wallet</strong> - Wallet management interface for subwallets and token distribution</li>
+                        <li><strong>/staking</strong> - Staking interface for token locking and rewards</li>
+                        <li><strong>/messages</strong> - Shareholder messaging system</li>
+                        <li><strong>/vote</strong> - Governance voting interface</li>
+                    </ul>
+                </div>
+                
+                <div class="architecture-content">
+                    <h3>API Routes</h3>
+                    <ul>
+                        <li><strong>/api/messages</strong> - Message storage and retrieval endpoints
+                            <ul>
+                                <li><strong>/api/messages/[id]</strong> - Get specific message thread</li>
+                                <li><strong>/api/messages/index</strong> - List all message threads</li>
+                            </ul>
+                        </li>
+                        <li><strong>/api/pusher</strong> - Real-time communication endpoints
+                            <ul>
+                                <li><strong>/api/pusher/auth</strong> - Authentication for pusher channels</li>
+                                <li><strong>/api/pusher/webhook</strong> - Webhook handler for pusher events</li>
+                            </ul>
+                        </li>
+                        <li><strong>/api/online-users</strong> - Track and retrieve online user status</li>
+                        <li><strong>/api/send-message</strong> - Send message to another shareholder</li>
+                        <li><strong>/api/send-notification</strong> - Send notification to users</li>
+                        <li><strong>/api/send-tribify</strong> - Send $TRIBIFY tokens to other users</li>
+                    </ul>
+                </div>
+                
+                <div class="architecture-content">
+                    <h3>Route Implementation</h3>
+                    <ul>
+                        <li><strong>Next.js Page Routing</strong> - Frontend routes are implemented using Next.js file-based routing</li>
+                        <li><strong>API Routes</strong> - Backend endpoints implemented as Next.js API routes</li>
+                        <li><strong>Dynamic Routes</strong> - Parameters in routes (like [id]) handle dynamic content</li>
+                        <li><strong>Route Protection</strong> - Routes are protected with authentication requirements</li>
+                        <li><strong>Middleware</strong> - Request processing middleware for validation and error handling</li>
+                    </ul>
+                </div>
+                
+                <div class="mermaid-wrapper">
+                    <h3>Route Request Flow</h3>
+                    <div class="mermaid">
+sequenceDiagram
+    participant Client as Client Browser
+    participant NextJS as Next.js Router
+    participant Page as Page Component
+    participant API as API Route
+    participant Database as Database
+    participant Blockchain as Blockchain
+    
+    Client->>NextJS: Request Route
+    
+    alt Frontend Route
+        NextJS->>Page: Render Page Component
+        Page->>API: Fetch Data (if needed)
+        API->>Database: Query Database
+        API->>Blockchain: Query Blockchain
+        Blockchain-->>API: Return Blockchain Data
+        Database-->>API: Return Database Data
+        API-->>Page: Return Data
+        Page-->>Client: Render UI
+    else API Route
+        NextJS->>API: Process API Request
+        API->>Database: Query/Update Database
+        API->>Blockchain: Submit Transaction
+        Blockchain-->>API: Confirm Transaction
+        Database-->>API: Return Result
+        API-->>Client: Return API Response
+    end
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mermaid Diagram Section -->
+            <div class="mermaid-container" id="architecture-diagram">
+                <h2>Tribify Architecture Diagram</h2>
+                <p>The following diagram illustrates the architecture and data flow of the Tribify platform:</p>
+                
+                <div class="mermaid-wrapper">
+                    <div class="mermaid">
+graph TD
+    User[User/Client Browser] --> |Interacts with| Frontend
+    
+    subgraph Frontend [Frontend Layer]
+        Components[React Components] --> |Uses| Context[Context Providers]
+        Context --> |Uses| Utils[Utility Functions]
+        Components --> |Routes to| Pages[Next.js Pages]
+    end
+    
+    subgraph Backend [Backend Services]
+        API[API Endpoints] --> |Uses| Prisma[Prisma Client]
+        WebSocket[WebSocket Server] --> |Real-time updates| Messaging[Messaging Service]
+        API --> |Uses| Solana[Solana.js]
+    end
+    
+    subgraph Blockchain [Blockchain Layer]
+        SolanaChain[Solana Blockchain] --> |Executes| Programs[Solana Programs]
+        Programs --> |Manages| Wallets[Wallet Operations]
+        Programs --> |Handles| Staking[Staking Operations]
+        Programs --> |Processes| TokenOps[Token Operations]
+    end
+    
+    Frontend --> |API Requests| Backend
+    Backend --> |Transactions| Blockchain
+    
+    style Frontend fill:#9b59b6,stroke:#8e44ad,color:white
+    style Backend fill:#2980b9,stroke:#2c3e50,color:white
+    style Blockchain fill:#27ae60,stroke:#16a085,color:white
+                    </div>
+                </div>
+                
+                <div class="mermaid-wrapper">
+                    <h3>Component Interaction Flow</h3>
+                    <div class="mermaid">
+sequenceDiagram
+    participant User as User
+    participant UI as UI Components
+    participant Context as Context Providers
+    participant API as API Endpoints
+    participant Blockchain as Solana Blockchain
+    
+    User->>UI: Interact with interface
+    UI->>Context: Update state / Request data
+    Context->>API: Make API request
+    API->>Blockchain: Submit transaction
+    Blockchain-->>API: Confirm transaction
+    API-->>Context: Return response
+    Context-->>UI: Update UI state
+    UI-->>User: Show updated information
+                    </div>
+                </div>
+                
+                <div class="mermaid-wrapper">
+                    <h3>Data Model</h3>
+                    <div class="mermaid">
+classDiagram
+    class User {
+        +String id
+        +String publicKey
+        +Array subwallets
+        +connect()
+        +disconnect()
+    }
+    
+    class Wallet {
+        +String address
+        +Number balanceSol
+        +Number balanceTribify
+        +Number balanceUsdc
+        +distribute()
+        +recover()
+    }
+    
+    class Stake {
+        +String id
+        +String walletAddress
+        +Number amount
+        +Number lockPeriod
+        +Date startTime
+        +stake()
+        +unstake()
+    }
+    
+    class Message {
+        +String id
+        +String senderId
+        +String receiverId
+        +String content
+        +Date timestamp
+        +send()
+        +encrypt()
+    }
+    
+    User "1" --> "*" Wallet : manages
+    User "1" --> "*" Stake : creates
+    User "1" --> "*" Message : sends/receives
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle category visibility
+            document.querySelectorAll('.sidebar-category').forEach(category => {
+                const targetId = category.getAttribute('data-target');
+                
+                // Restore collapsed state from localStorage
+                if (localStorage.getItem('category_' + targetId) === 'collapsed') {
+                    category.classList.add('collapsed');
+                    const targetContent = document.getElementById(targetId);
+                    if (targetContent) {
+                        targetContent.classList.add('hidden');
+                    }
+                }
+                
+                category.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const targetContent = document.getElementById(targetId);
+                    
+                    if (targetContent) {
+                        // Toggle collapsed class on category
+                        this.classList.toggle('collapsed');
+                        
+                        // Toggle visibility of content
+                        targetContent.classList.toggle('hidden');
+                        
+                        // Save collapsed state to localStorage
+                        if (this.classList.contains('collapsed')) {
+                            localStorage.setItem('category_' + targetId, 'collapsed');
+                        } else {
+                            localStorage.removeItem('category_' + targetId);
+                        }
+                    }
+                });
+            });
+            
+            // Toggle directory visibility
+            document.querySelectorAll('.directory-name').forEach(dir => {
+                dir.addEventListener('click', function() {
+                    this.classList.toggle('open');
+                    const content = this.nextElementSibling;
+                    if (content && content.classList.contains('directory')) {
+                        content.classList.toggle('hidden');
+                    }
+                });
+            });
+            
+            // Search functionality
+            document.getElementById('search-button').addEventListener('click', search);
+            document.getElementById('search-input').addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') {
+                    search();
+                }
+            });
+            
+            function search() {
+                const searchTerm = document.getElementById('search-input').value.toLowerCase();
+                // Remove previous highlights
+                document.querySelectorAll('.highlight').forEach(el => {
+                    el.outerHTML = el.innerHTML;
+                });
+                
+                if (!searchTerm) return;
+                
+                // Search in file names
+                document.querySelectorAll('.file').forEach(file => {
+                    const fileName = file.textContent.toLowerCase();
+                    if (fileName.includes(searchTerm)) {
+                        // Make sure parent directories are expanded
+                        let parent = file.parentElement;
+                        while (parent && !parent.classList.contains('project-container')) {
+                            if (parent.classList.contains('directory') && parent.classList.contains('hidden')) {
+                                parent.classList.remove('hidden');
+                                if (parent.previousElementSibling && parent.previousElementSibling.classList.contains('directory-name')) {
+                                    parent.previousElementSibling.classList.add('open');
+                                }
+                            }
+                            parent = parent.parentElement;
+                        }
+                        
+                        // Highlight the matching text
+                        const fileText = file.innerHTML;
+                        const highlightedText = fileText.replace(
+                            new RegExp(searchTerm, 'gi'), 
+                            match => `<span class="highlight">${match}</span>`
+                        );
+                        file.innerHTML = highlightedText;
+                    }
+                });
+                
+                // Search in directory names
+                document.querySelectorAll('.directory-name').forEach(dir => {
+                    const dirName = dir.textContent.toLowerCase();
+                    if (dirName.includes(searchTerm)) {
+                        // Make sure parent directories are expanded
+                        let parent = dir.parentElement;
+                        while (parent && !parent.classList.contains('project-container')) {
+                            if (parent.classList.contains('directory') && parent.classList.contains('hidden')) {
+                                parent.classList.remove('hidden');
+                                if (parent.previousElementSibling && parent.previousElementSibling.classList.contains('directory-name')) {
+                                    parent.previousElementSibling.classList.add('open');
+                                }
+                            }
+                            parent = parent.parentElement;
+                        }
+                        
+                        // Expand this directory
+                        dir.classList.add('open');
+                        if (dir.nextElementSibling && dir.nextElementSibling.classList.contains('directory')) {
+                            dir.nextElementSibling.classList.remove('hidden');
+                        }
+                        
+                        // Highlight the matching text
+                        const dirText = dir.innerHTML;
+                        const highlightedText = dirText.replace(
+                            new RegExp(searchTerm, 'gi'), 
+                            match => `<span class="highlight">${match}</span>`
+                        );
+                        dir.innerHTML = highlightedText;
+                    }
+                });
+            }
+            
+            // Expand all functionality
+            document.querySelector('.expand-all').addEventListener('click', function() {
+                document.querySelectorAll('.directory-name').forEach(dir => {
+                    dir.classList.add('open');
+                });
+                document.querySelectorAll('.directory').forEach(dir => {
+                    dir.classList.remove('hidden');
+                });
+            });
+            
+            // Collapse all functionality
+            document.querySelector('.collapse-all').addEventListener('click', function() {
+                document.querySelectorAll('.directory-name').forEach(dir => {
+                    if (!dir.textContent.includes('tribify2')) { // Keep root expanded
+                        dir.classList.remove('open');
+                    }
+                });
+                document.querySelectorAll('.directory').forEach(dir => {
+                    if (dir.parentElement.querySelector('.directory-name').textContent !== '📁 tribify2') {
+                        dir.classList.add('hidden');
+                    }
+                });
+            });
+            
+            // Sidebar menu functionality
+            document.querySelectorAll('#sidebar-menu li').forEach(item => {
+                // Skip category headers
+                if (item.classList.contains('sidebar-category') || item.classList.contains('sidebar-divider')) {
+                    return;
+                }
+                
+                item.addEventListener('click', function() {
+                    // Update active state in sidebar
+                    document.querySelectorAll('#sidebar-menu li').forEach(i => {
+                        if (!i.classList.contains('sidebar-category')) {
+                            i.classList.remove('active');
+                        }
+                    });
+                    this.classList.add('active');
+                    
+                    // Get the target directory
+                    const targetId = this.getAttribute('data-target');
+                    const targetElement = document.getElementById(targetId);
+                    
+                    if (targetElement) {
+                        // Expand parent directories if needed
+                        let parent = targetElement.parentElement;
+                        while (parent && !parent.classList.contains('project-container')) {
+                            if (parent.classList.contains('directory') && parent.classList.contains('hidden')) {
+                                parent.classList.remove('hidden');
+                                if (parent.previousElementSibling && parent.previousElementSibling.classList.contains('directory-name')) {
+                                    parent.previousElementSibling.classList.add('open');
+                                }
+                            }
+                            parent = parent.parentElement;
+                        }
+                        
+                        // Expand the target directory (only if it's a directory)
+                        if (targetElement.classList.contains('directory-name')) {
+                            targetElement.classList.add('open');
+                            if (targetElement.nextElementSibling && targetElement.nextElementSibling.classList.contains('directory')) {
+                                targetElement.nextElementSibling.classList.remove('hidden');
+                            }
+                        }
+                        
+                        // Scroll to the target element
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        
+                        // Add highlight effect
+                        targetElement.style.backgroundColor = 'rgba(155, 89, 182, 0.2)';
+                        setTimeout(() => {
+                            targetElement.style.backgroundColor = '';
+                        }, 2000);
+                    }
+                    
+                    // Close sidebar on mobile after clicking
+                    if (window.innerWidth <= 768) {
+                        document.querySelector('.sidebar').classList.remove('active');
+                    }
+                });
+            });
+            
+            // Mobile sidebar toggle
+            document.getElementById('sidebar-toggle').addEventListener('click', function() {
+                document.querySelector('.sidebar').classList.toggle('active');
+            });
+            
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768) {
+                    const sidebar = document.querySelector('.sidebar');
+                    const sidebarToggle = document.getElementById('sidebar-toggle');
+                    
+                    if (!sidebar.contains(e.target) && e.target !== sidebarToggle) {
+                        sidebar.classList.remove('active');
+                    }
+                }
+            });
+        });
+    </script>
+    
+    <!-- Include Mermaid.js for diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.8.0/dist/mermaid.min.js"></script>
+    <script>
+        // Initialize Mermaid with custom settings
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: 'Trebuchet MS, Lucida Sans Unicode, Lucida Grande, Lucida Sans, Arial, sans-serif',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            },
+            sequence: {
+                diagramMarginX: 50,
+                diagramMarginY: 10,
+                boxMargin: 10,
+                noteMargin: 10,
+                messageMargin: 35
+            },
+            er: {
+                useMaxWidth: true
+            }
+        });
+    </script>
+</body>
+</html> 
