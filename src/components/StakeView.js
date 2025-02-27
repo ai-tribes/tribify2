@@ -7,7 +7,123 @@ import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgr
 import { formatDuration } from '../utils/staking';
 import BN from 'bn.js';
 import UnstakeConfirmationModal from './UnstakeConfirmationModal';
-import Shareholders from './Shareholders';
+
+// ShareholdersDisplay component - Simplified version without navigation
+const ShareholdersDisplay = ({ holders = [], stakedAddresses = [], publicKey, nicknames = {}, setNicknames, subwallets = [] }) => {
+  const [editingNickname, setEditingNickname] = useState(null);
+  const [notification, setNotification] = useState(null);
+
+  // Create Set of user's public keys for efficient lookup
+  const userWalletsSet = new Set([
+    publicKey,
+    ...(subwallets || []).map(w => w?.publicKey?.toString()).filter(Boolean)
+  ]);
+
+  const copyAddress = async (address) => {
+    try {
+      await navigator.clipboard.writeText(address);
+      setNotification({
+        message: 'Address copied to clipboard!',
+        type: 'success'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      setNotification({
+        message: 'Failed to copy address',
+        type: 'error'
+      });
+    }
+  };
+
+  // Filter out any invalid holders and sort them
+  const sortedHolders = [...holders]
+    .filter(holder => holder && holder.address && holder.tokenBalance != null)
+    .sort((a, b) => (b.tokenBalance || 0) - (a.tokenBalance || 0));
+
+  if (!sortedHolders.length) {
+    return (
+      <div className="holders-list">
+        <div className="holder-header">
+          <div className="holder-col">No holders data available</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="holders-list">
+      {notification && (
+        <div className={`notification ${notification.type}`}>
+          {notification.message}
+        </div>
+      )}
+
+      <div className="holder-header">
+        <div className="holder-col address">Address</div>
+        <div className="holder-col percent">Share</div>
+        <div className="holder-col name">Name</div>
+        <div className="holder-col balance">TRIBIFY</div>
+        <div className="holder-col sol">SOL</div>
+        <div className="holder-col usdc">USDC</div>
+        <div className="holder-col staked">Staked</div>
+      </div>
+
+      {sortedHolders.map((holder) => (
+        <div 
+          key={holder.address} 
+          className={`holder-item ${userWalletsSet.has(holder.address) ? 'user-owned' : ''}`}
+        >
+          <div 
+            className="holder-col address clickable"
+            onClick={() => copyAddress(holder.address)}
+            title="Click to copy address"
+          >
+            {userWalletsSet.has(holder.address) ? '🔑' : '◈'} {holder.address}
+          </div>
+          <div className="holder-col percent">
+            {((holder.tokenBalance || 0) / 1_000_000_000 * 100).toFixed(4)}%
+          </div>
+          <div className="holder-col name">
+            {editingNickname === holder.address ? (
+              <input
+                autoFocus
+                defaultValue={nicknames[holder.address] || ''}
+                onBlur={(e) => {
+                  setNicknames?.(prev => ({...prev, [holder.address]: e.target.value}));
+                  setEditingNickname(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setNicknames?.(prev => ({...prev, [holder.address]: e.target.value}));
+                    setEditingNickname(null);
+                  }
+                }}
+              />
+            ) : (
+              <span onClick={() => setEditingNickname(holder.address)}>
+                {nicknames[holder.address] || '+ Add name'}
+              </span>
+            )}
+          </div>
+          <div className="holder-col balance">
+            {(holder.tokenBalance || 0).toLocaleString()}
+          </div>
+          <div className="holder-col sol">
+            {(holder.solBalance || 0).toFixed(4)}
+          </div>
+          <div className="holder-col usdc">
+            $ {(holder.usdcBalance || 0).toFixed(2)}
+          </div>
+          <div className="holder-col staked">
+            <span className={`staked-badge ${stakedAddresses?.includes(holder.address) ? 'yes' : 'no'}`}>
+              {stakedAddresses?.includes(holder.address) ? 'Yes' : 'No'}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 function StakeView({ parentWallet, tokenHolders, nicknames, setNicknames }) {
   const { subwallets, publicKeys } = useContext(TribifyContext);
@@ -117,8 +233,8 @@ function StakeView({ parentWallet, tokenHolders, nicknames, setNicknames }) {
         <h2>Staking Dashboard</h2>
       </div>
       
-      {/* Show Shareholders component with staked addresses */}
-      <Shareholders 
+      {/* Use ShareholdersDisplay instead of Shareholders */}
+      <ShareholdersDisplay 
         holders={tokenHolders}
         stakedAddresses={stakedAddresses}
         publicKey={parentWallet.publicKey}

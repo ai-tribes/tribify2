@@ -244,12 +244,12 @@ const Shareholders = ({
               {holder.address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7' ? (
                 <button 
                   className="message-all-button"
-                  onClick={() => setActiveView('messages')}
+                  onClick={() => setActiveView && setActiveView('messages')}
                 >
                   Message All
                 </button>
               ) : (
-                <button onClick={() => setActiveView('messages')}>
+                <button onClick={() => setActiveView && setActiveView('messages')}>
                   Message
                 </button>
               )}

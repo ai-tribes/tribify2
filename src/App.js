@@ -12,7 +12,7 @@ import Messages from './components/Messages';
 import Backup from './components/Backup';
 import Restore from './components/Restore';
 import Disconnect from './components/Disconnect';
-import { Link, useNavigate, Route, Routes } from 'react-router-dom';
+import { Link, useNavigate, Route, Routes, useLocation, BrowserRouter } from 'react-router-dom';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { clusterApiUrl } from '@solana/web3.js';
@@ -356,6 +356,7 @@ const MessageModal = ({ isOpen, onClose, recipient, recipientName, messages, onS
 
 function App() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeView, setActiveView] = useState('ai');
   const [isConnected, setIsConnected] = useState(false);
   const [tokenHolders, setTokenHolders] = useState([]);
@@ -377,8 +378,11 @@ function App() {
       
       if (!largestAccounts.value.length) {
         console.log('No token accounts found');
+        setIsLoading(false);
         return;
       }
+
+      console.log('Found token accounts:', largestAccounts.value.length);
 
       const holders = await Promise.all(
         largestAccounts.value.map(async (account) => {
@@ -412,24 +416,66 @@ function App() {
         .filter(h => h.tokenBalance > 0)
         .sort((a, b) => b.tokenBalance - a.tokenBalance);
 
-      console.log('Fetched holders:', filteredHolders);
+      console.log('Setting token holders:', filteredHolders);
       setTokenHolders(filteredHolders);
     } catch (error) {
       console.error('Error fetching token holders:', error);
     } finally {
+      console.log('Fetch completed, setting isLoading to false');
       setIsLoading(false);
     }
   };
 
+  // Update route handling
   useEffect(() => {
-    // Check if wallet is connected
+    const path = location.pathname;
+    console.log('Route changed to:', path);
+    console.log('Current tokenHolders:', tokenHolders);
+    console.log('Current isLoading:', isLoading);
+    console.log('Current activeView:', activeView);
+
+    switch (path) {
+      case '/':
+        setActiveView('ai');
+        break;
+      case '/shareholders':
+        console.log('Setting active view to shareholders');
+        setActiveView('shareholders');
+        if (tokenHolders.length === 0 && !isLoading) {
+          console.log('Fetching token holders for shareholders view');
+          fetchTokenHolders();
+        }
+        break;
+      case '/stake':
+        setActiveView('stake');
+        break;
+      case '/wallet':
+        setActiveView('wallet');
+        break;
+      case '/snipe':
+        setActiveView('snipe');
+        break;
+      case '/sign':
+        setActiveView('sign');
+        break;
+      case '/vote':
+        setActiveView('vote');
+        break;
+      default:
+        setActiveView('ai');
+    }
+  }, [location.pathname, tokenHolders.length, isLoading]);
+
+  // Check connection status
+  useEffect(() => {
     const checkConnection = async () => {
       const isPhantomConnected = window.phantom?.solana?.isConnected;
       const hasParentWallet = localStorage.getItem('tribify_parent_wallet');
+      console.log('Connection check:', { isPhantomConnected, hasParentWallet });
       setIsConnected(isPhantomConnected && hasParentWallet);
       
-      // If connected, fetch token holders
       if (isPhantomConnected && hasParentWallet) {
+        console.log('Connected, fetching token holders...');
         fetchTokenHolders();
       }
     };
@@ -438,7 +484,19 @@ function App() {
   }, []);
 
   const handleConnection = async () => {
-    navigate('/');
+    try {
+      if (!window.phantom?.solana) {
+        alert('Please install Phantom wallet!');
+        return;
+      }
+
+      const resp = await window.phantom.solana.connect();
+      localStorage.setItem('tribify_parent_wallet', resp.publicKey.toString());
+      setIsConnected(true);
+      navigate('/');
+    } catch (err) {
+      console.error('Failed to connect:', err);
+    }
   };
 
   const handleDisconnect = async () => {
@@ -446,176 +504,298 @@ function App() {
       await window.phantom.solana.disconnect();
     }
     localStorage.removeItem('tribify_parent_wallet');
+    setIsConnected(false);
     navigate('/');
   };
+
+  // Show landing page when not connected
+  if (!isConnected) {
+    return (
+      <div className="landing-container">
+        <div className="landing-header">
+          <div className="logo-section">
+            <h1>/tribify.ai</h1>
+            <p className="subtitle">AI-powered token management & community platform</p>
+          </div>
+        </div>
+
+        <div className="landing-content">
+          <div className="features-grid">
+            <div className="feature-card">
+              <h3>Token Management</h3>
+              <p>Create and manage up to 100 subwallets for strategic token distribution</p>
+            </div>
+            <div className="feature-card">
+              <h3>Community Tools</h3>
+              <p>Monitor token holders, communicate with shareholders, and build your community</p>
+            </div>
+            <div className="feature-card">
+              <h3>Token Conversion</h3>
+              <p>Seamlessly convert between TRIBIFY, SOL, and USDC tokens</p>
+            </div>
+            <div className="feature-card">
+              <h3>AI Assistant</h3>
+              <p>Get help with wallet management, token strategies, and community engagement</p>
+            </div>
+          </div>
+
+          <div className="connect-section">
+            <button className="connect-button" onClick={handleConnection}>
+              Connect Wallet
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Show main app when connected
   return (
     <div className="App">
-      {!isConnected ? (
-        <div className="connection-group">
-          <div className="tribify-text">/tribify.ai</div>
-          <button onClick={handleConnection}>Connect</button>
+      <nav className="desktop-nav">
+        <div className="nav-buttons">
+          <button 
+            className={`nav-button tribify-button ${activeView === 'ai' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveView('ai');
+              navigate('/');
+            }}
+          >
+            /tribify.ai
+          </button>
+          <button 
+            className={`nav-button ${activeView === 'shareholders' ? 'active' : ''}`}
+            onClick={() => {
+              console.log('Shareholders button clicked');
+              setActiveView('shareholders');
+              navigate('/shareholders');
+              if (tokenHolders.length === 0 && !isLoading) {
+                console.log('Fetching token holders data');
+                fetchTokenHolders();
+              }
+            }}
+          >
+            Shareholders
+          </button>
+          <button 
+            className={`nav-button wallet-button ${activeView === 'wallet' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveView('wallet');
+              navigate('/wallet');
+            }}
+          >
+            Wallet
+          </button>
+          <button 
+            className={`nav-button stake-button ${activeView === 'stake' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveView('stake');
+              navigate('/stake');
+            }}
+          >
+            Stake
+          </button>
+          <button 
+            className={`nav-button ${activeView === 'snipe' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveView('snipe');
+              navigate('/snipe');
+            }}
+          >
+            Snipe
+          </button>
+          <button 
+            className={`nav-button ${activeView === 'sign' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveView('sign');
+              navigate('/sign');
+            }}
+          >
+            Sign
+          </button>
+          <button 
+            className={`nav-button ${activeView === 'vote' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveView('vote');
+              navigate('/vote');
+            }}
+          >
+            Vote
+          </button>
+          <button 
+            className="nav-button"
+            onClick={handleDisconnect}
+          >
+            Disconnect
+          </button>
         </div>
-      ) : (
-        <>
-          <nav className="desktop-nav">
-            <div className="nav-buttons">
-              <button 
-                className={`nav-button tribify-button ${activeView === 'ai' ? 'active' : ''}`}
-                onClick={() => setActiveView('ai')}
-              >
-                /tribify.ai
-              </button>
-              <button 
-                className={`nav-button ${activeView === 'shareholders' ? 'active' : ''}`}
-                onClick={() => setActiveView('shareholders')}
-              >
-                Shareholders
-              </button>
-              <button 
-                className={`nav-button wallet-button ${activeView === 'wallet' ? 'active' : ''}`}
-                onClick={() => setActiveView('wallet')}
-              >
-                Wallet
-              </button>
-              <button 
-                className={`nav-button stake-button ${activeView === 'stake' ? 'active' : ''}`}
-                onClick={() => setActiveView('stake')}
-              >
-                Stake
-              </button>
-              <button 
-                className={`nav-button ${activeView === 'snipe' ? 'active' : ''}`}
-                onClick={() => setActiveView('snipe')}
-              >
-                Snipe
-              </button>
-              <button 
-                className={`nav-button ${activeView === 'sign' ? 'active' : ''}`}
-                onClick={() => setActiveView('sign')}
-              >
-                Sign
-              </button>
-              <button 
-                className={`nav-button ${activeView === 'vote' ? 'active' : ''}`}
-                onClick={() => setActiveView('vote')}
-              >
-                Vote
-              </button>
-              <button 
-                className="nav-button"
-                onClick={handleDisconnect}
-              >
-                Disconnect
-              </button>
-            </div>
-          </nav>
+      </nav>
 
-          <main className="main-content">
-            {activeView === 'ai' && (
-              <div className="terminal-container">
-                <div className="terminal-header">
+      <main className="main-content">
+        <Routes>
+          <Route path="/" element={
+            <div className="landing-container">
+              <div className="landing-header">
+                <div className="logo-section">
+                  <h1>/tribify.ai</h1>
+                  <p className="subtitle">AI-powered token management & community platform</p>
+                </div>
+                
+                {localStorage.getItem('tribify_parent_wallet') && (
                   <div className="wallet-info">
-                    <span className="wallet-address">
-                      {localStorage.getItem('tribify_parent_wallet')?.slice(0, 4)}...
-                      {localStorage.getItem('tribify_parent_wallet')?.slice(-4)}
-                    </span>
+                    <div className="wallet-address">
+                      <span className="label">Connected:</span>
+                      <span className="address">
+                        {localStorage.getItem('tribify_parent_wallet')?.slice(0, 4)}...
+                        {localStorage.getItem('tribify_parent_wallet')?.slice(-4)}
+                      </span>
+                    </div>
                     <div className="balance-info">
-                      <span className="balance-item tribify">32,071,767.199 $TRIBIFY</span>
-                      <span className="balance-item sol">0.46602528 SOL</span>
-                      <span className="balance-item usdc">$0 USDC</span>
+                      <span className="balance-item tribify">
+                        <span className="label">$TRIBIFY:</span>
+                        <span className="value">32,071,767.199</span>
+                      </span>
+                      <span className="balance-item sol">
+                        <span className="label">SOL:</span>
+                        <span className="value">0.46602528</span>
+                      </span>
+                      <span className="balance-item usdc">
+                        <span className="label">USDC:</span>
+                        <span className="value">$0.00</span>
+                      </span>
                     </div>
                   </div>
-                  <button className="close-terminal">×</button>
+                )}
+              </div>
+
+              <div className="landing-content">
+                <div className="features-grid">
+                  <div className="feature-card">
+                    <h3>Token Management</h3>
+                    <p>Create and manage up to 100 subwallets for strategic token distribution</p>
+                  </div>
+                  <div className="feature-card">
+                    <h3>Community Tools</h3>
+                    <p>Monitor token holders, communicate with shareholders, and build your community</p>
+                  </div>
+                  <div className="feature-card">
+                    <h3>Token Conversion</h3>
+                    <p>Seamlessly convert between TRIBIFY, SOL, and USDC tokens</p>
+                  </div>
+                  <div className="feature-card">
+                    <h3>AI Assistant</h3>
+                    <p>Get help with wallet management, token strategies, and community engagement</p>
+                  </div>
                 </div>
 
-                <div className="welcome-message">
-                  Welcome to /tribify.ai! I'm your AI assistant for managing TRIBIFY tokens and wallets. I can help you:
-                  • Create and manage up to 100 subwallets
-                  • Distribute TRIBIFY tokens strategically
-                  • Convert between TRIBIFY, SOL, and USDC
-                  • Monitor your token holder community
-                </div>
-
-                <input
-                  type="text"
-                  className="terminal-input"
-                  placeholder="Enter a command or ask for help..."
-                />
-
-                <div className="terminal-output">
-                  Type /help to see all commands
+                <div className="terminal-section">
+                  <div className="terminal-header">
+                    <span className="terminal-title">AI Terminal</span>
+                    <button className="close-terminal">×</button>
+                  </div>
+                  <div className="terminal-content">
+                    <div className="welcome-message">
+                      Welcome to /tribify.ai! I'm your AI assistant for managing TRIBIFY tokens and wallets. I can help you:
+                      • Create and manage up to 100 subwallets
+                      • Distribute TRIBIFY tokens strategically
+                      • Convert between TRIBIFY, SOL, and USDC
+                      • Monitor your token holder community
+                    </div>
+                    <div className="terminal-input-container">
+                      <input
+                        type="text"
+                        className="terminal-input"
+                        placeholder="Enter a command or ask for help..."
+                      />
+                    </div>
+                    <div className="terminal-output">
+                      Type /help to see all commands
+                    </div>
+                  </div>
                 </div>
               </div>
-            )}
-
-            {activeView === 'shareholders' && (
-              <div className="shareholders-container">
-                {isLoading ? (
-                  <div className="loading-overlay">
-                    <div className="loading-spinner"></div>
-                  </div>
-                ) : (
+            </div>
+          } />
+          <Route path="/shareholders" element={
+            <div className="shareholders-container">
+              <h2>Shareholders</h2>
+              {isLoading ? (
+                <div className="loading-overlay">
+                  <div className="loading-spinner"></div>
+                  <div className="loading-text">Loading shareholders data...</div>
+                </div>
+              ) : tokenHolders.length === 0 ? (
+                <div className="error-message">
+                  <p>No shareholders data available. Please make sure your wallet is connected.</p>
+                  <button 
+                    className="retry-button"
+                    onClick={() => {
+                      console.log('Retrying token holders fetch');
+                      fetchTokenHolders();
+                    }}
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : (
+                <div className="shareholders-content">
                   <Shareholders 
                     holders={tokenHolders}
                     nicknames={nicknames}
                     setNicknames={setNicknames}
                     setActiveView={setActiveView}
                     publicKey={localStorage.getItem('tribify_parent_wallet')}
+                    subwallets={subwallets}
                   />
-                )}
-              </div>
-            )}
-
-            {activeView === 'wallet' && (
-              <div className="wallet-container">
-                <WalletPage 
-                  subwallets={subwallets}
-                  setSubwallets={setSubwallets}
-                />
-              </div>
-            )}
-
-            {activeView === 'stake' && (
-              <div className="stake-container">
-                <StakeView 
-                  parentWallet={{
-                    publicKey: localStorage.getItem('tribify_parent_wallet'),
-                    tribifyBalance: tokenHolders.find(h => h.address === localStorage.getItem('tribify_parent_wallet'))?.tokenBalance || 0
-                  }}
-                  tokenHolders={tokenHolders}
-                />
-              </div>
-            )}
-
-            {activeView === 'snipe' && (
-              <div className="snipe-container">
-                <SnipePage 
-                  publicKey={localStorage.getItem('tribify_parent_wallet')}
-                  parentBalance={0.46602528}
-                  subwallets={subwallets}
-                />
-              </div>
-            )}
-
-            {activeView === 'sign' && (
-              <div className="sign-container">
-                <Sign />
-              </div>
-            )}
-
-            {activeView === 'vote' && (
-              <div className="vote-container">
-                <VotePage 
-                  tokenHolders={tokenHolders}
-                  publicKey={localStorage.getItem('tribify_parent_wallet')}
-                />
-              </div>
-            )}
-          </main>
-        </>
-      )}
+                </div>
+              )}
+            </div>
+          } />
+          <Route path="/stake" element={
+            <div className="stake-container">
+              <StakeView 
+                parentWallet={{
+                  publicKey: localStorage.getItem('tribify_parent_wallet'),
+                  tribifyBalance: tokenHolders.find(h => h.address === localStorage.getItem('tribify_parent_wallet'))?.tokenBalance || 0
+                }}
+                tokenHolders={tokenHolders}
+                nicknames={nicknames}
+                setNicknames={setNicknames}
+              />
+            </div>
+          } />
+          <Route path="/wallet" element={
+            <div className="wallet-container">
+              <WalletPage 
+                subwallets={subwallets}
+                setSubwallets={setSubwallets}
+              />
+            </div>
+          } />
+          <Route path="/snipe" element={
+            <div className="snipe-container">
+              <SnipePage 
+                publicKey={localStorage.getItem('tribify_parent_wallet')}
+                parentBalance={0.46602528}
+                subwallets={subwallets}
+              />
+            </div>
+          } />
+          <Route path="/sign" element={
+            <div className="sign-container">
+              <Sign />
+            </div>
+          } />
+          <Route path="/vote" element={
+            <div className="vote-container">
+              <VotePage 
+                tokenHolders={tokenHolders}
+                publicKey={localStorage.getItem('tribify_parent_wallet')}
+              />
+            </div>
+          } />
+        </Routes>
+      </main>
     </div>
   );
 }
