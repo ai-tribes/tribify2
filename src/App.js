@@ -769,15 +769,40 @@ function App() {
           } />
           <Route path="/stake" element={
             <div className="stake-container">
-              <StakeView 
-                parentWallet={{
-                  publicKey: localStorage.getItem('tribify_parent_wallet'),
-                  tribifyBalance: tokenHolders.find(h => h.address === localStorage.getItem('tribify_parent_wallet'))?.tokenBalance || 0
-                }}
-                tokenHolders={tokenHolders}
-                nicknames={nicknames}
-                setNicknames={setNicknames}
-              />
+              <div className="stake-header">
+                <h2>Staking Dashboard</h2>
+                {localStorage.getItem('tribify_parent_wallet') && (
+                  <div className="wallet-info">
+                    <div className="wallet-address">
+                      <span className="label">Connected:</span>
+                      <span className="address">
+                        {localStorage.getItem('tribify_parent_wallet')?.slice(0, 4)}...
+                        {localStorage.getItem('tribify_parent_wallet')?.slice(-4)}
+                      </span>
+                    </div>
+                    <div className="balance-info">
+                      <span className="balance-item tribify">
+                        <span className="label">$TRIBIFY:</span>
+                        <span className="value">
+                          {tokenHolders.find(h => h.address === localStorage.getItem('tribify_parent_wallet'))?.tokenBalance.toLocaleString() || '0'}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="stake-content">
+                <StakeView 
+                  parentWallet={{
+                    publicKey: localStorage.getItem('tribify_parent_wallet'),
+                    tribifyBalance: tokenHolders.find(h => h.address === localStorage.getItem('tribify_parent_wallet'))?.tokenBalance || 0
+                  }}
+                  tokenHolders={tokenHolders}
+                  nicknames={nicknames}
+                  setNicknames={setNicknames}
+                />
+              </div>
             </div>
           } />
           <Route path="/wallet" element={

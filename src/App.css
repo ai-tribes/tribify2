@@ -4611,3 +4611,163 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   transform: translateY(-1px);
   filter: brightness(1.1);
 }
+
+/* Stake Page Styles */
+.stake-container {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 1rem;
+  overflow: hidden;
+}
+
+.stake-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stake-header h2 {
+  color: #9b59b6;  /* Purple theme for staking */
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.stake-content {
+  padding: 1.5rem;
+}
+
+/* Staking-specific wallet info */
+.stake-container .wallet-info {
+  background: rgba(155, 89, 182, 0.1);  /* Light purple background */
+  border: 1px solid rgba(155, 89, 182, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.stake-container .wallet-address {
+  margin-bottom: 0.5rem;
+}
+
+.stake-container .wallet-address .label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.stake-container .wallet-address .address {
+  color: #9b59b6;  /* Purple for address */
+  font-family: monospace;
+}
+
+.stake-container .balance-info {
+  display: flex;
+  gap: 1rem;
+}
+
+.stake-container .balance-item {
+  padding: 0.5rem 1rem;
+  background: rgba(155, 89, 182, 0.1);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stake-container .balance-item .label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+.stake-container .balance-item .value {
+  color: #9b59b6;  /* Purple for values */
+  font-family: monospace;
+  font-weight: 500;
+}
+
+/* Staking Action Buttons */
+.stake-button {
+  padding: 0.75rem 1.5rem;
+  background: rgba(155, 89, 182, 0.1);
+  border: 1px solid #9b59b6;
+  color: #9b59b6;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.stake-button:hover {
+  background: rgba(155, 89, 182, 0.2);
+  transform: translateY(-1px);
+}
+
+.stake-button:active {
+  transform: translateY(0);
+}
+
+/* Staking Table Styles */
+.stake-table {
+  width: 100%;
+  margin-top: 1.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.stake-table-header {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stake-table-header span {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stake-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  align-items: center;
+}
+
+.stake-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Staking Status Indicators */
+.stake-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.stake-status.active {
+  background: rgba(155, 89, 182, 0.1);
+  color: #9b59b6;
+  border: 1px solid #9b59b6;
+}
+
+.stake-status.pending {
+  background: rgba(241, 196, 15, 0.1);
+  color: #f1c40f;
+  border: 1px solid #f1c40f;
+}
+
+.stake-status.expired {
+  background: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+  border: 1px solid #e74c3c;
+}
