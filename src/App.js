@@ -718,37 +718,53 @@ function App() {
           } />
           <Route path="/shareholders" element={
             <div className="shareholders-container">
-              <h2>Shareholders</h2>
-              {isLoading ? (
-                <div className="loading-overlay">
-                  <div className="loading-spinner"></div>
-                  <div className="loading-text">Loading shareholders data...</div>
-                </div>
-              ) : tokenHolders.length === 0 ? (
-                <div className="error-message">
-                  <p>No shareholders data available. Please make sure your wallet is connected.</p>
-                  <button 
-                    className="retry-button"
-                    onClick={() => {
-                      console.log('Retrying token holders fetch');
-                      fetchTokenHolders();
-                    }}
-                  >
-                    Retry
-                  </button>
-                </div>
-              ) : (
-                <div className="shareholders-content">
-                  <Shareholders 
-                    holders={tokenHolders}
-                    nicknames={nicknames}
-                    setNicknames={setNicknames}
-                    setActiveView={setActiveView}
-                    publicKey={localStorage.getItem('tribify_parent_wallet')}
-                    subwallets={subwallets}
-                  />
-                </div>
-              )}
+              <div className="shareholders-header">
+                <h2>Shareholders</h2>
+                {localStorage.getItem('tribify_parent_wallet') && (
+                  <div className="wallet-info">
+                    <div className="wallet-address">
+                      <span className="label">Connected:</span>
+                      <span className="address">
+                        {localStorage.getItem('tribify_parent_wallet')?.slice(0, 4)}...
+                        {localStorage.getItem('tribify_parent_wallet')?.slice(-4)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="shareholders-content">
+                {isLoading ? (
+                  <div className="loading-overlay">
+                    <div className="loading-spinner"></div>
+                    <div className="loading-text">Loading shareholders data...</div>
+                  </div>
+                ) : tokenHolders.length === 0 ? (
+                  <div className="error-message">
+                    <p>No shareholders data available. Please make sure your wallet is connected.</p>
+                    <button 
+                      className="retry-button"
+                      onClick={() => {
+                        console.log('Retrying token holders fetch');
+                        fetchTokenHolders();
+                      }}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : (
+                  <div className="holders-list-container">
+                    <HoldersList 
+                      holders={tokenHolders}
+                      nicknames={nicknames}
+                      setNicknames={setNicknames}
+                      setActiveView={setActiveView}
+                      publicKey={localStorage.getItem('tribify_parent_wallet')}
+                      subwallets={subwallets}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           } />
           <Route path="/stake" element={
