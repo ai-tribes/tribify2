@@ -4399,3 +4399,215 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
     transform: rotate(360deg);
   }
 }
+
+/* Wallet Page Styles */
+.wallet-container {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 1rem;
+  overflow: hidden;
+}
+
+.wallet-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.wallet-header h2 {
+  color: #00ff87;
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.wallet-content {
+  padding: 1.5rem;
+}
+
+/* Wallet Controls */
+.wallet-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.left-controls {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.right-controls {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Button Styles */
+.wallet-button {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Primary Action Buttons */
+.generate-button {
+  background: rgba(46, 204, 113, 0.1);
+  border: 1px solid #2ecc71;
+  color: #2ecc71;
+}
+
+.generate-button:hover {
+  background: rgba(46, 204, 113, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Secondary Action Buttons */
+.distribute-button {
+  background: rgba(241, 196, 15, 0.1);
+  border: 1px solid #f1c40f;
+  color: #f1c40f;
+}
+
+.distribute-button:hover {
+  background: rgba(241, 196, 15, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Danger Action Buttons */
+.sell-all-button {
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid #e74c3c;
+  color: #e74c3c;
+}
+
+.sell-all-button:hover {
+  background: rgba(231, 76, 60, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Utility Action Buttons */
+.fund-button {
+  background: rgba(52, 152, 219, 0.1);
+  border: 1px solid #3498db;
+  color: #3498db;
+}
+
+.fund-button:hover {
+  background: rgba(52, 152, 219, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Secondary Controls Section */
+.wallet-controls.secondary {
+  background: rgba(0, 0, 0, 0.1);
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+/* Wallet List Container */
+.wallet-list {
+  margin-top: 1.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* List Header */
+.list-header {
+  display: grid;
+  grid-template-columns: 50px minmax(150px, 1fr) minmax(150px, 1fr) 100px 120px;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.list-header span {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* List Rows */
+.list-row {
+  display: grid;
+  grid-template-columns: 50px minmax(150px, 1fr) minmax(150px, 1fr) 100px 120px;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  align-items: center;
+}
+
+.list-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Row Content Styles */
+.row-index {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+}
+
+.wallet-key {
+  font-family: monospace;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.wallet-key:hover {
+  color: #00ff87;
+}
+
+.token-balance {
+  font-family: monospace;
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+/* Action Button Styles */
+.buy-button,
+.sell-button {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.buy-button {
+  background: rgba(46, 204, 113, 0.1);
+  border: 1px solid #2ecc71;
+  color: #2ecc71;
+}
+
+.sell-button {
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid #e74c3c;
+  color: #e74c3c;
+}
+
+.buy-button:hover,
+.sell-button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}

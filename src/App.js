@@ -782,10 +782,46 @@ function App() {
           } />
           <Route path="/wallet" element={
             <div className="wallet-container">
-              <WalletPage 
-                subwallets={subwallets}
-                setSubwallets={setSubwallets}
-              />
+              <div className="wallet-header">
+                <h2>Wallet Management</h2>
+                {localStorage.getItem('tribify_parent_wallet') && (
+                  <div className="wallet-info">
+                    <div className="wallet-address">
+                      <span className="label">Connected:</span>
+                      <span className="address">
+                        {localStorage.getItem('tribify_parent_wallet')?.slice(0, 4)}...
+                        {localStorage.getItem('tribify_parent_wallet')?.slice(-4)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="wallet-content">
+                <div className="wallet-controls">
+                  <div className="left-controls">
+                    <button className="wallet-button generate-button">
+                      Generate Keys
+                    </button>
+                    <button className="wallet-button distribute-button">
+                      Distribute Tokens
+                    </button>
+                  </div>
+                  <div className="right-controls">
+                    <button className="wallet-button fund-button">
+                      Fund Wallets
+                    </button>
+                    <button className="wallet-button sell-all-button">
+                      Sell All
+                    </button>
+                  </div>
+                </div>
+
+                <WalletPage 
+                  subwallets={subwallets}
+                  setSubwallets={setSubwallets}
+                />
+              </div>
             </div>
           } />
           <Route path="/snipe" element={
