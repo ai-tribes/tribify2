@@ -16,12 +16,14 @@ import {
 } from '@solana/spl-token';
 import TokenDistributor from './TokenDistributor';
 import FundSubwallets from './FundSubwallets';
-import { Jupiter } from '@jup-ag/sdk';
+import { Jupiter } from '@jup-ag/api';
 import './ConversionModal.css';
 import ConversionModal from './ConversionModal';
 import { TribifyContext } from '../context/TribifyContext';
 import './BuyConfigModal.css';
 import './SellConfigModal.css';
+import { createJupiterApiClient } from '@jup-ag/api';
+import { DefaultApi, Configuration } from '@jup-ag/api';
 
 // Add CSS styles
 const styles = `
@@ -192,19 +194,21 @@ const styles = `
     background-color: rgba(46, 204, 113, 0.1) !important;
     border: 1px solid #2ecc71 !important;
     color: #2ecc71 !important;
+    font-weight: bold !important;
   }
 
-  .buy-button {
+  button.buy-button {
     background-color: #2ecc71 !important;
     border: 1px solid #27ae60 !important;
     color: white !important;
+    font-weight: bold !important;
   }
 
   .configure-buy-button:hover {
     background-color: rgba(46, 204, 113, 0.2) !important;
   }
 
-  .buy-button:hover {
+  button.buy-button:hover {
     background-color: #27ae60 !important;
   }
 
@@ -213,19 +217,53 @@ const styles = `
     background-color: rgba(231, 76, 60, 0.1) !important;
     border: 1px solid #e74c3c !important;
     color: #e74c3c !important;
+    font-weight: bold !important;
   }
 
-  .sell-button {
+  button.sell-button {
     background-color: #e74c3c !important;
     border: 1px solid #c0392b !important;
     color: white !important;
+    font-weight: bold !important;
   }
 
   .configure-sell-button:hover {
     background-color: rgba(231, 76, 60, 0.2) !important;
   }
 
-  .sell-button:hover {
+  button.sell-button:hover {
+    background-color: #c0392b !important;
+  }
+
+  /* Modal button styles */
+  .modal-content button.buy-button,
+  .sell-config-modal button.sell-button,
+  .modal-container button.buy-button,
+  .modal-container button.sell-button {
+    background-color: #2ecc71 !important;
+    border: 1px solid #27ae60 !important;
+    color: white !important;
+    font-weight: bold !important;
+  }
+
+  .modal-content button.sell-button,
+  .sell-config-modal button.sell-button,
+  .modal-container button.sell-button {
+    background-color: #e74c3c !important;
+    border: 1px solid #c0392b !important;
+    color: white !important;
+    font-weight: bold !important;
+  }
+
+  .modal-content button.buy-button:hover,
+  .sell-config-modal button.buy-button:hover,
+  .modal-container button.buy-button:hover {
+    background-color: #27ae60 !important;
+  }
+
+  .modal-content button.sell-button:hover,
+  .sell-config-modal button.sell-button:hover,
+  .modal-container button.sell-button:hover {
     background-color: #c0392b !important;
   }
 `;
@@ -2047,18 +2085,19 @@ function WalletPage() {
 
   // Add these helper functions before the WalletPage component
   const getJupiter = async (connection) => {
-    const calculator = new QuoteCalculator({
-      connection,
-      cluster: 'mainnet-beta',
-      routeCacheDuration: 10,
-      wrapUnwrapSOL: true,
-      enableSwapModeV2: true
-    });
-    return calculator;
+    try {
+      const config = new Configuration({
+        basePath: 'https://quote-api.jup.ag/v6'
+      });
+      return new DefaultApi(config);
+    } catch (error) {
+      console.error('Error initializing Jupiter:', error);
+      throw error;
+    }
   };
 
   const createSwapTransaction = async (
-    calculator,
+    jupiterInstance,
     fromToken,
     toToken,
     amount,
@@ -2073,33 +2112,37 @@ function WalletPage() {
                        toToken === 'USDC' ? new PublicKey(USDC_MINT) :
                        new PublicKey(TRIBIFY_TOKEN_MINT);
 
-    // Get quote
-    const quote = await calculator.getQuote({
-      sourceMint: inputMint,
-      destinationMint: outputMint,
+    // Get quotes
+    const quoteResponse = await jupiterInstance.quote({
+      inputMint: inputMint.toString(),
+      outputMint: outputMint.toString(),
       amount: toBigNumber(amount),
-      slippageBps: slippage * 100,
+      slippageBps: slippage * 100
     });
 
-    if (!quote) {
-      throw new Error('No routes found for swap');
+    if (!quoteResponse) {
+      throw new Error('No quotes found for swap');
     }
 
-    // Create the swap transaction
-    const swapTx = new Transaction();
-    
-    // Add swap instructions from quote
-    quote.instructions.forEach(instruction => {
-      swapTx.add(instruction);
+    // Get swap instructions
+    const swapResponse = await jupiterInstance.swap({
+      quoteResponse,
+      userPublicKey: keypair.publicKey.toString(),
+      wrapUnwrapSOL: true
     });
 
-    // Add recent blockhash and sign
-    const { blockhash } = await connection.getLatestBlockhash();
-    swapTx.recentBlockhash = blockhash;
-    swapTx.feePayer = keypair.publicKey;
-    swapTx.sign(keypair);
-
-    return swapTx;
+    // Get the transaction
+    const { swapTransaction } = swapResponse;
+    
+    if (swapTransaction) {
+      const { blockhash } = await connection.getLatestBlockhash();
+      swapTransaction.recentBlockhash = blockhash;
+      swapTransaction.feePayer = keypair.publicKey;
+      swapTransaction.sign(keypair);
+      return swapTransaction;
+    }
+    
+    throw new Error('No transaction generated');
   };
 
   // Update the handleMassConversion function
@@ -2145,13 +2188,13 @@ function WalletPage() {
   // Define token conversion functions inside the component
   const handleConvertTRIBIFYtoSOL = async () => {
     try {
-      const calculator = await getJupiter(connection);
+      const jupiterInstance = await getJupiter(connection);
       const transactions = [];
 
       for (const keypair of keypairs) {
         try {
           const tx = await createSwapTransaction(
-            calculator,
+            jupiterInstance,
             'TRIBIFY',
             'SOL',
             walletBalances[keypair.publicKey.toString()]?.tribify || 0,
@@ -2181,13 +2224,13 @@ function WalletPage() {
 
   const handleConvertTRIBIFYtoUSDC = async () => {
     try {
-      const calculator = await getJupiter(connection);
+      const jupiterInstance = await getJupiter(connection);
       const transactions = [];
 
       for (const keypair of keypairs) {
         try {
           const tx = await createSwapTransaction(
-            calculator,
+            jupiterInstance,
             'TRIBIFY',
             'USDC',
             walletBalances[keypair.publicKey.toString()]?.tribify || 0,
@@ -2217,7 +2260,7 @@ function WalletPage() {
 
   const handleConvertSOLtoTRIBIFY = async () => {
     try {
-      const calculator = await getJupiter(connection);
+      const jupiterInstance = await getJupiter(connection);
       const transactions = [];
 
       for (const keypair of keypairs) {
@@ -2225,7 +2268,7 @@ function WalletPage() {
           const solBalance = (walletBalances[keypair.publicKey.toString()]?.sol || 0) - 0.01;
           if (solBalance > 0) {
             const tx = await createSwapTransaction(
-              calculator,
+              jupiterInstance,
               'SOL',
               'TRIBIFY',
               solBalance,

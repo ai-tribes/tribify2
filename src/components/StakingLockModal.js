@@ -1,97 +1,104 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import './StakingLockModal.css';
-import { 
-  MIN_DURATION, 
-  MAX_DURATION, 
-  calculateAPY, 
-  formatDuration,
-  formatSliderLabel 
-} from '../utils/staking';
 
-const BASE_APY = 3; // Base APY for minimum stake
-const MAX_APY = 25; // Max APY for 4-year stake
+function StakingLockModal({ isOpen, onClose, wallet, onStake, apyTiers }) {
+  const [selectedTier, setSelectedTier] = useState(null);
+  const [amount, setAmount] = useState(wallet?.tribifyBalance || 0);
 
-const StakingLockModal = ({ wallet, onClose, onStake }) => {
-  const [duration, setDuration] = useState(1); // Default to 1 minute
-  const apy = calculateAPY(duration);
-
-  const handleSliderChange = useCallback((e) => {
-    const value = parseInt(e.target.value);
-    setDuration(value);
-  }, []);
-
-  // Add handler to prevent clicks inside modal from closing it
-  const handleModalClick = (e) => {
-    e.stopPropagation();
+  const handleStake = () => {
+    if (!selectedTier) return;
+    const duration = selectedTier.months * 30 * 24 * 60; // Convert months to minutes
+    onStake(wallet.publicKey.toString(), amount, duration);
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className="staking-modal-overlay" onClick={onClose}>
-      <div className="staking-modal" onClick={handleModalClick}>
-        <div className="staking-modal-header">
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <div className="modal-header">
           <h3>Stake TRIBIFY</h3>
-          <button className="staking-close-button" onClick={onClose}>×</button>
+          <button className="close-button" onClick={onClose}>&times;</button>
         </div>
-        
-        <div className="staking-modal-content">
-          <div className="staking-wallet-info">
-            <div className="staking-label">Wallet #{wallet?.index}:</div>
-            <div className="staking-address">{wallet?.publicKey}</div>
-          </div>
-          
-          <div className="staking-balance">
-            <div className="staking-label">Available to Stake:</div>
-            <div className="staking-amount">
-              {Number(wallet?.tribifyBalance).toLocaleString()} TRIBIFY
-            </div>
+
+        <div className="modal-body">
+          <div className="wallet-summary">
+            <div className="summary-label">Wallet</div>
+            <div className="summary-value">{wallet.publicKey.toString()}</div>
+            <div className="summary-label">Available Balance</div>
+            <div className="summary-value">{wallet.tribifyBalance.toLocaleString()} TRIBIFY</div>
           </div>
 
-          <div className="staking-duration-selector">
-            <h4>Select Lock Duration</h4>
-            <div className="duration-input">
+          <div className="stake-amount">
+            <label>Amount to Stake</label>
+            <div className="amount-input-wrapper">
               <input
                 type="number"
-                min={MIN_DURATION}
-                max={MAX_DURATION}
-                value={duration}
-                onChange={(e) => setDuration(Math.min(MAX_DURATION, Math.max(MIN_DURATION, parseInt(e.target.value) || 1)))}
-                className="duration-text-input"
+                value={amount}
+                onChange={(e) => setAmount(Math.min(Number(e.target.value), wallet.tribifyBalance))}
+                max={wallet.tribifyBalance}
               />
-              <span className="duration-unit">minutes</span>
-            </div>
-            <div className="staking-slider-container">
-              <input
-                type="range"
-                min={MIN_DURATION}
-                max={MAX_DURATION}
-                value={duration}
-                onChange={handleSliderChange}
-                className="staking-slider"
-              />
-              <div className="staking-duration-display">
-                <span className="duration-label">Lock Period:</span>
-                <span className="duration-value">{formatDuration(duration)}</span>
-              </div>
-              <div className="staking-apy-display">
-                <span className="apy-value">{apy.toFixed(3)}% APY</span>
-              </div>
+              <button 
+                className="max-button"
+                onClick={() => setAmount(wallet.tribifyBalance)}
+              >
+                MAX
+              </button>
             </div>
           </div>
 
+          <div className="lock-period">
+            <h4>Select Lock Period</h4>
+            <div className="apy-tiers">
+              {apyTiers.map((tier) => (
+                <div
+                  key={tier.months}
+                  className={`tier-card ${selectedTier?.months === tier.months ? 'selected' : ''}`}
+                  onClick={() => setSelectedTier(tier)}
+                >
+                  <div className="tier-months">{tier.months} Month{tier.months > 1 ? 's' : ''}</div>
+                  <div className="tier-apy">{tier.apy}% APY</div>
+                  <div className="tier-description">{tier.description}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {selectedTier && (
+            <div className="stake-summary">
+              <div className="summary-row">
+                <span>Lock Period</span>
+                <span>{selectedTier.months} Months</span>
+              </div>
+              <div className="summary-row">
+                <span>APY Rate</span>
+                <span>{selectedTier.apy}%</span>
+              </div>
+              <div className="summary-row">
+                <span>Projected Rewards</span>
+                <span>{((amount * selectedTier.apy) / 100).toLocaleString()} TRIBIFY</span>
+              </div>
+              <div className="summary-row total">
+                <span>Total at Unlock</span>
+                <span>{(amount + (amount * selectedTier.apy) / 100).toLocaleString()} TRIBIFY</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="modal-footer">
+          <button className="cancel-button" onClick={onClose}>Cancel</button>
           <button 
-            className="staking-confirm-button"
-            onClick={() => onStake(wallet.publicKey, wallet.tribifyBalance, duration)}
+            className="stake-button" 
+            onClick={handleStake}
+            disabled={!selectedTier || !amount}
           >
-            Confirm Stake
+            Stake {amount.toLocaleString()} TRIBIFY
           </button>
-
-          <div className="staking-warning">
-            ⚠️ Early unstaking will result in loss of all staking rewards
-          </div>
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default StakingLockModal; 

@@ -1488,9 +1488,17 @@ input[type="number"] {
 }
 
 .dialog-buttons .buy-button {
-  background: #2ecc71;
-  color: white;
-  border-color: #2ecc71;
+  background: #2ecc71 !important;
+  color: white !important;
+  border-color: #27ae60 !important;
+  font-weight: bold !important;
+}
+
+.dialog-buttons .sell-button {
+  background: #e74c3c !important;
+  color: white !important;
+  border-color: #c0392b !important;
+  font-weight: bold !important;
 }
 
 .dialog-buttons button:hover {

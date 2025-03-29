@@ -8,7 +8,7 @@ import { formatDuration } from '../utils/staking';
 import BN from 'bn.js';
 import UnstakeConfirmationModal from './UnstakeConfirmationModal';
 
-function StakeView({ parentWallet, tokenHolders }) {
+function StakeView({ parentWallet, tokenHolders = [] }) {
   const { subwallets, publicKeys } = useContext(TribifyContext);
   const { motions } = useContext(GovernanceContext);
   const [selectedStakeType, setSelectedStakeType] = useState({});
@@ -29,17 +29,17 @@ function StakeView({ parentWallet, tokenHolders }) {
   // Combine parent wallet with subwallets
   const allUserWallets = [
     {
-      publicKey: parentWallet.publicKey,
-      tribifyBalance: Number(parentWallet.tribifyBalance) || 0
+      publicKey: parentWallet?.publicKey,
+      tribifyBalance: Number(parentWallet?.tribifyBalance) || 0
     },
     ...(Array.isArray(subwallets) ? subwallets : []).map(wallet => {
-      const holderData = tokenHolders.find(h => h.address === wallet.publicKey);
+      const holderData = tokenHolders?.find(h => h?.address === wallet.publicKey);
       return {
         publicKey: wallet.publicKey,
         tribifyBalance: Number(holderData?.tokenBalance) || 0
       };
     })
-  ];
+  ].filter(wallet => wallet.publicKey); // Filter out any undefined wallets
 
   const handleStakeClick = (wallet) => {
     setSelectedWallet(wallet);

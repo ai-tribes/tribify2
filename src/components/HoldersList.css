@@ -1,0 +1,178 @@
+.holders-container {
+  width: 100%;
+}
+
+.holders-tabs {
+  display: flex;
+  gap: 1px;
+  margin-bottom: -1px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 255, 0, 0.3) rgba(0, 0, 0, 0.2);
+  padding-bottom: 2px;
+}
+
+.holders-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.holders-tabs::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+}
+
+.holders-tabs::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 0, 0.3);
+  border-radius: 2px;
+}
+
+.holders-tabs .tab {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  padding: 8px 16px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.holders-tabs .tab:hover {
+  background: rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.holders-tabs .tab.active {
+  background: #121212;
+  border-color: rgba(0, 255, 0, 0.3);
+  color: #00ff00;
+}
+
+.tab-icon {
+  font-size: 14px;
+}
+
+.tab-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.holder-count {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-family: 'Roboto Mono', monospace;
+  min-width: 20px;
+  text-align: center;
+}
+
+.holders-list {
+  background: #121212;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0 6px 6px 6px;
+  overflow: hidden;
+}
+
+/* Existing holders list styles */
+.holder-header {
+  display: grid;
+  grid-template-columns: 40px 200px 200px 120px 120px 120px 120px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+}
+
+.holder-item {
+  display: grid;
+  grid-template-columns: 40px 200px 200px 120px 120px 120px 120px;
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  align-items: center;
+  font-size: 13px;
+  transition: background-color 0.2s ease;
+}
+
+.holder-item:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.holder-col {
+  padding: 0 8px;
+}
+
+.holder-col.address {
+  font-family: 'Roboto Mono', monospace;
+  color: rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.holder-col.percent {
+  color: #00ff00;
+  font-family: 'Roboto Mono', monospace;
+  text-align: right;
+}
+
+.holder-col.name input {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  width: 100%;
+  padding: 4px 0;
+}
+
+.holder-col.name input:focus {
+  outline: none;
+  border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+}
+
+.holder-col.name input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.holder-col.balance {
+  color: #00ff00;
+  font-family: 'Roboto Mono', monospace;
+  text-align: right;
+}
+
+.holder-col.sol {
+  color: #00ff00;
+  font-family: 'Roboto Mono', monospace;
+  text-align: right;
+}
+
+.holder-col.usdc {
+  color: #00ff00;
+  font-family: 'Roboto Mono', monospace;
+  text-align: right;
+}
+
+.holder-col.message button {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+}
+
+.holder-col.message button:hover {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(0, 255, 0, 0.3);
+  color: #00ff00;
+} 

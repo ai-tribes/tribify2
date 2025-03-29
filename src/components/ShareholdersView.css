@@ -1,0 +1,175 @@
+.shareholders-view {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  color: #fff;
+}
+
+.tabs-container {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.tabs-header {
+  display: flex;
+  gap: 2px;
+  padding: 16px 16px 0;
+  background: rgba(0, 0, 0, 0.2);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 255, 0, 0.3) rgba(0, 0, 0, 0.2);
+}
+
+.tabs-header::-webkit-scrollbar {
+  height: 6px;
+}
+
+.tabs-header::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.tabs-header::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 0, 0.3);
+  border-radius: 3px;
+}
+
+.tab-button {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  padding: 12px 24px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 160px;
+  position: relative;
+}
+
+.tab-button:hover {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(0, 255, 0, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.tab-button.active {
+  background: rgba(0, 255, 0, 0.1);
+  border-color: #00ff00;
+  color: #00ff00;
+}
+
+.tab-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-icon {
+  font-size: 16px;
+}
+
+.tab-text {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.holder-count {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.tab-panel {
+  padding: 24px;
+}
+
+.token-info {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.token-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.token-header h2 {
+  color: #00ff00;
+  font-size: 24px;
+  margin: 0;
+}
+
+.token-stats {
+  display: flex;
+  gap: 24px;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat .label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+}
+
+.stat .value {
+  color: #00ff00;
+  font-size: 14px;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.stat .value.contract-address {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .shareholders-view {
+    padding: 16px;
+  }
+
+  .tabs-header {
+    padding: 12px 12px 0;
+  }
+
+  .tab-button {
+    padding: 8px 16px;
+    min-width: 120px;
+  }
+
+  .token-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .token-stats {
+    flex-direction: column;
+    gap: 12px;
+  }
+} 

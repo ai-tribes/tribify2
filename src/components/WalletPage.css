@@ -634,4 +634,73 @@
   .wallet-controls button {
     width: 100%;
   }
+}
+
+.configure-buy-button {
+  background: rgba(0, 255, 0, 0.1) !important;
+  border: 1px solid #00ff00 !important;
+  color: #00ff00 !important;
+  padding: 8px 16px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  transition: all 0.2s ease !important;
+}
+
+.buy-button {
+  background: #00ff00 !important;
+  border: none !important;
+  color: #000000 !important;
+  padding: 8px 16px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  transition: all 0.2s ease !important;
+}
+
+.configure-sell-button {
+  background: rgba(255, 0, 0, 0.1) !important;
+  border: 1px solid #ff0000 !important;
+  color: #ff0000 !important;
+  padding: 8px 16px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  transition: all 0.2s ease !important;
+}
+
+.sell-button {
+  background: #ff0000 !important;
+  border: none !important;
+  color: #000000 !important;
+  padding: 8px 16px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Hover states */
+.configure-buy-button:hover {
+  background: rgba(0, 255, 0, 0.2) !important;
+}
+
+.buy-button:hover {
+  background: #00cc00 !important;
+}
+
+.configure-sell-button:hover {
+  background: rgba(255, 0, 0, 0.2) !important;
+}
+
+.sell-button:hover {
+  background: #cc0000 !important;
+}
+
+/* Active states */
+.configure-buy-button:active,
+.buy-button:active,
+.configure-sell-button:active,
+.sell-button:active {
+  transform: translateY(1px) !important;
 } 
