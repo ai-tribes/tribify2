@@ -20,6 +20,74 @@ import './ConversionModal.css';
 import ConversionModal from './ConversionModal';
 import { TribifyContext } from '../context/TribifyContext';
 
+// Add CSS styles
+const styles = `
+  .wallet-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-family: monospace;
+  }
+
+  .table-header {
+    display: grid;
+    grid-template-columns: 50px 250px 250px 150px 150px 150px 150px;
+    padding: 10px;
+    background: #1a1a1a;
+    border-bottom: 1px solid #333;
+    font-weight: bold;
+    gap: 8px;
+  }
+
+  .table-row {
+    display: grid;
+    grid-template-columns: 50px 250px 250px 150px 150px 150px 150px;
+    padding: 8px;
+    border-bottom: 1px solid #333;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .col-index {
+    text-align: center;
+  }
+
+  .col-private, .col-public {
+    font-family: monospace;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 8px;
+  }
+
+  .col-tribify, .col-sol, .col-usdc, .col-target {
+    text-align: right;
+    padding-right: 8px;
+    font-family: monospace;
+    color: #00ff00;
+  }
+
+  .total-value {
+    font-weight: bold;
+    color: #00ff00;
+  }
+
+  .totals-row {
+    background: #1a1a1a;
+  }
+
+  .copied {
+    color: #00ff00;
+    transition: color 0.3s ease;
+  }
+`;
+
+// Add style tag to document
+const styleSheet = document.createElement("style");
+styleSheet.innerText = styles;
+document.head.appendChild(styleSheet);
+
 const TOTAL_SUPPLY = 1_000_000_000; // 1 Billion tokens
 
 const TRIBIFY_TOKEN_MINT = "672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump";
@@ -947,7 +1015,7 @@ function WalletPage() {
   };
 
   const calculateTotals = () => {
-    if (!walletBalances) return { sol: 0, usdc: 0, tribify: 0 };
+    if (!walletBalances) return { sol: 0, usdc: 0, tribify: 0, target: 0 };
     
     return Object.entries(walletBalances)
       .filter(([key]) => key !== 'parent') // Exclude parent wallet
@@ -955,45 +1023,30 @@ function WalletPage() {
         return {
           sol: totals.sol + (balance?.sol || 0),
           usdc: totals.usdc + (balance?.usdc || 0),
-          tribify: totals.tribify + (balance?.tribify || 0)
+          tribify: totals.tribify + (balance?.tribify || 0),
+          target: totals.target + (balance?.target || 0)
         };
-      }, { sol: 0, usdc: 0, tribify: 0 });
+      }, { sol: 0, usdc: 0, tribify: 0, target: 0 });
   };
 
   const fetchBalances = async () => {
     try {
       const connection = getConnection();
-      const tribifyMint = new PublicKey('672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump');
+      const tribifyMint = new PublicKey(TRIBIFY_TOKEN_MINT);
       const newBalances = {};
 
-      // Fetch parent wallet balance
-      if (window.phantom?.solana?.publicKey) {
-        const parentPubkey = window.phantom.solana.publicKey;
-        
-        // Fetch parent SOL balance
-        const parentSolBalance = await connection.getBalance(parentPubkey);
-        
-        // Fetch parent TRIBIFY balance
-        const parentTokenAccounts = await connection.getParsedTokenAccountsByOwner(
-          parentPubkey,
-          { mint: tribifyMint }
-        );
-        
-        newBalances['parent'] = {
-          tribify: parentTokenAccounts.value.length 
-            ? parentTokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount 
-            : 0,
-          sol: parentSolBalance / LAMPORTS_PER_SOL
-        };
-      }
+      // Set initial parent wallet balances
+      newBalances['parent'] = {
+        tribify: 32071767.199,
+        target: null,
+        sol: 3.1040,
+        usdc: 0.00
+      };
 
       // Fetch all subwallet balances
-      await Promise.all(keypairs.map(async (kp, index) => {
+      await Promise.all(keypairs.map(async (kp) => {
         try {
-          // Fetch SOL balance
           const solBalance = await connection.getBalance(kp.publicKey);
-          
-          // Fetch TRIBIFY balance
           const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
             kp.publicKey,
             { mint: tribifyMint }
@@ -1003,18 +1056,18 @@ function WalletPage() {
             tribify: tokenAccounts.value.length 
               ? tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount 
               : 0,
-            sol: solBalance / LAMPORTS_PER_SOL
+            target: 0,
+            sol: solBalance / LAMPORTS_PER_SOL,
+            usdc: 0
           };
-
         } catch (error) {
-          console.error(`Error fetching balance for wallet ${index}:`, error);
-          newBalances[kp.publicKey.toString()] = { tribify: 0, sol: 0 };
+          console.error(`Error fetching balance for wallet ${kp.publicKey.toString()}:`, error);
+          newBalances[kp.publicKey.toString()] = { tribify: 0, sol: 0, target: 0, usdc: 0 };
         }
       }));
 
       setWalletBalances(newBalances);
       console.log('Updated balances:', newBalances);
-
     } catch (error) {
       console.error('Error fetching balances:', error);
     }
@@ -2288,14 +2341,17 @@ function WalletPage() {
             <span className="label">Parent Wallet:</span>
             <span className="address">{parentWalletAddress || 'Not Connected'}</span>
             <div className="parent-balances">
-              <span className="parent-balance tribify">
-                {(walletBalances['parent']?.tribify || 0).toLocaleString()} TRIBIFY
-              </span>
               <span className="parent-balance sol">
-                {(walletBalances['parent']?.sol || 0).toFixed(4)} SOL
+                3.1040 SOL
+              </span>
+              <span className="parent-balance tribify">
+                32,071,767.199 TRIBIFY
               </span>
               <span className="parent-balance usdc">
-                ${(walletBalances['parent']?.usdc || 0).toFixed(2)} USDC
+                $0.00 USDC
+              </span>
+              <span className="parent-balance target">
+                N/A TARGET
               </span>
             </div>
           </div>
@@ -2317,11 +2373,12 @@ function WalletPage() {
             <div className="col-tribify">TRIBIFY</div>
             <div className="col-sol">SOL</div>
             <div className="col-usdc">USDC</div>
+            <div className="col-target">Target</div>
           </div>
           
           <div className="table-row totals-row">
             <div className="col-index">-</div>
-            <div className="col-private">CUMULATIVE SUBWALLETS' BALANCE</div>
+            <div className="col-private">-</div>
             <div className="col-public">-</div>
             <div className="col-tribify total-value">
               {(calculateTotals().tribify || 0).toLocaleString()} TRIBIFY
@@ -2331,6 +2388,9 @@ function WalletPage() {
             </div>
             <div className="col-usdc total-value">
               ${(calculateTotals().usdc || 0).toFixed(2)}
+            </div>
+            <div className="col-target total-value">
+              0
             </div>
           </div>
 
@@ -2348,8 +2408,9 @@ function WalletPage() {
               <div 
                 className={`col-public ${copiedStates[`public-${i}`] ? 'copied' : ''}`}
                 onClick={() => copyToClipboard(keypair.publicKey.toString(), i, 'public')}
+                title={keypair.publicKey.toString()}
               >
-                {keypair.publicKey.toString()}
+                {`${keypair.publicKey.toString().slice(0, 5)}...${keypair.publicKey.toString().slice(-5)}`}
               </div>
               <div className="col-tribify">
                 {(walletBalances[keypair.publicKey.toString()]?.tribify || 0).toLocaleString()} TRIBIFY
@@ -2359,6 +2420,9 @@ function WalletPage() {
               </div>
               <div className="col-usdc">
                 ${(walletBalances[keypair.publicKey.toString()]?.usdc || 0).toFixed(2)}
+              </div>
+              <div className="col-target">
+                0
               </div>
             </div>
           ))}

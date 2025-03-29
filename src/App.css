@@ -2010,6 +2010,24 @@ body.light .debug-value {
   font-weight: 600;
 }
 
+/* TARGET button */
+.wallet-controls.secondary .target-button {
+  background: linear-gradient(to bottom, #9b59b6, #8e44ad) !important;
+  border: 1px solid #9b59b6 !important;
+  color: #FFFFFF !important;
+  font-weight: 600;
+  min-width: 120px;
+  padding: 6px 12px;
+  height: 32px;
+  font-size: 13px;
+  flex: 0 0 auto;
+}
+
+.wallet-controls.secondary .target-button:hover {
+  background: linear-gradient(to bottom, #8e44ad, #703688) !important;
+  transform: translateY(-1px);
+}
+
 /* Configure Buy button */
 .wallet-controls.secondary.row button:nth-child(3) {
   background: rgba(46, 204, 113, 0.1) !important;
@@ -3198,4 +3216,92 @@ body.light .debug-value {
   .parent-balances {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* Target Dialog Styles */
+.target-dialog {
+  max-width: 600px;
+  width: 100%;
+  background: #1a1a1a;
+  padding: 32px;
+}
+
+.target-description {
+  margin: 24px 0;
+  padding: 20px;
+  background: rgba(155, 89, 182, 0.05);
+  border: 1px solid rgba(155, 89, 182, 0.2);
+  border-radius: 6px;
+}
+
+.target-description p {
+  margin: 0 0 16px 0;
+  color: #9b59b6;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.target-description ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #888;
+}
+
+.target-description li {
+  margin: 8px 0;
+  line-height: 1.4;
+}
+
+.target-input-group {
+  margin: 24px 0;
+}
+
+.target-input-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #9b59b6;
+  font-size: 14px;
+}
+
+.target-input-group input {
+  width: 100%;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(155, 89, 182, 0.2);
+  border-radius: 4px;
+  color: white;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.target-input-group input:focus {
+  outline: none;
+  border-color: #9b59b6;
+  background: rgba(155, 89, 182, 0.1);
+}
+
+.target-input-group input::placeholder {
+  color: #666;
+}
+
+.target-confirm-button {
+  background: linear-gradient(to bottom, #9b59b6, #8e44ad) !important;
+  border: 1px solid #9b59b6 !important;
+  color: white !important;
+  padding: 10px 24px !important;
+  font-weight: 600;
+  min-width: 140px;
+}
+
+.target-confirm-button:hover {
+  background: linear-gradient(to bottom, #8e44ad, #703688) !important;
+  transform: translateY(-1px);
+}
+
+.target-confirm-button:disabled {
+  background: #444 !important;
+  border-color: #666 !important;
+  color: #888 !important;
+  cursor: not-allowed;
+  transform: none;
 }
