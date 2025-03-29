@@ -121,6 +121,24 @@ const styles = `
     background-color: #006600;
   }
 
+  /* Eye icon button for toggling private keys */
+  .eye-icon {
+    background: none;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    margin-left: 8px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    vertical-align: middle;
+    transition: all 0.2s ease;
+  }
+
+  .eye-icon:hover {
+    background-color: #333;
+    transform: scale(1.1);
+  }
+
   .target-button {
     background-color: #2c3e50;
     color: white;
@@ -2498,20 +2516,21 @@ function WalletPage() {
         
         <div className="wallets-header">
           <h3 className="subwallets-title">Sub Wallets</h3>
-          <div className="toggle-private-keys-container">
-            <button 
-              className={`toggle-private-keys ${showPrivateKeys ? 'active' : ''}`}
-              onClick={() => setShowPrivateKeys(!showPrivateKeys)}
-            >
-              {showPrivateKeys ? 'Hide Private Keys' : 'Show Private Keys'}
-            </button>
-          </div>
         </div>
         
         <div className="wallet-table">
           <div className="table-header">
             <div className="col-index">#</div>
-            <div className="col-private">Private Key</div>
+            <div className="col-private">
+              Private Key
+              <button 
+                className="eye-icon"
+                onClick={() => setShowPrivateKeys(!showPrivateKeys)}
+                title={showPrivateKeys ? "Hide Private Keys" : "Show Private Keys"}
+              >
+                {showPrivateKeys ? '👁️' : '👁️‍🗨️'}
+              </button>
+            </div>
             <div className="col-public">Public Key</div>
             <div className="col-tribify">TRIBIFY</div>
             <div className="col-sol">SOL</div>
@@ -2519,38 +2538,20 @@ function WalletPage() {
             <div className="col-target">Target</div>
           </div>
           
-          <div className="table-row totals-row">
-            <div className="col-index">-</div>
-            <div className="col-private">-</div>
-            <div className="col-public">-</div>
-            <div className="col-tribify total-value">
-              {(calculateTotals().tribify || 0).toLocaleString()} TRIBIFY
-            </div>
-            <div className="col-sol total-value">
-              {(calculateTotals().sol || 0).toFixed(4)} SOL
-            </div>
-            <div className="col-usdc total-value">
-              ${(calculateTotals().usdc || 0).toFixed(2)}
-            </div>
-            <div className="col-target total-value">
-              0
-            </div>
-          </div>
-
-          {keypairs.map((keypair, i) => (
-            <div key={i} className="table-row">
-              <div className="col-index">{i + 1}</div>
+          {keypairs.map((keypair, index) => (
+            <div key={index} className="table-row">
+              <div className="col-index">{index + 1}</div>
               <div 
-                className={`col-private ${copiedStates[`private-${i}`] ? 'copied' : ''}`}
-                onClick={() => copyToClipboard(Buffer.from(keypair.secretKey).toString('hex'), i, 'private')}
+                className={`col-private ${copiedStates[`private-${index}`] ? 'copied' : ''}`}
+                onClick={() => copyToClipboard(Buffer.from(keypair.secretKey).toString('hex'), index, 'private')}
               >
                 {showPrivateKeys 
                   ? Buffer.from(keypair.secretKey).toString('hex')
                   : '••••••••••••••••••••••'}
               </div>
               <div 
-                className={`col-public ${copiedStates[`public-${i}`] ? 'copied' : ''}`}
-                onClick={() => copyToClipboard(keypair.publicKey.toString(), i, 'public')}
+                className={`col-public ${copiedStates[`public-${index}`] ? 'copied' : ''}`}
+                onClick={() => copyToClipboard(keypair.publicKey.toString(), index, 'public')}
                 title={keypair.publicKey.toString()}
               >
                 {`${keypair.publicKey.toString().slice(0, 5)}...${keypair.publicKey.toString().slice(-5)}`}
