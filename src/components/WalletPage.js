@@ -27,11 +27,12 @@ const styles = `
     border-collapse: collapse;
     margin-top: 20px;
     font-family: monospace;
+    background-color: #121212;
   }
 
   .table-header {
     display: grid;
-    grid-template-columns: 50px 250px 250px 150px 150px 150px 150px;
+    grid-template-columns: 40px 200px 200px 120px 120px 120px 120px;
     padding: 10px;
     background: #1a1a1a;
     border-bottom: 1px solid #333;
@@ -41,11 +42,12 @@ const styles = `
 
   .table-row {
     display: grid;
-    grid-template-columns: 50px 250px 250px 150px 150px 150px 150px;
+    grid-template-columns: 40px 200px 200px 120px 120px 120px 120px;
     padding: 8px;
     border-bottom: 1px solid #333;
     align-items: center;
     gap: 8px;
+    background-color: #121212;
   }
 
   .col-index {
@@ -66,6 +68,7 @@ const styles = `
     padding-right: 8px;
     font-family: monospace;
     color: #00ff00;
+    background-color: inherit;
   }
 
   .total-value {
@@ -74,12 +77,48 @@ const styles = `
   }
 
   .totals-row {
-    background: #1a1a1a;
+    background: #1a1a1a !important;
   }
 
   .copied {
     color: #00ff00;
     transition: color 0.3s ease;
+  }
+
+  .subwallets-title {
+    text-align: center;
+    margin: 20px 0 15px;
+    color: #00ff00;
+    font-size: 24px;
+  }
+
+  .wallets-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px 0;
+  }
+
+  .toggle-private-keys-container {
+    margin-top: 10px;
+  }
+
+  .toggle-private-keys {
+    background-color: #333;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+  .toggle-private-keys:hover {
+    background-color: #444;
+  }
+
+  .toggle-private-keys.active {
+    background-color: #006600;
   }
 `;
 
@@ -2356,15 +2395,19 @@ function WalletPage() {
             </div>
           </div>
         </div>
-        <div className="wallet-controls">
-          <button 
-            className={`toggle-private-keys ${showPrivateKeys ? 'active' : ''}`}
-            onClick={() => setShowPrivateKeys(!showPrivateKeys)}
-          >
-            {showPrivateKeys ? 'Hide Private Keys' : 'Show Private Keys'}
-          </button>
+        
+        <div className="wallets-header">
+          <h3 className="subwallets-title">Sub Wallets</h3>
+          <div className="toggle-private-keys-container">
+            <button 
+              className={`toggle-private-keys ${showPrivateKeys ? 'active' : ''}`}
+              onClick={() => setShowPrivateKeys(!showPrivateKeys)}
+            >
+              {showPrivateKeys ? 'Hide Private Keys' : 'Show Private Keys'}
+            </button>
+          </div>
         </div>
-        <h3 className="subwallets-title">Sub Wallets</h3>
+        
         <div className="wallet-table">
           <div className="table-header">
             <div className="col-index">#</div>
