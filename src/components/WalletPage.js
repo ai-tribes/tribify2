@@ -2318,7 +2318,6 @@ function WalletPage() {
       <div className="wallet-content">
         <div className="wallet-header">
           <div className="wallet-section">
-            <h2>Wallet Management</h2>
             <div className="wallet-controls primary">
               <button onClick={generateHDWallet} disabled={generating}>
                 {generating ? 'Generating...' : 'Generate Keys'}
@@ -2368,7 +2367,6 @@ function WalletPage() {
           </div>
 
           <div className="wallet-section">
-            <h2>Trading Options</h2>
             <div className="wallet-controls-container">
               {/* All buttons in a single row */}
               <div className="wallet-controls secondary row">
@@ -2419,12 +2417,11 @@ function WalletPage() {
           </div>
 
           <div className="wallet-section">
-            <h2>Token Conversion</h2>
             <div className="wallet-controls tertiary">
               <div className="conversion-row single-row">
                 {/* TRIBIFY Conversions */}
                 <div className="conversion-group">
-                  <span className="group-label">TRIBIFY</span>
+                  <span className="group-label">Convert TRIBIFY</span>
                   <div className="button-group">
                     <button className="convert-button tribify-to-sol" onClick={() => handleConvertTRIBIFYtoSOL()}>
                       To SOL
@@ -2437,7 +2434,7 @@ function WalletPage() {
                 
                 {/* SOL Conversions */}
                 <div className="conversion-group">
-                  <span className="group-label">SOL</span>
+                  <span className="group-label">Convert SOL</span>
                   <div className="button-group">
                     <button className="convert-button sol-to-tribify" onClick={() => handleConvertSOLtoTRIBIFY()}>
                       To TRIBIFY
@@ -2450,7 +2447,7 @@ function WalletPage() {
                 
                 {/* USDC Conversions */}
                 <div className="conversion-group">
-                  <span className="group-label">USDC</span>
+                  <span className="group-label">Convert USDC</span>
                   <div className="button-group">
                     <button className="convert-button usdc-to-tribify" onClick={() => handleConvertUSDCtoTRIBIFY()}>
                       To TRIBIFY
@@ -2463,7 +2460,7 @@ function WalletPage() {
 
                 {/* TARGET Conversions */}
                 <div className="conversion-group">
-                  <span className="group-label">TARGET</span>
+                  <span className="group-label">Convert TARGET</span>
                   <div className="button-group">
                     <button className="convert-button target-to-tribify" onClick={() => handleConvertTARGETtoTRIBIFY()}>
                       To TRIBIFY
