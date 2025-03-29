@@ -2221,6 +2221,29 @@ function WalletPage() {
     }
   };
 
+  // Add TARGET conversion handlers
+  const handleConvertTARGETtoTRIBIFY = async () => {
+    try {
+      setStatus('Converting TARGET to TRIBIFY...');
+      // Implementation will be added based on specific TARGET token requirements
+      setStatus('TARGET to TRIBIFY conversion not yet implemented');
+    } catch (error) {
+      console.error('Error converting TARGET to TRIBIFY:', error);
+      setStatus(`Failed to convert TARGET to TRIBIFY: ${error.message}`);
+    }
+  };
+
+  const handleConvertTARGETtoSOL = async () => {
+    try {
+      setStatus('Converting TARGET to SOL...');
+      // Implementation will be added based on specific TARGET token requirements
+      setStatus('TARGET to SOL conversion not yet implemented');
+    } catch (error) {
+      console.error('Error converting TARGET to SOL:', error);
+      setStatus(`Failed to convert TARGET to SOL: ${error.message}`);
+    }
+  };
+
   return (
     <div className="wallet-fullscreen">
       {/* Hidden file input for restore functionality */}
@@ -2388,6 +2411,19 @@ function WalletPage() {
                       To TRIBIFY
                     </button>
                     <button className="convert-button usdc-to-sol" onClick={() => handleConvertUSDCtoSOL()}>
+                      To SOL
+                    </button>
+                  </div>
+                </div>
+
+                {/* TARGET Conversions */}
+                <div className="conversion-group">
+                  <span className="group-label">TARGET</span>
+                  <div className="button-group">
+                    <button className="convert-button target-to-tribify" onClick={() => handleConvertTARGETtoTRIBIFY()}>
+                      To TRIBIFY
+                    </button>
+                    <button className="convert-button target-to-sol" onClick={() => handleConvertTARGETtoSOL()}>
                       To SOL
                     </button>
                   </div>
