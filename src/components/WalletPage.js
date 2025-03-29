@@ -120,6 +120,21 @@ const styles = `
   .toggle-private-keys.active {
     background-color: #006600;
   }
+
+  .target-button {
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
+  }
+
+  .target-button:hover {
+    background-color: #34495e;
+  }
 `;
 
 // Add style tag to document
@@ -257,6 +272,7 @@ function WalletPage() {
   const [notification, setNotification] = useState(null);
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
   const [isSellModalOpen, setIsSellModalOpen] = useState(false);
+  const [isTargetModalOpen, setIsTargetModalOpen] = useState(false); // New state for Target modal
   const [buyConfig, setBuyConfig] = useState({
     slippage: 1.0,
     priorityFee: 0.000001,
@@ -2296,6 +2312,12 @@ function WalletPage() {
                 >
                   Distribute $Tribify
                 </button>
+                <button 
+                  className="target-button" 
+                  onClick={() => setIsTargetModalOpen(true)}
+                >
+                  Select Target
+                </button>
               </div>
               
               {/* Second row: Configure Buy/Sell and Sequences */}
@@ -2471,6 +2493,71 @@ function WalletPage() {
           ))}
         </div>
 
+        {/* Add Target Selection Modal */}
+        {isTargetModalOpen && (
+          <div className="modal-container">
+            <div className="modal-overlay" onClick={() => setIsTargetModalOpen(false)} />
+            <div className="modal-content">
+              <div className="modal-header">
+                <h3>Select Target Wallets</h3>
+                <button className="close-button" onClick={() => setIsTargetModalOpen(false)}>×</button>
+              </div>
+              <div className="modal-body">
+                <p className="modal-description">
+                  Select which wallets should be targeted for token distribution operations.
+                </p>
+                <div className="target-options">
+                  <div className="option">
+                    <label className="checkbox-label">
+                      <input 
+                        type="checkbox" 
+                        checked={true}
+                        onChange={() => {}}
+                      />
+                      Target All Wallets
+                    </label>
+                  </div>
+
+                  <div className="option">
+                    <label className="checkbox-label">
+                      <input 
+                        type="checkbox" 
+                        checked={false}
+                        onChange={() => {}}
+                      />
+                      Target Wallets with Zero Balance
+                    </label>
+                  </div>
+
+                  <div className="option">
+                    <label className="checkbox-label">
+                      <input 
+                        type="checkbox" 
+                        checked={false}
+                        onChange={() => {}}
+                      />
+                      Target Custom Range
+                    </label>
+                    <div className="range-inputs">
+                      <input type="number" placeholder="From" min="1" disabled />
+                      <span>to</span>
+                      <input type="number" placeholder="To" min="1" disabled />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button className="cancel-button" onClick={() => setIsTargetModalOpen(false)}>
+                  Cancel
+                </button>
+                <button className="save-button">
+                  Apply Selection
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Buy Configuration Modal */}
         {isBuyModalOpen && (
           <div className="modal-container">
