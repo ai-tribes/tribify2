@@ -125,8 +125,7 @@ const ShareholdersDisplay = ({ holders = [], stakedAddresses = [], publicKey, ni
   );
 };
 
-function StakeView({ parentWallet, tokenHolders, nicknames, setNicknames }) {
-  const { subwallets, publicKeys } = useContext(TribifyContext);
+function StakeView({ parentWallet, subwallets = [], nicknames, setNicknames }) {
   const { motions } = useContext(GovernanceContext);
   const [selectedStakeType, setSelectedStakeType] = useState({});
   const [showStakeModal, setShowStakeModal] = useState(false);
@@ -149,13 +148,10 @@ function StakeView({ parentWallet, tokenHolders, nicknames, setNicknames }) {
       publicKey: parentWallet.publicKey,
       tribifyBalance: Number(parentWallet.tribifyBalance) || 0
     },
-    ...(Array.isArray(subwallets) ? subwallets : []).map(wallet => {
-      const holderData = tokenHolders.find(h => h.address === wallet.publicKey);
-      return {
-        publicKey: wallet.publicKey,
-        tribifyBalance: Number(holderData?.tokenBalance) || 0
-      };
-    })
+    ...(Array.isArray(subwallets) ? subwallets : []).map(wallet => ({
+      publicKey: wallet.publicKey,
+      tribifyBalance: Number(wallet.tribifyBalance) || 0
+    }))
   ];
 
   // Get array of staked addresses
@@ -209,9 +205,6 @@ function StakeView({ parentWallet, tokenHolders, nicknames, setNicknames }) {
         throw new Error(`Tokens are locked for ${formatDuration((stake.unlockTime - currentTime) * 60)}`);
       }
 
-      // TODO: Implement actual unstaking transaction
-      console.log(`Will unstake ${stake.amount} TRIBIFY from ${walletPublicKey}${forceEarly ? ' (early)' : ''}`);
-
       // Remove from locked stakes
       setLockedStakes(prev => {
         const newStakes = { ...prev };
@@ -232,16 +225,6 @@ function StakeView({ parentWallet, tokenHolders, nicknames, setNicknames }) {
       <div className="stake-header">
         <h2>Staking Dashboard</h2>
       </div>
-      
-      {/* Use ShareholdersDisplay instead of Shareholders */}
-      <ShareholdersDisplay 
-        holders={tokenHolders}
-        stakedAddresses={stakedAddresses}
-        publicKey={parentWallet.publicKey}
-        nicknames={nicknames}
-        setNicknames={setNicknames}
-        subwallets={subwallets}
-      />
 
       <div className="wallets-list">
         <div className="wallet-row header">
@@ -288,7 +271,6 @@ function StakeView({ parentWallet, tokenHolders, nicknames, setNicknames }) {
                       {Number(lockedStakes[wallet.publicKey].amount).toLocaleString()} TRIBIFY
                     </span>
                     <span className="unlock-time">
-                      {/* Remove "minutes" since formatDuration already includes it */}
                       Unlocks in {formatDuration(Math.floor((lockedStakes[wallet.publicKey].duration)))}
                     </span>
                   </div>

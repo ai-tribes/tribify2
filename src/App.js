@@ -26,6 +26,9 @@ import { TribifyContext } from './context/TribifyContext';
 import Sign from './components/Sign';
 import VotePage from './components/VotePage';
 import SnipePage from './components/SnipePage';
+import { getPhantomProvider, isPhantomInstalled, getPhantomConnectionState } from './utils/phantom';
+import { marked } from 'marked';
+import LandingPage from './components/LandingPage';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -363,6 +366,45 @@ function App() {
   const [nicknames, setNicknames] = useState({});
   const [subwallets, setSubwallets] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [publicKey, setPublicKey] = useState(null);
+  const [balance, setBalance] = useState(null);
+  const [messages, setMessages] = useState({});
+  const [unreadCounts, setUnreadCounts] = useState({});
+
+  // Add useEffect to fetch token holders when messages page is opened
+  useEffect(() => {
+    if (location.pathname === '/messages' && tokenHolders.length === 0 && !isLoading) {
+      fetchTokenHolders();
+    }
+  }, [location.pathname]);
+
+  // Message handling function
+  const handleSendMessage = (message, recipient) => {
+    const timestamp = Date.now();
+    setMessages(prev => ({
+      ...prev,
+      [recipient]: [
+        ...(prev[recipient] || []),
+        {
+          text: message,
+          from: publicKey,
+          timestamp,
+          delivered: false
+        }
+      ]
+    }));
+  };
+
+  // Add function to update SOL balance
+  const updateBalance = async (pubKey) => {
+    try {
+      if (!pubKey) return;
+      const bal = await connection.getBalance(new PublicKey(pubKey));
+      setBalance(bal / LAMPORTS_PER_SOL);
+    } catch (error) {
+      console.error('Error updating balance:', error);
+    }
+  };
 
   // Fetch token holders
   const fetchTokenHolders = async () => {
@@ -466,21 +508,30 @@ function App() {
     }
   }, [location.pathname, tokenHolders.length, isLoading]);
 
-  // Check connection status
+  // Add auto-reconnect on page load
   useEffect(() => {
-    const checkConnection = async () => {
-      const isPhantomConnected = window.phantom?.solana?.isConnected;
-      const hasParentWallet = localStorage.getItem('tribify_parent_wallet');
-      console.log('Connection check:', { isPhantomConnected, hasParentWallet });
-      setIsConnected(isPhantomConnected && hasParentWallet);
-      
-      if (isPhantomConnected && hasParentWallet) {
-        console.log('Connected, fetching token holders...');
-        fetchTokenHolders();
+    const autoConnect = async () => {
+      try {
+        // First check if we have connection info in localStorage
+        const storedPublicKey = localStorage.getItem('tribify_parent_wallet');
+        
+        if (storedPublicKey) {
+          const connectionState = getPhantomConnectionState();
+          const provider = getPhantomProvider();
+          
+          if (connectionState === 'connected' && provider) {
+            setIsConnected(true);
+            setPublicKey(storedPublicKey);
+            await updateBalance(storedPublicKey);
+            await fetchTokenHolders();
+          }
+        }
+      } catch (error) {
+        console.log('No existing connection');
       }
     };
-    
-    checkConnection();
+
+    autoConnect();
   }, []);
 
   const handleConnection = async () => {
@@ -554,168 +605,148 @@ function App() {
     <div className="App">
       <nav className="desktop-nav">
         <div className="nav-buttons">
-          <button 
-            className={`nav-button tribify-button ${activeView === 'ai' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveView('ai');
-              navigate('/');
-            }}
-          >
-            /tribify.ai
-          </button>
-          <button 
-            className={`nav-button ${activeView === 'shareholders' ? 'active' : ''}`}
-            onClick={() => {
-              console.log('Shareholders button clicked');
-              setActiveView('shareholders');
-              navigate('/shareholders');
-              if (tokenHolders.length === 0 && !isLoading) {
-                console.log('Fetching token holders data');
-                fetchTokenHolders();
-              }
-            }}
-          >
-            Shareholders
-          </button>
-          <button 
-            className={`nav-button wallet-button ${activeView === 'wallet' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveView('wallet');
-              navigate('/wallet');
-            }}
-          >
-            Wallet
-          </button>
-          <button 
-            className={`nav-button stake-button ${activeView === 'stake' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveView('stake');
-              navigate('/stake');
-            }}
-          >
-            Stake
-          </button>
-          <button 
-            className={`nav-button ${activeView === 'snipe' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveView('snipe');
-              navigate('/snipe');
-            }}
-          >
-            Snipe
-          </button>
-          <button 
-            className={`nav-button ${activeView === 'sign' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveView('sign');
-              navigate('/sign');
-            }}
-          >
-            Sign
-          </button>
-          <button 
-            className={`nav-button ${activeView === 'vote' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveView('vote');
-              navigate('/vote');
-            }}
-          >
-            Vote
-          </button>
-          <button 
-            className="nav-button"
-            onClick={handleDisconnect}
-          >
-            Disconnect
-          </button>
+          <div className="nav-buttons-row">
+            <button 
+              className={`nav-button tribify-button ${activeView === 'ai' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('ai');
+                navigate('/');
+              }}
+            >
+              /tribify.ai
+            </button>
+            <button 
+              className={`nav-button ${activeView === 'shareholders' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('shareholders');
+                navigate('/shareholders');
+              }}
+            >
+              Shareholders
+            </button>
+            <button 
+              className={`nav-button ${activeView === 'wallet' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('wallet');
+                navigate('/wallet');
+              }}
+            >
+              Wallet
+            </button>
+            <button 
+              className={`nav-button ${activeView === 'stake' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('stake');
+                navigate('/stake');
+              }}
+            >
+              Stake
+            </button>
+            <button 
+              className={`nav-button ${activeView === 'snipe' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('snipe');
+                navigate('/snipe');
+              }}
+            >
+              Snipe
+            </button>
+            <button 
+              className={`nav-button ${activeView === 'sign' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('sign');
+                navigate('/sign');
+              }}
+            >
+              Sign
+            </button>
+            <button 
+              className={`nav-button ${activeView === 'vote' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('vote');
+                navigate('/vote');
+              }}
+            >
+              Vote
+            </button>
+            <button 
+              className={`nav-button ${activeView === 'backup' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('backup');
+                navigate('/backup');
+              }}
+            >
+              Backup
+            </button>
+          </div>
+          <div className="nav-buttons-row">
+            <button 
+              className={`nav-button ${activeView === 'password' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('password');
+                navigate('/password');
+              }}
+            >
+              Password
+            </button>
+            <button 
+              className={`nav-button ${activeView === 'messages' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('messages');
+                navigate('/messages');
+              }}
+            >
+              Messages
+            </button>
+            <button 
+              className={`nav-button ${activeView === 'restore' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('restore');
+                navigate('/restore');
+              }}
+            >
+              Restore
+            </button>
+            <button 
+              className={`nav-button ${activeView === 'docs' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('docs');
+                navigate('/docs');
+              }}
+            >
+              Docs
+            </button>
+            <button 
+              className={`nav-button ${activeView === 'graph' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('graph');
+                navigate('/graph');
+              }}
+            >
+              Graph
+            </button>
+            <button 
+              className={`nav-button ${activeView === 'connection' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('connection');
+                navigate('/connection');
+              }}
+            >
+              Connection
+            </button>
+            <button 
+              className="nav-button"
+              onClick={handleDisconnect}
+            >
+              Disconnect
+            </button>
+          </div>
         </div>
       </nav>
 
       <main className="main-content">
         <Routes>
-          <Route path="/" element={
-            <div className="landing-container">
-              <div className="landing-header">
-                <div className="logo-section">
-                  <h1>/tribify.ai</h1>
-                  <p className="subtitle">AI-powered token management & community platform</p>
-                </div>
-                
-                {localStorage.getItem('tribify_parent_wallet') && (
-                  <div className="wallet-info">
-                    <div className="wallet-address">
-                      <span className="label">Connected:</span>
-                      <span className="address">
-                        {localStorage.getItem('tribify_parent_wallet')?.slice(0, 4)}...
-                        {localStorage.getItem('tribify_parent_wallet')?.slice(-4)}
-                      </span>
-                    </div>
-                    <div className="balance-info">
-                      <span className="balance-item tribify">
-                        <span className="label">$TRIBIFY:</span>
-                        <span className="value">32,071,767.199</span>
-                      </span>
-                      <span className="balance-item sol">
-                        <span className="label">SOL:</span>
-                        <span className="value">0.46602528</span>
-                      </span>
-                      <span className="balance-item usdc">
-                        <span className="label">USDC:</span>
-                        <span className="value">$0.00</span>
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="landing-content">
-                <div className="features-grid">
-                  <div className="feature-card">
-                    <h3>Token Management</h3>
-                    <p>Create and manage up to 100 subwallets for strategic token distribution</p>
-                  </div>
-                  <div className="feature-card">
-                    <h3>Community Tools</h3>
-                    <p>Monitor token holders, communicate with shareholders, and build your community</p>
-                  </div>
-                  <div className="feature-card">
-                    <h3>Token Conversion</h3>
-                    <p>Seamlessly convert between TRIBIFY, SOL, and USDC tokens</p>
-                  </div>
-                  <div className="feature-card">
-                    <h3>AI Assistant</h3>
-                    <p>Get help with wallet management, token strategies, and community engagement</p>
-                  </div>
-                </div>
-
-                <div className="terminal-section">
-                  <div className="terminal-header">
-                    <span className="terminal-title">AI Terminal</span>
-                    <button className="close-terminal">×</button>
-                  </div>
-                  <div className="terminal-content">
-                    <div className="welcome-message">
-                      Welcome to /tribify.ai! I'm your AI assistant for managing TRIBIFY tokens and wallets. I can help you:
-                      • Create and manage up to 100 subwallets
-                      • Distribute TRIBIFY tokens strategically
-                      • Convert between TRIBIFY, SOL, and USDC
-                      • Monitor your token holder community
-                    </div>
-                    <div className="terminal-input-container">
-                      <input
-                        type="text"
-                        className="terminal-input"
-                        placeholder="Enter a command or ask for help..."
-                      />
-                    </div>
-                    <div className="terminal-output">
-                      Type /help to see all commands
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          } />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/shareholders" element={
             <div className="shareholders-container">
               <h2>Shareholders</h2>
@@ -727,13 +758,7 @@ function App() {
               ) : tokenHolders.length === 0 ? (
                 <div className="error-message">
                   <p>No shareholders data available. Please make sure your wallet is connected.</p>
-                  <button 
-                    className="retry-button"
-                    onClick={() => {
-                      console.log('Retrying token holders fetch');
-                      fetchTokenHolders();
-                    }}
-                  >
+                  <button onClick={fetchTokenHolders} className="retry-button">
                     Retry
                   </button>
                 </div>
@@ -751,19 +776,6 @@ function App() {
               )}
             </div>
           } />
-          <Route path="/stake" element={
-            <div className="stake-container">
-              <StakeView 
-                parentWallet={{
-                  publicKey: localStorage.getItem('tribify_parent_wallet'),
-                  tribifyBalance: tokenHolders.find(h => h.address === localStorage.getItem('tribify_parent_wallet'))?.tokenBalance || 0
-                }}
-                tokenHolders={tokenHolders}
-                nicknames={nicknames}
-                setNicknames={setNicknames}
-              />
-            </div>
-          } />
           <Route path="/wallet" element={
             <div className="wallet-container">
               <WalletPage 
@@ -772,11 +784,24 @@ function App() {
               />
             </div>
           } />
+          <Route path="/stake" element={
+            <div className="stake-container">
+              <StakeView 
+                parentWallet={{
+                  publicKey: localStorage.getItem('tribify_parent_wallet'),
+                  tribifyBalance: tokenHolders.find(h => h.address === localStorage.getItem('tribify_parent_wallet'))?.tokenBalance || 0
+                }}
+                subwallets={subwallets}
+                nicknames={nicknames}
+                setNicknames={setNicknames}
+              />
+            </div>
+          } />
           <Route path="/snipe" element={
             <div className="snipe-container">
               <SnipePage 
                 publicKey={localStorage.getItem('tribify_parent_wallet')}
-                parentBalance={0.46602528}
+                parentBalance={balance}
                 subwallets={subwallets}
               />
             </div>
@@ -792,6 +817,50 @@ function App() {
                 tokenHolders={tokenHolders}
                 publicKey={localStorage.getItem('tribify_parent_wallet')}
               />
+            </div>
+          } />
+          <Route path="/password" element={
+            <div className="password-container">
+              <Password />
+            </div>
+          } />
+          <Route path="/messages" element={
+            <div className="messages-container">
+              <MessagesPage 
+                tokenHolders={tokenHolders}
+                publicKey={publicKey}
+                messages={messages}
+                setMessages={setMessages}
+                nicknames={nicknames}
+                unreadCounts={unreadCounts}
+                onSendMessage={handleSendMessage}
+                onClose={() => navigate('/')}
+              />
+            </div>
+          } />
+          <Route path="/backup" element={
+            <div className="backup-container">
+              <Backup />
+            </div>
+          } />
+          <Route path="/restore" element={
+            <div className="restore-container">
+              <Restore />
+            </div>
+          } />
+          <Route path="/docs" element={
+            <div className="docs-container">
+              <div className="docs-content" dangerouslySetInnerHTML={{ __html: marked(DOCS_CONTENT) }} />
+            </div>
+          } />
+          <Route path="/graph" element={
+            <div className="graph-container">
+              <TokenHolderGraph holders={tokenHolders} />
+            </div>
+          } />
+          <Route path="/connection" element={
+            <div className="connection-container">
+              <Connected onClick={handleConnection} />
             </div>
           } />
         </Routes>

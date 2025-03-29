@@ -10,14 +10,12 @@ import {
   createAssociatedTokenAccountInstruction,
   createTransferInstruction,
   transfer,
-  TOKEN_PROGRAM_ID 
+  TOKEN_PROGRAM_ID,
+  NATIVE_MINT 
 } from '@solana/spl-token';
 import TokenDistributor from './TokenDistributor';
-// Import the new component
 import FundSubwallets from './FundSubwallets';
-// Add these imports at the top
 import { Jupiter, QuoteCalculator } from '@jup-ag/sdk';
-import { NATIVE_MINT } from '@solana/spl-token';
 import './ConversionModal.css';
 import ConversionModal from './ConversionModal';
 import { TribifyContext } from '../context/TribifyContext';
@@ -213,9 +211,21 @@ function WalletPage() {
     minAmount: 0,
     maxAmount: 0
   });
-  const [publicKey, setPublicKey] = useState(null);
-  const [showDistributeModal, setShowDistributeModal] = useState(false);
   const [walletBalances, setWalletBalances] = useState({});
+  const [conversionStatus, setConversionStatus] = useState({
+    isConverting: false,
+    inProgress: false,
+    processed: 0,
+    total: 0,
+    currentBatch: [],
+    successfulWallets: [],
+    failedWallets: [],
+    totalConverted: 0,
+    fromToken: '',
+    toToken: '',
+    error: null,
+    retryCount: 0
+  });
 
   // Add file input ref near other state declarations
   const fileInputRef = useRef(null);
@@ -262,24 +272,14 @@ function WalletPage() {
   // Add new state for showing/hiding private keys
   const [showPrivateKeys, setShowPrivateKeys] = useState(false);
 
-  // Add this to your state declarations
-  const [conversionStatus, setConversionStatus] = useState({
-    isConverting: false,
-    inProgress: false,
-    processed: 0,
-    total: 0,
-    currentBatch: [],
-    successfulWallets: [],
-    failedWallets: [],
-    totalConverted: 0,
-    fromToken: '',
-    toToken: '',
-    error: null, // Add error state
-    retryCount: 0 // Add retry counter
-  });
+  // Add publicKey state
+  const [publicKey, setPublicKey] = useState('');
 
   // Add this in WalletPage.js
   const { setSubwallets, setPublicKeys } = useContext(TribifyContext);
+
+  // Setup aliases for modal functions
+  const setShowDistributeModal = setIsDistributeModalOpen;
 
   const showStatus = (message, duration = 3000) => {
     setStatusMessage(message);
@@ -947,6 +947,8 @@ function WalletPage() {
   };
 
   const calculateTotals = () => {
+    if (!walletBalances) return { sol: 0, usdc: 0, tribify: 0 };
+    
     return Object.entries(walletBalances)
       .filter(([key]) => key !== 'parent') // Exclude parent wallet
       .reduce((totals, [_, balance]) => {
@@ -1792,15 +1794,14 @@ function WalletPage() {
   }, [isFundingModalOpen]);
 
   // Add these helper functions before the WalletPage component
-  const getJupiter = async (connection, keypair) => {
+  const getJupiter = async (connection) => {
     const calculator = new QuoteCalculator({
       connection,
       cluster: 'mainnet-beta',
-      routeCacheDuration: 10, // 10 second cache
+      routeCacheDuration: 10,
       wrapUnwrapSOL: true,
       enableSwapModeV2: true
     });
-    
     return calculator;
   };
 
@@ -1889,6 +1890,229 @@ function WalletPage() {
 
   const refreshBalances = fetchBalances;
 
+  // Define token conversion functions inside the component
+  const handleConvertTRIBIFYtoSOL = async () => {
+    try {
+      const calculator = await getJupiter(connection);
+      const transactions = [];
+
+      for (const keypair of keypairs) {
+        try {
+          const tx = await createSwapTransaction(
+            calculator,
+            'TRIBIFY',
+            'SOL',
+            walletBalances[keypair.publicKey.toString()]?.tribify || 0,
+            keypair,
+            1
+          );
+          transactions.push(tx);
+        } catch (error) {
+          console.error(`Failed to create TRIBIFY to SOL swap for wallet ${keypair.publicKey.toString()}:`, error);
+        }
+      }
+
+      await txQueue.add(transactions, (processed) => {
+        setConversionStatus(prev => ({
+          ...prev,
+          processed,
+          total: transactions.length
+        }));
+      });
+
+      await fetchBalances();
+    } catch (error) {
+      console.error('Error converting TRIBIFY to SOL:', error);
+      setStatus(`Failed to convert TRIBIFY to SOL: ${error.message}`);
+    }
+  };
+
+  const handleConvertTRIBIFYtoUSDC = async () => {
+    try {
+      const calculator = await getJupiter(connection);
+      const transactions = [];
+
+      for (const keypair of keypairs) {
+        try {
+          const tx = await createSwapTransaction(
+            calculator,
+            'TRIBIFY',
+            'USDC',
+            walletBalances[keypair.publicKey.toString()]?.tribify || 0,
+            keypair,
+            1
+          );
+          transactions.push(tx);
+        } catch (error) {
+          console.error(`Failed to create TRIBIFY to USDC swap for wallet ${keypair.publicKey.toString()}:`, error);
+        }
+      }
+
+      await txQueue.add(transactions, (processed) => {
+        setConversionStatus(prev => ({
+          ...prev,
+          processed,
+          total: transactions.length
+        }));
+      });
+
+      await fetchBalances();
+    } catch (error) {
+      console.error('Error converting TRIBIFY to USDC:', error);
+      setStatus(`Failed to convert TRIBIFY to USDC: ${error.message}`);
+    }
+  };
+
+  const handleConvertSOLtoTRIBIFY = async () => {
+    try {
+      const calculator = await getJupiter(connection);
+      const transactions = [];
+
+      for (const keypair of keypairs) {
+        try {
+          const solBalance = (walletBalances[keypair.publicKey.toString()]?.sol || 0) - 0.01;
+          if (solBalance > 0) {
+            const tx = await createSwapTransaction(
+              calculator,
+              'SOL',
+              'TRIBIFY',
+              solBalance,
+              keypair,
+              1
+            );
+            transactions.push(tx);
+          }
+        } catch (error) {
+          console.error(`Failed to create SOL to TRIBIFY swap for wallet ${keypair.publicKey.toString()}:`, error);
+        }
+      }
+
+      await txQueue.add(transactions, (processed) => {
+        setConversionStatus(prev => ({
+          ...prev,
+          processed,
+          total: transactions.length
+        }));
+      });
+
+      await fetchBalances();
+    } catch (error) {
+      console.error('Error converting SOL to TRIBIFY:', error);
+      setStatus(`Failed to convert SOL to TRIBIFY: ${error.message}`);
+    }
+  };
+
+  const handleConvertSOLtoUSDC = async () => {
+    try {
+      const calculator = await getJupiter(connection);
+      const transactions = [];
+
+      for (const keypair of keypairs) {
+        try {
+          const solBalance = (walletBalances[keypair.publicKey.toString()]?.sol || 0) - 0.01;
+          if (solBalance > 0) {
+            const tx = await createSwapTransaction(
+              calculator,
+              'SOL',
+              'USDC',
+              solBalance,
+              keypair,
+              1
+            );
+            transactions.push(tx);
+          }
+        } catch (error) {
+          console.error(`Failed to create SOL to USDC swap for wallet ${keypair.publicKey.toString()}:`, error);
+        }
+      }
+
+      await txQueue.add(transactions, (processed) => {
+        setConversionStatus(prev => ({
+          ...prev,
+          processed,
+          total: transactions.length
+        }));
+      });
+
+      await fetchBalances();
+    } catch (error) {
+      console.error('Error converting SOL to USDC:', error);
+      setStatus(`Failed to convert SOL to USDC: ${error.message}`);
+    }
+  };
+
+  const handleConvertUSDCtoTRIBIFY = async () => {
+    try {
+      const calculator = await getJupiter(connection);
+      const transactions = [];
+
+      for (const keypair of keypairs) {
+        try {
+          const tx = await createSwapTransaction(
+            calculator,
+            'USDC',
+            'TRIBIFY',
+            walletBalances[keypair.publicKey.toString()]?.usdc || 0,
+            keypair,
+            1
+          );
+          transactions.push(tx);
+        } catch (error) {
+          console.error(`Failed to create USDC to TRIBIFY swap for wallet ${keypair.publicKey.toString()}:`, error);
+        }
+      }
+
+      await txQueue.add(transactions, (processed) => {
+        setConversionStatus(prev => ({
+          ...prev,
+          processed,
+          total: transactions.length
+        }));
+      });
+
+      await fetchBalances();
+    } catch (error) {
+      console.error('Error converting USDC to TRIBIFY:', error);
+      setStatus(`Failed to convert USDC to TRIBIFY: ${error.message}`);
+    }
+  };
+
+  const handleConvertUSDCtoSOL = async () => {
+    try {
+      const calculator = await getJupiter(connection);
+      const transactions = [];
+
+      for (const keypair of keypairs) {
+        try {
+          const tx = await createSwapTransaction(
+            calculator,
+            'USDC',
+            'SOL',
+            walletBalances[keypair.publicKey.toString()]?.usdc || 0,
+            keypair,
+            1
+          );
+          transactions.push(tx);
+        } catch (error) {
+          console.error(`Failed to create USDC to SOL swap for wallet ${keypair.publicKey.toString()}:`, error);
+        }
+      }
+
+      await txQueue.add(transactions, (processed) => {
+        setConversionStatus(prev => ({
+          ...prev,
+          processed,
+          total: transactions.length
+        }));
+      });
+
+      await fetchBalances();
+    } catch (error) {
+      console.error('Error converting USDC to SOL:', error);
+      setStatus(`Failed to convert USDC to SOL: ${error.message}`);
+    }
+  };
+
   return (
     <div className="wallet-fullscreen">
       {/* Hidden file input for restore functionality */}
@@ -1912,10 +2136,10 @@ function WalletPage() {
       )}
       <div className="wallet-content">
         <div className="wallet-header">
-          {/* First row - existing controls */}
-          <div className="wallet-controls">
-            <div className="left-controls">
-              <button onClick={() => navigate(-1)}>Close Wallet</button>
+          <div className="wallet-section">
+            <h2>Wallet Management</h2>
+            <div className="wallet-controls primary">
+              <button onClick={() => navigate(-1)} className="close-wallet-button">Close Wallet</button>
               <button onClick={generateHDWallet} disabled={generating}>
                 {generating ? 'Generating...' : 'Generate Keys'}
               </button>
@@ -1934,8 +2158,6 @@ function WalletPage() {
               >
                 ↻ Refresh Wallets
               </button>
-            </div>
-            <div className="right-controls">
               <button
                 onClick={() => {
                   const confirmed = window.confirm(
@@ -1958,136 +2180,122 @@ function WalletPage() {
                     }
                   }
                 }}
-                className="nav-button danger"
+                className="danger-button"
               >
                 Clear Storage & Reset
               </button>
             </div>
           </div>
 
-          {/* Second row - restore action buttons */}
-          <div className="wallet-controls secondary">
-            <div className="left-controls">
-              <button 
-                className="fund-button" 
-                onClick={() => setIsFundingModalOpen(true)}
-              >
-                Fund Subwallets
-              </button>
-              <button 
-                className="distribute-button" 
-                onClick={() => setIsDistributeModalOpen(true)}
-              >
-                Distribute $Tribify
-              </button>
-              <button onClick={() => setIsBuyModalOpen(true)}>
-                Configure Buy
-              </button>
-              <button 
-                className="sequence-button" 
-                onClick={() => {
-                  buyAndDistribute();
-                  setStatus('Buy sequence started');
-                }}
-              >
-                Buy Sequence
-              </button>
-              <button onClick={() => setIsSellModalOpen(true)}>
-                Configure Sell
-              </button>
-              <button 
-                className="sequence-button sell" 
-                onClick={() => {
-                  sellAndDistribute();
-                  setStatus('Sell sequence started');
-                }}
-              >
-                Sell Sequence
-              </button>
+          <div className="wallet-section">
+            <h2>Trading Options</h2>
+            <div className="wallet-controls-container">
+              {/* First row: Fund and Distribute */}
+              <div className="wallet-controls secondary row">
+                <button 
+                  className="fund-button" 
+                  onClick={() => setIsFundingModalOpen(true)}
+                >
+                  Fund Subwallets
+                </button>
+                <button 
+                  className="distribute-button" 
+                  onClick={() => setIsDistributeModalOpen(true)}
+                >
+                  Distribute $Tribify
+                </button>
+              </div>
+              
+              {/* Second row: Configure Buy/Sell and Sequences */}
+              <div className="wallet-controls secondary row">
+                <button onClick={() => setIsBuyModalOpen(true)}>
+                  Configure Buy
+                </button>
+                <button 
+                  className="sequence-button" 
+                  onClick={() => {
+                    buyAndDistribute();
+                    setStatus('Buy sequence started');
+                  }}
+                >
+                  Buy
+                </button>
+                <button onClick={() => setIsSellModalOpen(true)}>
+                  Configure Sell
+                </button>
+                <button 
+                  className="sequence-button sell" 
+                  onClick={() => {
+                    sellAndDistribute();
+                    setStatus('Sell sequence started');
+                  }}
+                >
+                  Sell
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Third row - restore conversion buttons */}
-          <div className="wallet-controls tertiary">
-            <div className="conversion-buttons">
-              {/* TRIBIFY conversions */}
-              <div className="conversion-group tribify">
-                <span className="group-label">Convert ALL TRIBIFY to:</span>
-                <button 
-                  className="convert-button tribify-to-sol"
-                  onClick={() => handleMassConversion('TRIBIFY', 'SOL')}
-                >
-                  SOL
-                </button>
-                <button 
-                  className="convert-button tribify-to-usdc"
-                  onClick={() => alert(
-                    `TRIBIFY/USDC conversions will be available after $TRIBIFY graduates from Pump.fun.\n\n` +
-                    `For now, you can convert TRIBIFY to SOL using the Pump.fun liquidity pool.`
-                  )}
-                >
-                  USDC
-                </button>
-              </div>
-
-              {/* SOL conversions */}
-              <div className="conversion-group sol">
-                <span className="group-label">Convert ALL SOL to:</span>
-                <button 
-                  className="convert-button sol-to-tribify"
-                  onClick={() => handleMassConversion('SOL', 'TRIBIFY')}
-                >
-                  TRIBIFY
-                </button>
-                <button 
-                  className="convert-button sol-to-usdc"
-                  onClick={() => alert(
-                    `SOL/USDC conversions will be enabled after $TRIBIFY graduates to Raydium.\n\n` +
-                    `For now, you can use other DEXes like Raydium or Jupiter to convert SOL to USDC.`
-                  )}
-                >
-                  USDC
-                </button>
-              </div>
-
-              {/* USDC conversions */}
-              <div className="conversion-group usdc">
-                <span className="group-label">Convert ALL USDC to:</span>
-                <button 
-                  className="convert-button usdc-to-tribify"
-                  onClick={() => alert(
-                    `USDC/TRIBIFY conversions will be available after $TRIBIFY graduates from Pump.fun.\n\n` +
-                    `For now, you can convert USDC to SOL elsewhere, then use Pump.fun to buy TRIBIFY.`
-                  )}
-                >
-                  TRIBIFY
-                </button>
-                <button 
-                  className="convert-button usdc-to-sol"
-                  onClick={() => alert(
-                    `USDC/SOL conversions will be enabled after $TRIBIFY graduates to Raydium.\n\n` +
-                    `For now, you can use other DEXes like Raydium or Jupiter to convert USDC to SOL.`
-                  )}
-                >
-                  SOL
-                </button>
+          <div className="wallet-section">
+            <h2>Token Conversion</h2>
+            <div className="wallet-controls tertiary">
+              <div className="conversion-row single-row">
+                {/* TRIBIFY Conversions */}
+                <div className="conversion-group">
+                  <span className="group-label">TRIBIFY</span>
+                  <div className="button-group">
+                    <button className="convert-button tribify-to-sol" onClick={() => handleConvertTRIBIFYtoSOL()}>
+                      To SOL
+                    </button>
+                    <button className="convert-button tribify-to-usdc" onClick={() => handleConvertTRIBIFYtoUSDC()}>
+                      To USDC
+                    </button>
+                  </div>
+                </div>
+                
+                {/* SOL Conversions */}
+                <div className="conversion-group">
+                  <span className="group-label">SOL</span>
+                  <div className="button-group">
+                    <button className="convert-button sol-to-tribify" onClick={() => handleConvertSOLtoTRIBIFY()}>
+                      To TRIBIFY
+                    </button>
+                    <button className="convert-button sol-to-usdc" onClick={() => handleConvertSOLtoUSDC()}>
+                      To USDC
+                    </button>
+                  </div>
+                </div>
+                
+                {/* USDC Conversions */}
+                <div className="conversion-group">
+                  <span className="group-label">USDC</span>
+                  <div className="button-group">
+                    <button className="convert-button usdc-to-tribify" onClick={() => handleConvertUSDCtoTRIBIFY()}>
+                      To TRIBIFY
+                    </button>
+                    <button className="convert-button usdc-to-sol" onClick={() => handleConvertUSDCtoSOL()}>
+                      To SOL
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
+
         <div className="parent-wallet-info">
           <div className="parent-wallet-row">
             <span className="label">Parent Wallet:</span>
             <span className="address">{parentWalletAddress || 'Not Connected'}</span>
             <div className="parent-balances">
               <span className="parent-balance tribify">
-                {walletBalances['parent']?.tribify?.toLocaleString() || '0'} TRIBIFY
+                {(walletBalances['parent']?.tribify || 0).toLocaleString()} TRIBIFY
               </span>
               <span className="parent-balance sol">
-                {walletBalances['parent']?.sol?.toFixed(4) || '0.0000'} SOL
+                {(walletBalances['parent']?.sol || 0).toFixed(4)} SOL
               </span>
               <span className="parent-balance usdc">
-                ${walletBalances['parent']?.usdc?.toFixed(2) || '0.00'} USDC
+                ${(walletBalances['parent']?.usdc || 0).toFixed(2)} USDC
               </span>
             </div>
           </div>
@@ -2116,13 +2324,13 @@ function WalletPage() {
             <div className="col-private">CUMULATIVE SUBWALLETS' BALANCE</div>
             <div className="col-public">-</div>
             <div className="col-tribify total-value">
-              {calculateTotals().tribify.toLocaleString()} TRIBIFY
+              {(calculateTotals().tribify || 0).toLocaleString()} TRIBIFY
             </div>
             <div className="col-sol total-value">
-              {calculateTotals().sol.toFixed(4)} SOL
+              {(calculateTotals().sol || 0).toFixed(4)} SOL
             </div>
             <div className="col-usdc total-value">
-              ${calculateTotals().usdc.toFixed(2)}
+              ${(calculateTotals().usdc || 0).toFixed(2)}
             </div>
           </div>
 
@@ -2144,13 +2352,13 @@ function WalletPage() {
                 {keypair.publicKey.toString()}
               </div>
               <div className="col-tribify">
-                {walletBalances[keypair.publicKey.toString()]?.tribify?.toLocaleString() || '0'} TRIBIFY
+                {(walletBalances[keypair.publicKey.toString()]?.tribify || 0).toLocaleString()} TRIBIFY
               </div>
               <div className="col-sol">
-                {walletBalances[keypair.publicKey.toString()]?.sol?.toFixed(4) || '0.0000'} SOL
+                {(walletBalances[keypair.publicKey.toString()]?.sol || 0).toFixed(4)} SOL
               </div>
               <div className="col-usdc">
-                ${(keypair.usdcBalance || 0).toFixed(2)}
+                ${(walletBalances[keypair.publicKey.toString()]?.usdc || 0).toFixed(2)}
               </div>
             </div>
           ))}
@@ -2795,7 +3003,7 @@ function WalletPage() {
                 </div>
                 <div className="stat total-recovered">
                   <span>Total TRIBIFY Recovered:</span>
-                  <span className="amount">{recoveryStatus.totalRecovered.toLocaleString()}</span>
+                  <span className="amount">{(recoveryStatus.totalRecovered || 0).toLocaleString()} TRIBIFY</span>
                 </div>
               </div>
 

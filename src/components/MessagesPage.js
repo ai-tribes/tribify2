@@ -3,12 +3,12 @@ import './MessagesPage.css';
 import { GovernanceContext } from '../context/GovernanceContext';
 
 const MessagesPage = ({ 
-  tokenHolders, 
+  tokenHolders = [],
   publicKey, 
-  messages, 
+  messages = {},
   setMessages,
-  nicknames, 
-  unreadCounts,
+  nicknames = {},
+  unreadCounts = {},
   onSendMessage,
   onClose 
 }) => {

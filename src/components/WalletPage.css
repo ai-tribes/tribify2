@@ -468,4 +468,170 @@
 .export-button:hover {
   background: rgba(155, 89, 182, 0.3);
   transform: translateY(-1px);
+}
+
+.wallet-content {
+  padding: 20px;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.wallet-header {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.wallet-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+/* Primary controls - wallet management */
+.wallet-controls.primary {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.wallet-controls.primary button {
+  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+  color: #fff;
+  border: 1px solid #333;
+}
+
+.wallet-controls.primary button:hover {
+  background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%);
+  border-color: #444;
+}
+
+.wallet-controls.primary .danger-button {
+  background: linear-gradient(135deg, #8B0000 0%, #660000 100%);
+  border-color: #990000;
+}
+
+.wallet-controls.primary .danger-button:hover {
+  background: linear-gradient(135deg, #990000 0%, #770000 100%);
+  border-color: #aa0000;
+}
+
+/* Secondary controls - trading */
+.wallet-controls.secondary {
+  background: rgba(0, 128, 128, 0.1);
+}
+
+.wallet-controls.secondary button {
+  background: linear-gradient(135deg, #006666 0%, #004d4d 100%);
+  color: #fff;
+  border: 1px solid #008080;
+}
+
+.wallet-controls.secondary button:hover {
+  background: linear-gradient(135deg, #007777 0%, #005e5e 100%);
+  border-color: #009999;
+}
+
+.wallet-controls.secondary .sequence-button {
+  background: linear-gradient(135deg, #004d00 0%, #003300 100%);
+  border-color: #006600;
+}
+
+.wallet-controls.secondary .sequence-button:hover {
+  background: linear-gradient(135deg, #005e00 0%, #004400 100%);
+  border-color: #007700;
+}
+
+.wallet-controls.secondary .sequence-button.sell {
+  background: linear-gradient(135deg, #4d0000 0%, #330000 100%);
+  border-color: #660000;
+}
+
+.wallet-controls.secondary .sequence-button.sell:hover {
+  background: linear-gradient(135deg, #5e0000 0%, #440000 100%);
+  border-color: #770000;
+}
+
+/* Tertiary controls - token conversion */
+.wallet-controls.tertiary {
+  background: rgba(70, 130, 180, 0.1);
+}
+
+.conversion-buttons {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+
+.conversion-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  min-width: 200px;
+}
+
+.group-label {
+  font-size: 14px;
+  color: #888;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+.convert-button {
+  background: linear-gradient(135deg, #1a365d 0%, #0d1b2a 100%);
+  color: #fff;
+  border: 1px solid #2a4a8d;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.convert-button:hover {
+  background: linear-gradient(135deg, #234781 0%, #122436 100%);
+  border-color: #3a5da6;
+}
+
+/* Common button styles */
+.wallet-controls button {
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.wallet-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .wallet-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .conversion-group {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .wallet-controls button {
+    width: 100%;
+  }
 } 
