@@ -3046,6 +3046,20 @@ body.light .debug-value {
   font-weight: bold;
 }
 
+/* Parent Wallet Title styling */
+.parent-wallet-title {
+  font-size: 20px;
+  color: #2ecc71;
+  margin: 0 0 10px 0;
+  font-weight: 600;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid rgba(46, 204, 113, 0.3);
+  padding-bottom: 8px;
+  width: 100%;
+}
+
 /* CA Token styles */
 .parent-balance.ca {
   background: rgba(155, 89, 182, 0.1);
@@ -3311,4 +3325,69 @@ body.light .debug-value {
   color: #888 !important;
   cursor: not-allowed;
   transform: none;
+}
+
+.copy-notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 24px;
+  padding-right: 40px;
+  border-radius: 4px;
+  background: rgba(46, 204, 113, 0.9);
+  color: white;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease, fadeOut 0.3s ease 4.7s;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  max-width: 300px;
+}
+
+.copy-notification .close-notification {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.copy-notification .close-notification:hover {
+  opacity: 1;
+}
+
+.status-message {
+  position: fixed;
+  bottom: 80px; /* Position below copy notification */
+  right: 20px;
+  padding: 12px 24px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease, fadeOut 0.3s ease 2.7s;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(20px); }
 }

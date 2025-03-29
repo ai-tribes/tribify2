@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import * as bip39 from 'bip39';
 import { derivePath } from 'ed25519-hd-key';
 import { Keypair, Connection, PublicKey, LAMPORTS_PER_SOL, Transaction, SystemProgram } from '@solana/web3.js';
-import CryptoJS from 'crypto-js';
+import * as CryptoJS from 'crypto-js';
 import bs58 from 'bs58';
 import { 
   getAssociatedTokenAddress, 
@@ -11,14 +11,17 @@ import {
   createTransferInstruction,
   transfer,
   TOKEN_PROGRAM_ID,
-  NATIVE_MINT 
+  NATIVE_MINT,
+  ASSOCIATED_TOKEN_PROGRAM_ID
 } from '@solana/spl-token';
 import TokenDistributor from './TokenDistributor';
 import FundSubwallets from './FundSubwallets';
-import { Jupiter, QuoteCalculator } from '@jup-ag/sdk';
+import { Jupiter } from '@jup-ag/sdk';
 import './ConversionModal.css';
 import ConversionModal from './ConversionModal';
 import { TribifyContext } from '../context/TribifyContext';
+import './BuyConfigModal.css';
+import './SellConfigModal.css';
 
 // Add CSS styles
 const styles = `
@@ -185,22 +188,44 @@ const styles = `
   }
 
   /* Green buttons (Buy) */
-  .configure-buy-button, .buy-button {
+  .configure-buy-button {
+    background-color: rgba(46, 204, 113, 0.1) !important;
+    border: 1px solid #2ecc71 !important;
+    color: #2ecc71 !important;
+  }
+
+  .buy-button {
     background-color: #2ecc71 !important;
+    border: 1px solid #27ae60 !important;
     color: white !important;
   }
 
-  .configure-buy-button:hover, .buy-button:hover {
+  .configure-buy-button:hover {
+    background-color: rgba(46, 204, 113, 0.2) !important;
+  }
+
+  .buy-button:hover {
     background-color: #27ae60 !important;
   }
 
   /* Red buttons (Sell) */
-  .configure-sell-button, .sell-button {
+  .configure-sell-button {
+    background-color: rgba(231, 76, 60, 0.1) !important;
+    border: 1px solid #e74c3c !important;
+    color: #e74c3c !important;
+  }
+
+  .sell-button {
     background-color: #e74c3c !important;
+    border: 1px solid #c0392b !important;
     color: white !important;
   }
 
-  .configure-sell-button:hover, .sell-button:hover {
+  .configure-sell-button:hover {
+    background-color: rgba(231, 76, 60, 0.2) !important;
+  }
+
+  .sell-button:hover {
     background-color: #c0392b !important;
   }
 `;
@@ -214,8 +239,33 @@ const TOTAL_SUPPLY = 1_000_000_000; // 1 Billion tokens
 
 const TRIBIFY_TOKEN_MINT = "672PLqkiNdmByS6N1BQT5YPbEpkZte284huLUCxupump";
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
-const HELIUS_RPC_URL = `https://rpc-devnet.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_API_KEY}`;
+const HELIUS_RPC_URL = 'https://rpc-devnet.helius.xyz/?api-key=YOUR_API_KEY';
 const connection = new Connection(HELIUS_RPC_URL);
+
+// Define RPC_ENDPOINTS
+const RPC_ENDPOINTS = [
+  'https://api.mainnet-beta.solana.com',
+  'https://solana-api.projectserum.com',
+  'https://rpc.helius.xyz/?api-key=YOUR_API_KEY'
+];
+
+// Define JUP_API_KEY
+const JUP_API_KEY = 'YOUR_API_KEY';
+
+// Define getTokenDetails function
+const getTokenDetails = async (connection, address) => {
+  try {
+    return {
+      decimals: 9,
+      supply: TOTAL_SUPPLY,
+      name: 'TRIBIFY',
+      symbol: 'TRIBIFY'
+    };
+  } catch (error) {
+    console.error('Error getting token details:', error);
+    return null;
+  }
+};
 
 const getHolderColor = (address, tokenBalance) => {
   if (address === '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7') {
@@ -253,13 +303,6 @@ const getConnection = () => {
 };
 
 // Add these near the top of the file, after imports
-const RPC_ENDPOINTS = [
-  `https://rpc.helius.xyz/?api-key=${process.env.REACT_APP_HELIUS_KEY}`,
-  `https://api.mainnet-beta.solana.com`,
-  `https://solana-api.projectserum.com`
-];
-
-// Add these constants at the top
 const PUMP_LP_ADDRESS = '6MFyLKnyJgZnVLL8NoVVauoKFHRRbZ7RAjboF2m47me7';
 // const PUMP_PROGRAM_ID = new PublicKey('PuMpFhQoAMRPFhQoAMRPFhQoAMRPFhQoAMRP'); // Replace with actual program ID
 
@@ -347,14 +390,19 @@ function WalletPage() {
     walletCount: 1,
     minAmount: 0.1,
     maxAmount: 1.0,
-    budget: 0,
-    denominatedInSol: true,
-    startTime: null,
-    endTime: null,
+    budget: {
+      amount: 0,
+      currency: 'SOL'
+    },
+    denominationType: 'SOL',
+    contractAddress: '',
+    rpcUrl: '',
+    ataAddress: '',
+    startTime: new Date(Date.now() + 300000).toISOString().slice(0, 16), // 5 minutes from now
+    endTime: new Date(Date.now() + 3600000).toISOString().slice(0, 16),  // 1 hour from now
     minInterval: 5,
     maxInterval: 30,
     randomOrder: true,
-    denominationType: 'SOL',
   });
   const [showCAInput, setShowCAInput] = useState(false);
   const [caValue, setCAValue] = useState('');
@@ -380,14 +428,18 @@ function WalletPage() {
     walletCount: 1,
     minAmount: 0.1,
     maxAmount: 1.0,
-    budget: 0,
-    denominatedInSol: true,
-    startTime: null,
-    endTime: null,
+    budget: {
+      amount: 0,
+      currency: 'SOL'
+    },
+    denominationType: 'SOL',
+    tokenAddress: '',
+    rpcUrl: '',
+    startTime: new Date(Date.now() + 300000).toISOString().slice(0, 16), // 5 minutes from now
+    endTime: new Date(Date.now() + 3600000).toISOString().slice(0, 16),  // 1 hour from now
     minInterval: 5,
     maxInterval: 30,
     randomOrder: true,
-    denominationType: 'SOL',
   });
   const [isDistributeModalOpen, setIsDistributeModalOpen] = useState(false);
   const [distributeConfig, setDistributeConfig] = useState({
@@ -460,8 +512,8 @@ function WalletPage() {
     fundedCount: 0,
   });
 
-  // Add new state for showing/hiding private keys
-  const [showPrivateKeys, setShowPrivateKeys] = useState(false);
+  // Add state for individual private key visibility
+  const [visiblePrivateKeys, setVisiblePrivateKeys] = useState({});
 
   // Add publicKey state
   const [publicKey, setPublicKey] = useState('');
@@ -475,6 +527,15 @@ function WalletPage() {
   const showStatus = (message, duration = 3000) => {
     setStatusMessage(message);
     setTimeout(() => setStatusMessage(null), duration);
+  };
+
+  // Add a new function for toast notifications
+  const showToast = (message, duration = 5000) => {
+    setNotification(message);
+    // Auto-dismiss after specified duration
+    if (duration > 0) {
+      setTimeout(() => setNotification(null), duration);
+    }
   };
 
   useEffect(() => {
@@ -688,25 +749,39 @@ function WalletPage() {
     try {
       await navigator.clipboard.writeText(text);
       
+      // Toggle visibility of this specific private key if it's a private key click
+      if (type === 'private') {
+        setVisiblePrivateKeys(prev => ({
+          ...prev,
+          [index]: !prev[index] // Toggle the visibility state
+        }));
+        
+        if (!visiblePrivateKeys[index]) {
+          showToast(`Private key ${index + 1} revealed and copied to clipboard`);
+        } else {
+          showToast(`Private key ${index + 1} hidden and copied to clipboard`);
+        }
+      } else {
+        // Show regular notification for public keys
+        showToast(`Public key copied to clipboard`);
+      }
+      
       // Update copied state for this specific key
       setCopiedStates(prev => ({
         ...prev,
         [`${type}-${index}`]: true
       }));
 
-      // Show notification
-      setNotification(`${type === 'private' ? 'Private' : 'Public'} key copied to clipboard`);
-
-      // Reset states after 2 seconds
+      // Only reset copied states after 2 seconds, not the notification
       setTimeout(() => {
         setCopiedStates(prev => ({
           ...prev,
           [`${type}-${index}`]: false
         }));
-        setNotification(null);
       }, 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
+      showToast(`Failed to copy: ${err.message}`, 3000);
     }
   };
 
@@ -958,6 +1033,7 @@ function WalletPage() {
     }
   };
 
+  // Buy config props
   const walletCountProps = {
     type: "number",
     min: "1",
@@ -2312,6 +2388,103 @@ function WalletPage() {
     }
   };
 
+  // Sell config props
+  const sellWalletCountProps = {
+    type: "number",
+    min: "1",
+    max: "100",
+    value: sellConfig.walletCount,
+    onChange: (e) => setSellConfig({
+      ...sellConfig,
+      walletCount: Math.min(100, Math.max(1, parseInt(e.target.value) || 1))
+    })
+  };
+
+  const sellMinAmountProps = {
+    type: "number",
+    min: "0",
+    step: "0.000001",
+    value: sellConfig.minAmount,
+    onChange: (e) => setSellConfig({
+      ...sellConfig,
+      minAmount: Math.max(0, parseFloat(e.target.value) || 0)
+    })
+  };
+
+  const sellMaxAmountProps = {
+    type: "number",
+    min: "0", 
+    step: "0.000001",
+    value: sellConfig.maxAmount,
+    onChange: (e) => setSellConfig({
+      ...sellConfig,
+      maxAmount: Math.max(sellConfig.minAmount, parseFloat(e.target.value) || 0)
+    })
+  };
+
+  const sellStartTimeProps = {
+    type: "datetime-local",
+    value: sellConfig.startTime || '',
+    onChange: (e) => setSellConfig({
+      ...sellConfig,
+      startTime: e.target.value
+    })
+  };
+
+  const sellEndTimeProps = {
+    type: "datetime-local",
+    min: sellConfig.startTime || '',
+    value: sellConfig.endTime || '',
+    onChange: (e) => setSellConfig({
+      ...sellConfig,
+      endTime: e.target.value
+    })
+  };
+
+  const sellMinIntervalProps = {
+    type: "number",
+    min: "1",
+    max: sellConfig.maxInterval,
+    value: sellConfig.minInterval,
+    onChange: (e) => setSellConfig({
+      ...sellConfig,
+      minInterval: Math.max(1, parseInt(e.target.value) || 1)
+    })
+  };
+
+  const sellMaxIntervalProps = {
+    type: "number",
+    min: sellConfig.minInterval,
+    value: sellConfig.maxInterval,
+    onChange: (e) => setSellConfig({
+      ...sellConfig,
+      maxInterval: Math.max(sellConfig.minInterval, parseInt(e.target.value) || sellConfig.minInterval)
+    })
+  };
+
+  const sellSlippageProps = {
+    type: "number",
+    min: "0.1",
+    max: "100",
+    step: "0.1",
+    value: sellConfig.slippage,
+    onChange: (e) => setSellConfig({
+      ...sellConfig,
+      slippage: parseFloat(e.target.value)
+    })
+  };
+
+  const sellPriorityFeeProps = {
+    type: "number",
+    min: "0",
+    step: "0.000001",
+    value: sellConfig.priorityFee,
+    onChange: (e) => setSellConfig({
+      ...sellConfig,
+      priorityFee: parseFloat(e.target.value)
+    })
+  };
+
   return (
     <div className="wallet-fullscreen">
       {/* Hidden file input for restore functionality */}
@@ -2326,6 +2499,13 @@ function WalletPage() {
       {notification && (
         <div className="copy-notification">
           {notification}
+          <button 
+            className="close-notification" 
+            onClick={() => setNotification(null)}
+            title="Close"
+          >
+            ×
+          </button>
         </div>
       )}
       {statusMessage && (
@@ -2336,7 +2516,7 @@ function WalletPage() {
       <div className="wallet-content">
         <div className="parent-wallet-info">
           <div className="parent-wallet-row">
-            <span className="label">Parent Wallet:</span>
+            <h3 className="parent-wallet-title">Parent Wallet</h3>
             <span className="address">{parentWalletAddress || 'Not Connected'}</span>
             <div className="parent-balances">
               <span className="parent-balance sol">
@@ -2389,6 +2569,7 @@ function WalletPage() {
             <div className="wallet-controls-container">
               {/* All buttons in a single row */}
               <div className="wallet-controls secondary row">
+                <div style={{ width: '20px' }}></div>
                 <button 
                   className="distribute-button" 
                   onClick={() => setIsDistributeModalOpen(true)}
@@ -2398,10 +2579,15 @@ function WalletPage() {
                 <button 
                   className="target-button" 
                   onClick={() => setIsTargetModalOpen(true)}
+                  style={{ marginLeft: '20px' }}
                 >
                   Select Target
                 </button>
-                <button className="configure-buy-button" onClick={() => setIsBuyModalOpen(true)}>
+                <div style={{ flexGrow: 0.9 }}></div>
+                <button 
+                  className="configure-buy-button" 
+                  onClick={() => setIsBuyModalOpen(true)}
+                >
                   Configure Buy
                 </button>
                 <button 
@@ -2413,7 +2599,10 @@ function WalletPage() {
                 >
                   Buy
                 </button>
-                <button className="configure-sell-button" onClick={() => setIsSellModalOpen(true)}>
+                <button 
+                  className="configure-sell-button" 
+                  onClick={() => setIsSellModalOpen(true)}
+                >
                   Configure Sell
                 </button>
                 <button 
@@ -2425,6 +2614,7 @@ function WalletPage() {
                 >
                   Sell
                 </button>
+                <div style={{ width: '20px' }}></div>
               </div>
             </div>
           </div>
@@ -2497,13 +2687,7 @@ function WalletPage() {
             <div className="col-index">#</div>
             <div className="col-private">
               Private Key
-              <button 
-                className="eye-icon"
-                onClick={() => setShowPrivateKeys(!showPrivateKeys)}
-                title={showPrivateKeys ? "Hide Private Keys" : "Show Private Keys"}
-              >
-                {showPrivateKeys ? '👁️' : '👁️‍🗨️'}
-              </button>
+              {/* Remove the global show/hide button */}
             </div>
             <div className="col-public">Public Key</div>
             <div className="col-tribify">TRIBIFY</div>
@@ -2519,9 +2703,14 @@ function WalletPage() {
                 className={`col-private ${copiedStates[`private-${index}`] ? 'copied' : ''}`}
                 onClick={() => copyToClipboard(Buffer.from(keypair.secretKey).toString('hex'), index, 'private')}
               >
-                {showPrivateKeys 
+                {visiblePrivateKeys[index] 
                   ? Buffer.from(keypair.secretKey).toString('hex')
-                  : '••••••••••••••••••••••'}
+                  : (
+                    <span className="reveal-key" title="Click to reveal and copy private key">
+                      •••••••••••••••••••••• <i className="eye-icon">👁️‍🗨️</i>
+                    </span>
+                  )
+                }
               </div>
               <div 
                 className={`col-public ${copiedStates[`public-${index}`] ? 'copied' : ''}`}
@@ -2615,13 +2804,98 @@ function WalletPage() {
         {isBuyModalOpen && (
           <div className="modal-container">
             <div className="modal-overlay" onClick={() => setIsBuyModalOpen(false)} />
-            <div className="modal-content">
-              {/* Left side - Guide */}
-              <div className="modal-left">
-                <ConfigExplanation type="buy" />
-                <div className="required-fields">
-                  <h3>Required Details</h3>
-                  <div className="field-group">
+            <div className="buy-config-modal">
+              <div className="modal-header">
+                <h3>Configure Automated Buying Sequence</h3>
+                <button 
+                  className="close-modal-button"
+                  onClick={() => setIsBuyModalOpen(false)}
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="settings-grid">
+                {/* Left side - Settings */}
+                <div className="settings-section">
+                  <h4>Wallet & Amount Settings</h4>
+                  <div className="input-group">
+                    <label>Number of Wallets (1-100)</label>
+                    <input type="number" {...walletCountProps} />
+                  </div>
+                  <div className="input-group">
+                    <label>Min Amount</label>
+                    <input type="number" {...minAmountProps} />
+                  </div>
+                  <div className="input-group">
+                    <label>Max Amount</label>
+                    <input type="number" {...maxAmountProps} />
+                  </div>
+                  
+                  <h4>Transaction Settings</h4>
+                  <div className="input-group">
+                    <label>Slippage (%)</label>
+                    <input type="number" {...slippageProps} />
+                  </div>
+                  <div className="input-group">
+                    <label>Priority Fee (SOL)</label>
+                    <input type="number" {...priorityFeeProps} />
+                  </div>
+                  <div className="input-group checkbox">
+                    <label>
+                      <input 
+                        type="checkbox" 
+                        checked={buyConfig.randomOrder}
+                        onChange={(e) => setBuyConfig({
+                          ...buyConfig,
+                          randomOrder: e.target.checked
+                        })}
+                      />
+                      Randomize Wallet Order
+                    </label>
+                  </div>
+                </div>
+                
+                {/* Right side - Settings */}
+                <div className="settings-section">
+                  <h4>Time Settings</h4>
+                  <div className="input-group">
+                    <label>Start Time</label>
+                    <input type="datetime-local" {...startTimeProps} />
+                  </div>
+                  <div className="input-group">
+                    <label>End Time</label>
+                    <input type="datetime-local" {...endTimeProps} />
+                  </div>
+                  <div className="input-group">
+                    <label>Min Interval (seconds)</label>
+                    <input type="number" {...minIntervalProps} />
+                  </div>
+                  <div className="input-group">
+                    <label>Max Interval (seconds)</label>
+                    <input type="number" {...maxIntervalProps} />
+                  </div>
+                  
+                  <h4>Budget Settings</h4>
+                  <div className="input-group">
+                    <label>Maximum Budget ({buyConfig.denominationType})</label>
+                    <input 
+                      type="number"
+                      value={buyConfig.budget.amount || 0}
+                      onChange={(e) => setBuyConfig({
+                        ...buyConfig,
+                        budget: {
+                          ...buyConfig.budget,
+                          amount: parseFloat(e.target.value)
+                        }
+                      })}
+                      min="0"
+                      step="0.1"
+                    />
+                  </div>
+                  
+                  <h4>Connection Settings</h4>
+                  <div className="input-group">
                     <label>Contract Address</label>
                     <input 
                       type="text"
@@ -2633,11 +2907,11 @@ function WalletPage() {
                       })}
                     />
                   </div>
-                  <div className="field-group">
+                  <div className="input-group">
                     <label>Custom RPC URL (Optional)</label>
                     <input 
                       type="text"
-                      placeholder="Your RPC endpoint"
+                      placeholder="Custom RPC URL"
                       value={buyConfig.rpcUrl}
                       onChange={(e) => setBuyConfig({
                         ...buyConfig,
@@ -2645,149 +2919,30 @@ function WalletPage() {
                       })}
                     />
                   </div>
-                  <div className="field-group">
-                    <label>Associated Token Account</label>
-                    <input 
-                      type="text"
-                      placeholder="ATA address"
-                      value={buyConfig.ataAddress}
-                      onChange={(e) => setBuyConfig({
-                        ...buyConfig,
-                        ataAddress: e.target.value
-                      })}
-                    />
-                  </div>
                 </div>
               </div>
-
-              {/* Right side - Settings */}
-              <div className="modal-right">
-                <div className="dialog-header">
-                  <h3>Configure Automated Buying Sequence</h3>
-                  <div className="header-buttons">
-                    <button 
-                      className="randomize-button"
-                      onClick={() => randomizeConfig('buy')}
-                      title="Generate random configuration"
-                    >
-                      🎲 Randomize
-                    </button>
-                    <button className="save-button" onClick={() => setIsBuyModalOpen(false)}>
-                      Save Config
-                    </button>
-                    <button 
-                      className="buy-button"
-                      onClick={() => {
-                        buyAndDistribute();
-                        setIsBuyModalOpen(false);
-                        setStatus('Automated buying has been started.');
-                      }}
-                    >
-                      Start Buying
-                    </button>
-                  </div>
-                </div>
-
-                <div className="settings-grid">
-                  {/* Wallet & Amount Settings */}
-                  <div className="form-section">
-                    <div className="form-section-title">Wallet & Amount Settings</div>
-                    <div className="wallet-amount-section">
-                      <div className="form-field">
-                        <label>Number of Wallets (1-100)</label>
-                        <input type="number" {...walletCountProps} />
-                      </div>
-                      <div className="form-field">
-                        <label>Min Amount</label>
-                        <input type="number" {...minAmountProps} />
-                      </div>
-                      <div className="form-field">
-                        <label>Max Amount</label>
-                        <input type="number" {...maxAmountProps} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Transaction Settings */}
-                  <div className="form-section">
-                    <div className="form-section-title">Transaction Settings</div>
-                    <div className="transaction-settings">
-                      <div className="form-field">
-                        <label>Slippage (%)</label>
-                        <input type="number" {...slippageProps} />
-                      </div>
-                      <div className="form-field">
-                        <label>Priority Fee (SOL)</label>
-                        <input type="number" {...priorityFeeProps} />
-                      </div>
-                      <div className="form-field">
-                        <label className="checkbox-label">
-                          <input 
-                            type="checkbox" 
-                            checked={buyConfig.randomOrder}
-                            onChange={(e) => setBuyConfig({
-                              ...buyConfig,
-                              randomOrder: e.target.checked
-                            })}
-                          />
-                          Randomize Wallet Order
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Time Settings */}
-                  <div className="form-section">
-                    <div className="form-section-title">Time Settings</div>
-                    <div className="time-settings">
-                      <div className="form-field">
-                        <label>Start Time</label>
-                        <input type="datetime-local" {...startTimeProps} />
-                      </div>
-                      <div className="form-field">
-                        <label>End Time</label>
-                        <input type="datetime-local" {...endTimeProps} />
-                      </div>
-                      <div className="form-field">
-                        <label>Min Interval (seconds)</label>
-                        <input type="number" {...minIntervalProps} />
-                      </div>
-                      <div className="form-field">
-                        <label>Max Interval (seconds)</label>
-                        <input type="number" {...maxIntervalProps} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Budget Settings */}
-                  <div className="form-section">
-                    <div className="form-section-title">Budget</div>
-                    <div className="budget-settings">
-                      <div className="form-field">
-                        <label>Maximum Budget ({buyConfig.denominationType})</label>
-                        <input 
-                          type="number"
-                          value={buyConfig.budget}
-                          onChange={(e) => setBuyConfig({
-                            ...buyConfig,
-                            budget: parseFloat(e.target.value)
-                          })}
-                          min="0"
-                          step="0.1"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="dialog-note">
-                  Will automatically buy random amounts between {buyConfig.minAmount} and {buyConfig.maxAmount} {buyConfig.denominatedInSol ? 'SOL' : 'TRIBIFY'} 
-                  using {buyConfig.walletCount} wallet{buyConfig.walletCount > 1 ? 's' : ''}<br/>
-                  Buys will occur between {buyConfig.startTime ? new Date(buyConfig.startTime).toLocaleString() : '(not set)'} 
-                  and {buyConfig.endTime ? new Date(buyConfig.endTime).toLocaleString() : '(not set)'}<br/>
-                  with {buyConfig.minInterval}-{buyConfig.maxInterval} minute intervals between transactions
-                  {buyConfig.randomOrder && ' in random wallet order'}
-                </div>
+              
+              <div className="dialog-buttons">
+                <button 
+                  className="randomize-button"
+                  onClick={() => randomizeConfig('buy')}
+                  title="Generate random configuration"
+                >
+                  🎲 Randomize
+                </button>
+                <button className="save-button" onClick={() => setIsBuyModalOpen(false)}>
+                  Save Config
+                </button>
+                <button 
+                  className="buy-button"
+                  onClick={() => {
+                    buyAndDistribute();
+                    setIsBuyModalOpen(false);
+                    setStatus('Automated buying has been started.');
+                  }}
+                >
+                  Start Buying
+                </button>
               </div>
             </div>
           </div>
@@ -2797,17 +2952,100 @@ function WalletPage() {
         {isSellModalOpen && (
           <div className="modal-container">
             <div className="modal-overlay" onClick={() => setIsSellModalOpen(false)} />
-            <div className="modal-content">
-              {/* Left side - Guide */}
-              <div className="modal-left">
-                <ConfigExplanation type="sell" />
-                <div className="required-fields">
-                  <h3>Required Details</h3>
-                  <div className="field-group">
-                    <label>Token Address to Sell</label>
+            <div className="sell-config-modal">
+              <div className="modal-header">
+                <h3>Configure Automated Selling Sequence</h3>
+                <button 
+                  className="close-modal-button"
+                  onClick={() => setIsSellModalOpen(false)}
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="settings-grid">
+                {/* Left side - Settings */}
+                <div className="settings-section">
+                  <h4>Wallet & Amount Settings</h4>
+                  <div className="input-group">
+                    <label>Number of Wallets (1-100)</label>
+                    <input {...sellWalletCountProps} />
+                  </div>
+                  <div className="input-group">
+                    <label>Min Amount</label>
+                    <input {...sellMinAmountProps} />
+                  </div>
+                  <div className="input-group">
+                    <label>Max Amount</label>
+                    <input {...sellMaxAmountProps} />
+                  </div>
+                  
+                  <h4>Transaction Settings</h4>
+                  <div className="input-group">
+                    <label>Slippage (%)</label>
+                    <input {...sellSlippageProps} />
+                  </div>
+                  <div className="input-group">
+                    <label>Priority Fee (SOL)</label>
+                    <input {...sellPriorityFeeProps} />
+                  </div>
+                  <div className="input-group checkbox">
+                    <label>
+                      <input 
+                        type="checkbox" 
+                        checked={sellConfig.randomOrder}
+                        onChange={(e) => setSellConfig({
+                          ...sellConfig,
+                          randomOrder: e.target.checked
+                        })}
+                      />
+                      Randomize Wallet Order
+                    </label>
+                  </div>
+                </div>
+                
+                {/* Right side - Settings */}
+                <div className="settings-section">
+                  <h4>Time Settings</h4>
+                  <div className="input-group">
+                    <label>Start Time</label>
+                    <input {...sellStartTimeProps} />
+                  </div>
+                  <div className="input-group">
+                    <label>End Time</label>
+                    <input {...sellEndTimeProps} />
+                  </div>
+                  <div className="input-group">
+                    <label>Min Interval (seconds)</label>
+                    <input {...sellMinIntervalProps} />
+                  </div>
+                  <div className="input-group">
+                    <label>Max Interval (seconds)</label>
+                    <input {...sellMaxIntervalProps} />
+                  </div>
+                  
+                  <h4>Budget & Connection Settings</h4>
+                  <div className="input-group">
+                    <label>Maximum Budget ({sellConfig.denominationType})</label>
+                    <input 
+                      type="number"
+                      value={sellConfig.budget.amount || 0}
+                      onChange={(e) => setSellConfig({
+                        ...sellConfig,
+                        budget: {
+                          ...sellConfig.budget,
+                          amount: parseFloat(e.target.value)
+                        }
+                      })}
+                      min="0"
+                      step="0.1"
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label>Token Address</label>
                     <input 
                       type="text"
-                      placeholder="Token address"
+                      placeholder="Token address to sell"
                       value={sellConfig.tokenAddress}
                       onChange={(e) => setSellConfig({
                         ...sellConfig,
@@ -2815,238 +3053,42 @@ function WalletPage() {
                       })}
                     />
                   </div>
-                  <div className="field-group">
-                    <label>DEX Contract Address</label>
+                  <div className="input-group">
+                    <label>Custom RPC URL (Optional)</label>
                     <input 
                       type="text"
-                      placeholder="DEX contract address"
-                      value={sellConfig.dexAddress}
+                      placeholder="Custom RPC URL"
+                      value={sellConfig.rpcUrl}
                       onChange={(e) => setSellConfig({
                         ...sellConfig,
-                        dexAddress: e.target.value
-                      })}
-                    />
-                  </div>
-                  <div className="field-group">
-                    <label>Output Token Address (SOL/USDC)</label>
-                    <input 
-                      type="text"
-                      placeholder="Output token address"
-                      value={sellConfig.outputAddress}
-                      onChange={(e) => setSellConfig({
-                        ...sellConfig,
-                        outputAddress: e.target.value
+                        rpcUrl: e.target.value
                       })}
                     />
                   </div>
                 </div>
               </div>
-
-              {/* Right side - Settings */}
-              <div className="modal-right">
-                <div className="dialog-header">
-                  <h3>Configure Automated Selling Sequence</h3>
-                  <div className="header-buttons">
-                    <button 
-                      className="randomize-button"
-                      onClick={() => randomizeConfig('sell')}
-                      title="Generate random configuration"
-                    >
-                      🎲 Randomize
-                    </button>
-                    <button className="save-button" onClick={() => setIsSellModalOpen(false)}>
-                      Save Config
-                    </button>
-                    <button 
-                      className="sell-button"
-                      onClick={() => {
-                        sellAndDistribute();
-                        setIsSellModalOpen(false);
-                        setStatus('Automated selling has been started.');
-                      }}
-                    >
-                      Start Selling
-                    </button>
-                  </div>
-                </div>
-
-                <div className="settings-grid">
-                  {/* Wallet & Amount Settings */}
-                  <div className="form-section">
-                    <div className="form-section-title">Wallet & Amount Settings</div>
-                    <div className="wallet-amount-section">
-                      <div className="form-field">
-                        <label>Number of Wallets (1-100)</label>
-                        <input 
-                          type="number"
-                          min="1"
-                          max="100"
-                          value={sellConfig.walletCount}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            walletCount: Math.min(100, Math.max(1, parseInt(e.target.value) || 1))
-                          })}
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label>Min Amount</label>
-                        <input 
-                          type="number"
-                          min="0"
-                          step="0.000001"
-                          value={sellConfig.minAmount}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            minAmount: Math.max(0, parseFloat(e.target.value) || 0)
-                          })}
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label>Max Amount</label>
-                        <input 
-                          type="number"
-                          min="0"
-                          step="0.000001"
-                          value={sellConfig.maxAmount}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            maxAmount: Math.max(sellConfig.minAmount, parseFloat(e.target.value) || 0)
-                          })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Transaction Settings */}
-                  <div className="form-section">
-                    <div className="form-section-title">Transaction Settings</div>
-                    <div className="transaction-settings">
-                      <div className="form-field">
-                        <label>Slippage (%)</label>
-                        <input 
-                          type="number"
-                          min="0.1"
-                          max="100"
-                          step="0.1"
-                          value={sellConfig.slippage}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            slippage: parseFloat(e.target.value)
-                          })}
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label>Priority Fee (SOL)</label>
-                        <input 
-                          type="number"
-                          min="0"
-                          step="0.000001"
-                          value={sellConfig.priorityFee}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            priorityFee: parseFloat(e.target.value)
-                          })}
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label className="checkbox-label">
-                          <input 
-                            type="checkbox" 
-                            checked={sellConfig.randomOrder}
-                            onChange={(e) => setSellConfig({
-                              ...sellConfig,
-                              randomOrder: e.target.checked
-                            })}
-                          />
-                          Randomize Wallet Order
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Time Settings */}
-                  <div className="form-section">
-                    <div className="form-section-title">Time Settings</div>
-                    <div className="time-settings">
-                      <div className="form-field">
-                        <label>Start Time</label>
-                        <input 
-                          type="datetime-local"
-                          value={sellConfig.startTime || ''}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            startTime: e.target.value
-                          })}
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label>End Time</label>
-                        <input 
-                          type="datetime-local"
-                          min={sellConfig.startTime || ''}
-                          value={sellConfig.endTime || ''}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            endTime: e.target.value
-                          })}
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label>Min Interval (seconds)</label>
-                        <input 
-                          type="number"
-                          min="1"
-                          value={sellConfig.minInterval}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            minInterval: Math.max(1, parseInt(e.target.value) || 1)
-                          })}
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label>Max Interval (seconds)</label>
-                        <input 
-                          type="number"
-                          min={sellConfig.minInterval}
-                          value={sellConfig.maxInterval}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            maxInterval: Math.max(sellConfig.minInterval, parseInt(e.target.value) || sellConfig.minInterval)
-                          })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Budget Section */}
-                  <div className="form-section">
-                    <div className="form-section-title">Budget</div>
-                    <div className="budget-settings">
-                      <div className="form-field">
-                        <label>Maximum Budget ({sellConfig.denominationType})</label>
-                        <input 
-                          type="number"
-                          value={sellConfig.budget}
-                          onChange={(e) => setSellConfig({
-                            ...sellConfig,
-                            budget: parseFloat(e.target.value)
-                          })}
-                          min="0"
-                          step="0.1"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="dialog-note">
-                  Will automatically sell random amounts between {sellConfig.minAmount} and {sellConfig.maxAmount} {sellConfig.denominationType} 
-                  using {sellConfig.walletCount} wallet{sellConfig.walletCount > 1 ? 's' : ''}<br/>
-                  Sales will occur between {sellConfig.startTime ? new Date(sellConfig.startTime).toLocaleString() : '(not set)'} 
-                  and {sellConfig.endTime ? new Date(sellConfig.endTime).toLocaleString() : '(not set)'}<br/>
-                  with {sellConfig.minInterval}-{sellConfig.maxInterval} second intervals between transactions
-                  {sellConfig.randomOrder && ' in random wallet order'}
-                </div>
+              
+              <div className="dialog-buttons">
+                <button 
+                  className="randomize-button"
+                  onClick={() => randomizeConfig('sell')}
+                  title="Generate random configuration"
+                >
+                  🎲 Randomize
+                </button>
+                <button className="save-button" onClick={() => setIsSellModalOpen(false)}>
+                  Save Config
+                </button>
+                <button 
+                  className="sell-button"
+                  onClick={() => {
+                    sellAndDistribute();
+                    setIsSellModalOpen(false);
+                    setStatus('Automated selling has been started.');
+                  }}
+                >
+                  Start Selling
+                </button>
               </div>
             </div>
           </div>
