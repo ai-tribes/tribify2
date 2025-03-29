@@ -9,9 +9,8 @@ import { encrypt, decrypt } from './lib/encryption';
 import Connected from './components/Connected';
 import Messages from './components/Messages';
 import Backup from './components/Backup';
-import Restore from './components/Restore';
 import Disconnect from './components/Disconnect';
-import { Link, useNavigate, Route, Routes, useLocation, BrowserRouter } from 'react-router-dom';
+import { Link, useNavigate, Route, Routes, useLocation, BrowserRouter, Navigate } from 'react-router-dom';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { clusterApiUrl } from '@solana/web3.js';
@@ -647,13 +646,13 @@ function App() {
               Snipe
             </button>
             <button 
-              className={`nav-button ${activeView === 'sign' ? 'active' : ''}`}
+              className={`nav-button ${activeView === 'messages' ? 'active' : ''}`}
               onClick={() => {
-                setActiveView('sign');
-                navigate('/sign');
+                setActiveView('messages');
+                navigate('/messages');
               }}
             >
-              Sign
+              Messages
             </button>
             <button 
               className={`nav-button ${activeView === 'vote' ? 'active' : ''}`}
@@ -664,44 +663,17 @@ function App() {
             >
               Vote
             </button>
+            <button 
+              className={`nav-button ${activeView === 'sign' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('sign');
+                navigate('/sign');
+              }}
+            >
+              Sign
+            </button>
           </div>
           <div className="nav-buttons-row">
-            <button 
-              className={`nav-button ${activeView === 'messages' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveView('messages');
-                navigate('/messages');
-              }}
-            >
-              Messages
-            </button>
-            <button 
-              className={`nav-button ${activeView === 'restore' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveView('restore');
-                navigate('/restore');
-              }}
-            >
-              Restore
-            </button>
-            <button 
-              className={`nav-button ${activeView === 'docs' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveView('docs');
-                navigate('/docs');
-              }}
-            >
-              Docs
-            </button>
-            <button 
-              className={`nav-button ${activeView === 'graph' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveView('graph');
-                navigate('/graph');
-              }}
-            >
-              Graph
-            </button>
           </div>
         </div>
       </nav>
@@ -800,26 +772,7 @@ function App() {
               <Backup />
             </div>
           } />
-          <Route path="/restore" element={
-            <div className="restore-container">
-              <Restore />
-            </div>
-          } />
-          <Route path="/docs" element={
-            <div className="docs-container">
-              <div className="docs-content" dangerouslySetInnerHTML={{ __html: marked(DOCS_CONTENT) }} />
-            </div>
-          } />
-          <Route path="/graph" element={
-            <div className="graph-container">
-              <TokenHolderGraph holders={tokenHolders} />
-            </div>
-          } />
-          <Route path="/connection" element={
-            <div className="connection-container">
-              <Connected onClick={handleConnection} />
-            </div>
-          } />
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
     </div>

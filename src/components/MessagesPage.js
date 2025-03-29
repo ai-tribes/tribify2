@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import './MessagesPage.css';
 import { GovernanceContext } from '../context/GovernanceContext';
+import { useNavigate } from 'react-router-dom';
 
 const MessagesPage = ({ 
   tokenHolders = [],
@@ -12,6 +13,7 @@ const MessagesPage = ({
   onSendMessage,
   onClose 
 }) => {
+  const navigate = useNavigate();
   const [activeChat, setActiveChat] = useState(null);
   const [messageInput, setMessageInput] = useState('');
   const [messageType, setMessageType] = useState('message'); // 'message' or 'motion'
@@ -138,7 +140,10 @@ const MessagesPage = ({
             </button>
             <button 
               className={`type-button ${messageType === 'motion' ? 'active' : ''}`}
-              onClick={() => setMessageType('motion')}
+              onClick={() => {
+                navigate('/vote');
+                onClose();
+              }}
             >
               Propose Motion
             </button>

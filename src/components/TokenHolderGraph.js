@@ -6,9 +6,9 @@ const TokenHolderGraph = ({ holders, width, height }) => {
   // Create nodes from holders data
   const graphData = {
     nodes: holders.map(holder => ({
-      id: holder.id,
-      value: holder.value,
-      name: holder.name,
+      id: holder.id || holder.address,
+      value: holder.tokenBalance || 0,
+      name: holder.name || holder.address,
       address: holder.address
     })).sort((a, b) => b.value - a.value), // Sort by size
     links: []
@@ -30,14 +30,14 @@ const TokenHolderGraph = ({ holders, width, height }) => {
   return (
     <ForceGraph2D
       graphData={graphData}
-      nodeVal={d => Math.sqrt(d.value) / 100}
-      nodeLabel={d => `${d.name}\n${d.value.toLocaleString()} $TRIBIFY`}
+      nodeVal={d => Math.sqrt(d.value || 0) / 100}
+      nodeLabel={d => `${d.name || 'Unknown'}\n${(d.value || 0).toLocaleString()} $TRIBIFY`}
       nodeColor={getNodeColor}
       width={width}
       height={height}
       d3Force={('charge', d3.forceManyBody().strength(-200))}
       d3Force={('center', d3.forceCenter(width / 2, height / 2))}
-      d3Force={('collision', d3.forceCollide().radius(d => Math.sqrt(d.value) * 2))}
+      d3Force={('collision', d3.forceCollide().radius(d => Math.sqrt(d.value || 0) * 2))}
       d3Force={('x', d3.forceX(width / 2).strength(0.1))}
       d3Force={('y', d3.forceY(height / 2).strength(0.1))}
       backgroundColor="rgba(0,0,0,0.3)"
