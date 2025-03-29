@@ -21,7 +21,6 @@ import StakeView from './components/StakeView';
 import WalletPage from './components/WalletPage';
 import Shareholders from './components/Shareholders';
 import { TribifyContext } from './context/TribifyContext';
-import Sign from './components/Sign';
 import VotePage from './components/VotePage';
 import SnipePage from './components/SnipePage';
 import { getPhantomProvider, isPhantomInstalled, getPhantomConnectionState } from './utils/phantom';
@@ -488,11 +487,8 @@ function App() {
       case '/wallet':
         setActiveView('wallet');
         break;
-      case '/snipe':
+      case '/target':
         setActiveView('snipe');
-        break;
-      case '/sign':
-        setActiveView('sign');
         break;
       case '/vote':
         setActiveView('vote');
@@ -616,34 +612,7 @@ function App() {
                 navigate('/shareholders');
               }}
             >
-              Shareholders
-            </button>
-            <button 
-              className={`nav-button ${activeView === 'wallet' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveView('wallet');
-                navigate('/wallet');
-              }}
-            >
-              Wallet
-            </button>
-            <button 
-              className={`nav-button ${activeView === 'stake' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveView('stake');
-                navigate('/stake');
-              }}
-            >
-              Stake
-            </button>
-            <button 
-              className={`nav-button ${activeView === 'snipe' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveView('snipe');
-                navigate('/snipe');
-              }}
-            >
-              Snipe
+              Tribe Members
             </button>
             <button 
               className={`nav-button ${activeView === 'messages' ? 'active' : ''}`}
@@ -655,6 +624,24 @@ function App() {
               Messages
             </button>
             <button 
+              className={`nav-button ${activeView === 'wallet' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('wallet');
+                navigate('/wallet');
+              }}
+            >
+              Wallet
+            </button>
+            <button 
+              className={`nav-button ${activeView === 'snipe' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('snipe');
+                navigate('/target');
+              }}
+            >
+              Target
+            </button>
+            <button 
               className={`nav-button ${activeView === 'vote' ? 'active' : ''}`}
               onClick={() => {
                 setActiveView('vote');
@@ -664,13 +651,13 @@ function App() {
               Vote
             </button>
             <button 
-              className={`nav-button ${activeView === 'sign' ? 'active' : ''}`}
+              className={`nav-button ${activeView === 'stake' ? 'active' : ''}`}
               onClick={() => {
-                setActiveView('sign');
-                navigate('/sign');
+                setActiveView('stake');
+                navigate('/stake');
               }}
             >
-              Sign
+              Stake
             </button>
           </div>
           <div className="nav-buttons-row">
@@ -683,15 +670,15 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/shareholders" element={
             <div className="shareholders-container">
-              <h2>Shareholders</h2>
+              <h2>Tribe Members</h2>
               {isLoading ? (
                 <div className="loading-overlay">
                   <div className="loading-spinner"></div>
-                  <div className="loading-text">Loading shareholders data...</div>
+                  <div className="loading-text">Loading tribe member data...</div>
                 </div>
               ) : tokenHolders.length === 0 ? (
                 <div className="error-message">
-                  <p>No shareholders data available. Please make sure your wallet is connected.</p>
+                  <p>No tribe member data available. Please make sure your wallet is connected.</p>
                   <button onClick={fetchTokenHolders} className="retry-button">
                     Retry
                   </button>
@@ -703,8 +690,8 @@ function App() {
                   nicknames={nicknames}
                   setNicknames={setNicknames}
                   setActiveView={setActiveView}
-                    publicKey={localStorage.getItem('tribify_parent_wallet')}
-                    subwallets={subwallets}
+                  publicKey={localStorage.getItem('tribify_parent_wallet')}
+                  subwallets={subwallets}
                 />
               </div>
             )}
@@ -731,7 +718,7 @@ function App() {
               />
             </div>
           } />
-          <Route path="/snipe" element={
+          <Route path="/target" element={
             <div className="snipe-container">
               <SnipePage 
                 publicKey={localStorage.getItem('tribify_parent_wallet')}
@@ -739,11 +726,6 @@ function App() {
                 subwallets={subwallets}
               />
             </div>
-          } />
-          <Route path="/sign" element={
-              <div className="sign-container">
-              <Sign />
-              </div>
           } />
           <Route path="/vote" element={
             <div className="vote-container">

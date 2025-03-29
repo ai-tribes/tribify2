@@ -34,7 +34,7 @@ function MainAppLayout({
             className={`nav-button ${activeView === 'shareholders' ? 'active' : ''}`}
             onClick={() => setActiveView('shareholders')}
           >
-            Shareholders
+            Tribe Members
           </button>
           <button 
             className={`nav-button ${activeView === 'wallet' ? 'active' : ''}`}
@@ -77,8 +77,8 @@ function MainAppLayout({
 
       <div className="main-content">
         {activeView === 'shareholders' && (
-          <div className="token-holders">
-            <h3>$TRIBIFY Shareholders</h3>
+          <div className="content-section">
+            <h3>$TRIBIFY Tribe Members</h3>
             <Shareholders 
               holders={tokenHolders}
               nicknames={nicknames}

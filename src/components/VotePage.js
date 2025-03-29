@@ -11,154 +11,193 @@ function VotePage({ tokenHolders, publicKey }) {
     getUserVote 
   } = useContext(GovernanceContext);
 
-  const [showNewProposalModal, setShowNewProposalModal] = useState(false);
-  const [newProposal, setNewProposal] = useState({
-    title: '',
+  const [showNewTargetModal, setShowNewTargetModal] = useState(false);
+  const [newTarget, setNewTarget] = useState({
+    name: '',
+    tokenCA: '',
     description: '',
-    deadline: ''
+    votingPeriod: '7',
+    minStake: '1000' // Minimum TRIBIFY tokens to stake for voting
   });
 
-  const handleCreateProposal = (e) => {
+  const handleCreateTarget = (e) => {
     e.preventDefault();
     
-    // Create new proposal
+    // Create new target proposal
     createProposal({
-      title: newProposal.title,
-      description: newProposal.description,
-      deadline: newProposal.deadline,
-      proposer: publicKey
+      type: 'target',
+      name: newTarget.name,
+      tokenCA: newTarget.tokenCA,
+      description: newTarget.description,
+      votingPeriod: newTarget.votingPeriod,
+      minStake: newTarget.minStake,
+      proposer: publicKey,
+      totalStaked: 0,
+      votes: {}
     });
 
     // Reset form and close modal
-    setNewProposal({
-      title: '',
+    setNewTarget({
+      name: '',
+      tokenCA: '',
       description: '',
-      deadline: ''
+      votingPeriod: '7',
+      minStake: '1000'
     });
-    setShowNewProposalModal(false);
+    setShowNewTargetModal(false);
   };
 
-  const handleVote = (proposalId, voteType) => {
-    const stakedAmount = getStakedAmount(proposalId, publicKey);
-    if (stakedAmount > 0) {
-      voteOnProposal(proposalId, publicKey, voteType, stakedAmount);
+  const handleStakeVote = (targetId, amount) => {
+    if (amount > 0) {
+      voteOnProposal(targetId, publicKey, 'stake', amount);
     }
   };
 
-  // Separate proposals into my proposals and others
-  const myProposals = motions.filter(motion => motion.proposer === publicKey);
-  const otherProposals = motions.filter(motion => motion.proposer !== publicKey);
+  // Separate targets into active and completed
+  const activeTargets = motions.filter(motion => motion.status === 'active');
+  const completedTargets = motions.filter(motion => motion.status === 'completed');
 
-  const ProposalCard = ({ motion }) => (
-    <div key={motion.id} className="motion-card">
-      <div className="motion-header">
-        <h3>{motion.title}</h3>
-        <span className={`status-badge ${motion.status}`}>
-          {motion.status}
-        </span>
-      </div>
+  const TargetCard = ({ target }) => {
+    const [stakeAmount, setStakeAmount] = useState('');
+    const userStake = target.votes[publicKey] || 0;
+    const totalStaked = Object.values(target.votes).reduce((a, b) => a + b, 0);
+    
+    return (
+      <div className="target-card">
+        <div className="target-header">
+          <h3>{target.name}</h3>
+          <span className={`status-badge ${target.status}`}>
+            {target.status}
+          </span>
+        </div>
 
-      <p className="motion-description">{motion.description}</p>
-      
-      <div className="proposer">
-        Proposed by: {motion.proposer === publicKey ? 'You' : motion.proposer.slice(0, 4) + '...' + motion.proposer.slice(-4)}
-      </div>
+        <div className="target-ca">
+          Token CA: {target.tokenCA}
+        </div>
 
-      <div className="motion-stats">
-        <div className="votes-display">
-          <div className="vote-bar">
-            <div 
-              className="votes-for"
-              style={{ 
-                width: `${(motion.votesFor / (motion.votesFor + motion.votesAgainst)) * 100}%` 
-              }}
+        <p className="target-description">{target.description}</p>
+        
+        <div className="proposer">
+          Proposed by: {target.proposer === publicKey ? 'You' : 
+            (tokenHolders.find(h => h.address === target.proposer)?.username || 
+            target.proposer.slice(0, 4) + '...' + target.proposer.slice(-4))}
+        </div>
+
+        <div className="target-stats">
+          <div className="stake-display">
+            <div className="stake-bar">
+              <div 
+                className="total-staked"
+                style={{ width: `${(totalStaked / target.minStake) * 100}%` }}
+              />
+            </div>
+            <div className="stake-info">
+              <span className="total">
+                {totalStaked.toLocaleString()} TRIBIFY Staked
+              </span>
+              <span className="user-stake">
+                Your Stake: {userStake.toLocaleString()} TRIBIFY
+              </span>
+            </div>
+          </div>
+          <div className="deadline">
+            Voting Ends: {new Date(target.endTime).toLocaleDateString()}
+          </div>
+        </div>
+
+        {target.status === 'active' && (
+          <div className="target-actions">
+            <input
+              type="number"
+              value={stakeAmount}
+              onChange={(e) => setStakeAmount(e.target.value)}
+              placeholder="Enter TRIBIFY amount to stake"
+              className="stake-input"
             />
+            <button 
+              className="stake-button"
+              onClick={() => handleStakeVote(target.id, parseFloat(stakeAmount))}
+              disabled={!stakeAmount || parseFloat(stakeAmount) <= 0}
+            >
+              Stake TRIBIFY
+            </button>
           </div>
-          <div className="vote-counts">
-            <span className="for">
-              {(motion.votesFor).toLocaleString()} For
-            </span>
-            <span className="against">
-              {(motion.votesAgainst).toLocaleString()} Against
-            </span>
-          </div>
-        </div>
-        <div className="deadline">
-          Ends: {motion.deadline}
-        </div>
-      </div>
-
-      <div className="motion-actions">
-        {motion.proposer === publicKey ? (
-          <button className="cancel-proposal">Cancel Proposal</button>
-        ) : (
-          <>
-            <button className="vote-for" onClick={() => handleVote(motion.id, 'for')}>Vote For</button>
-            <button className="vote-against" onClick={() => handleVote(motion.id, 'against')}>Vote Against</button>
-          </>
         )}
       </div>
-    </div>
-  );
+    );
+  };
 
-  const CreateProposalModal = ({ onClose }) => {
-    const [formData, setFormData] = useState({
-      title: '',
-      description: '',
-      deadline: ''
-    });
-
-    const handleChange = (e) => {
-      const { name, value } = e.target;
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    };
-
+  const CreateTargetModal = ({ onClose }) => {
     return (
       <div className="modal-overlay">
         <div className="modal-content">
-          <h3>Create New Proposal</h3>
+          <h3>Propose New Target</h3>
           <button className="close-btn" onClick={onClose}>×</button>
 
           <div className="form-group">
-            <label>Title</label>
+            <label>Target Name</label>
             <input
               type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="Enter proposal title"
-              className="proposal-input"
+              value={newTarget.name}
+              onChange={(e) => setNewTarget(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Enter target name"
+              className="target-input"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Token Contract Address (CA)</label>
+            <input
+              type="text"
+              value={newTarget.tokenCA}
+              onChange={(e) => setNewTarget(prev => ({ ...prev, tokenCA: e.target.value }))}
+              placeholder="Enter token CA"
+              className="target-input"
             />
           </div>
 
           <div className="form-group">
             <label>Description</label>
             <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Describe your proposal"
-              className="proposal-textarea"
+              value={newTarget.description}
+              onChange={(e) => setNewTarget(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Why should we target this token?"
+              className="target-textarea"
               rows={6}
             />
           </div>
 
           <div className="form-group">
-            <label>Deadline</label>
+            <label>Voting Period (Days)</label>
+            <select
+              value={newTarget.votingPeriod}
+              onChange={(e) => setNewTarget(prev => ({ ...prev, votingPeriod: e.target.value }))}
+              className="target-select"
+            >
+              <option value="3">3 days</option>
+              <option value="7">7 days</option>
+              <option value="14">14 days</option>
+              <option value="30">30 days</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Minimum Stake Required (TRIBIFY)</label>
             <input
-              type="date"
-              name="deadline"
-              value={formData.deadline}
-              onChange={handleChange}
-              className="proposal-input"
+              type="number"
+              value={newTarget.minStake}
+              onChange={(e) => setNewTarget(prev => ({ ...prev, minStake: e.target.value }))}
+              className="target-input"
+              min="1000"
+              step="1000"
             />
           </div>
 
-          <button className="create-proposal-btn">
-            Create Proposal
+          <button 
+            className="create-target-btn"
+            onClick={handleCreateTarget}
+          >
+            Propose Target
           </button>
         </div>
       </div>
@@ -168,39 +207,39 @@ function VotePage({ tokenHolders, publicKey }) {
   return (
     <div className="vote-page">
       <div className="vote-header">
-        <h2>Governance</h2>
+        <h2>Target Proposals</h2>
         <button 
-          className="new-motion-button"
-          onClick={() => setShowNewProposalModal(true)}
+          className="new-target-button"
+          onClick={() => setShowNewTargetModal(true)}
         >
-          + New Proposal
+          + Propose New Target
         </button>
       </div>
 
-      {showNewProposalModal && <CreateProposalModal onClose={() => setShowNewProposalModal(false)} />}
+      {showNewTargetModal && <CreateTargetModal onClose={() => setShowNewTargetModal(false)} />}
 
-      <div className="proposals-section">
-        <h3>My Proposals</h3>
-        <div className="motions-list">
-          {myProposals.length === 0 ? (
-            <div className="no-proposals">
-              You haven't created any proposals yet
+      <div className="targets-section">
+        <h3>Active Targets</h3>
+        <div className="targets-list">
+          {activeTargets.length === 0 ? (
+            <div className="no-targets">
+              No active target proposals
             </div>
           ) : (
-            myProposals.map(motion => <ProposalCard key={motion.id} motion={motion} />)
+            activeTargets.map(target => <TargetCard key={target.id} target={target} />)
           )}
         </div>
       </div>
 
-      <div className="proposals-section">
-        <h3>Active Proposals</h3>
-        <div className="motions-list">
-          {otherProposals.length === 0 ? (
-            <div className="no-proposals">
-              No active proposals from other holders
+      <div className="targets-section">
+        <h3>Completed Raids</h3>
+        <div className="targets-list">
+          {completedTargets.length === 0 ? (
+            <div className="no-targets">
+              No completed raids yet
             </div>
           ) : (
-            otherProposals.map(motion => <ProposalCard key={motion.id} motion={motion} />)
+            completedTargets.map(target => <TargetCard key={target.id} target={target} />)
           )}
         </div>
       </div>

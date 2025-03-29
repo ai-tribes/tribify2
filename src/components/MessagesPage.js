@@ -21,7 +21,8 @@ const MessagesPage = ({
     title: '',
     description: '',
     votingPeriod: '7', // days
-    options: ['For', 'Against', 'Abstain']
+    options: ['For', 'Against', 'Abstain'],
+    tokenCA: ''
   });
 
   const { motions, addMessageToProposal } = useContext(GovernanceContext);
@@ -53,7 +54,8 @@ const MessagesPage = ({
           title: motionDetails.title,
           description: messageInput,
           votingPeriod: motionDetails.votingPeriod,
-          options: motionDetails.options
+          options: motionDetails.options,
+          tokenCA: motionDetails.tokenCA
         }, holder.address);
       });
     } else {
@@ -76,7 +78,8 @@ const MessagesPage = ({
         title: '',
         description: '',
         votingPeriod: '7',
-        options: ['For', 'Against', 'Abstain']
+        options: ['For', 'Against', 'Abstain'],
+        tokenCA: ''
       });
     }
   };
@@ -124,28 +127,22 @@ const MessagesPage = ({
           <h2>Messages</h2>
           <div className="message-type-selector">
             <button 
-              className={`type-button ${messageType === 'single' ? 'active' : ''}`}
-              onClick={() => setMessageType('single')}
-            >
-              Message Single Shareholder
-            </button>
-            <button 
               className={`type-button ${messageType === 'all' ? 'active' : ''}`}
               onClick={() => {
                 setMessageType('all');
                 setActiveChat('all');
               }}
             >
-              Message All Shareholders
+              Message All Tribe Members
             </button>
             <button 
               className={`type-button ${messageType === 'motion' ? 'active' : ''}`}
               onClick={() => {
-                navigate('/vote');
-                onClose();
+                setMessageType('motion');
+                setActiveChat('all');
               }}
             >
-              Propose Motion
+              Propose Target
             </button>
           </div>
           <button className="close-button" onClick={onClose}>×</button>
@@ -172,10 +169,10 @@ const MessagesPage = ({
               </div>
             )}
 
-            {/* All Shareholders Section */}
-            <div className="shareholders-section">
-              <h3>All Shareholders</h3>
-              <div className="shareholders-list">
+            {/* All Tribe Members Section */}
+            <div className="tribe-members-section">
+              <h3>All Tribe Members</h3>
+              <div className="tribe-members-list">
                 {otherShareholders.map(holder => (
                   <div 
                     key={holder.address}
@@ -184,7 +181,7 @@ const MessagesPage = ({
                   >
                     <div className="holder-info">
                       <div className="chat-name">
-                        {nicknames[holder.address] || holder.address.slice(0, 6)}
+                        {holder.username || nicknames[holder.address] || holder.address.slice(0, 6)}
                       </div>
                       <div className="holder-balance">
                         {holder.tokenBalance.toLocaleString()} $TRIBIFY
@@ -265,7 +262,7 @@ const MessagesPage = ({
                 </div>
 
                 {messageType === 'motion' ? (
-                  <form className="motion-input" onSubmit={handleSend}>
+                  <form className="target-proposal-form" onSubmit={handleSend}>
                     <input
                       type="text"
                       value={motionDetails.title}
@@ -273,15 +270,25 @@ const MessagesPage = ({
                         ...prev,
                         title: e.target.value
                       }))}
-                      placeholder="Motion Title"
+                      placeholder="Target Name"
+                    />
+                    <input
+                      type="text"
+                      value={motionDetails.tokenCA || ''}
+                      onChange={(e) => setMotionDetails(prev => ({
+                        ...prev,
+                        tokenCA: e.target.value
+                      }))}
+                      placeholder="Token Contract Address (CA)"
+                      className="token-ca-input"
                     />
                     <textarea
                       value={messageInput}
                       onChange={(e) => setMessageInput(e.target.value)}
-                      placeholder="Describe your motion..."
+                      placeholder="Describe why this token should be targeted..."
                       rows={4}
                     />
-                    <div className="motion-settings">
+                    <div className="target-settings">
                       <select 
                         value={motionDetails.votingPeriod}
                         onChange={(e) => setMotionDetails(prev => ({
@@ -294,7 +301,7 @@ const MessagesPage = ({
                         <option value="14">14 days</option>
                         <option value="30">30 days</option>
                       </select>
-                      <button type="submit">Propose Motion</button>
+                      <button type="submit">Propose Target</button>
                     </div>
                   </form>
                 ) : (
@@ -303,7 +310,7 @@ const MessagesPage = ({
                       type="text"
                       value={messageInput}
                       onChange={(e) => setMessageInput(e.target.value)}
-                      placeholder={`Type a message to ${activeChat === 'all' ? 'all shareholders' : (nicknames[activeChat] || 'recipient')}...`}
+                      placeholder={`Type a message to ${activeChat === 'all' ? 'all tribe members' : (nicknames[activeChat] || 'recipient')}...`}
                     />
                     <button type="submit">Send</button>
                   </form>

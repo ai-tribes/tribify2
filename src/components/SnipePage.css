@@ -488,4 +488,35 @@
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.5);
   cursor: not-allowed;
+}
+
+.explanation-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.explanation-section p {
+  margin-bottom: 15px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+}
+
+.explanation-section ul {
+  list-style-type: none;
+  padding-left: 20px;
+}
+
+.explanation-section li {
+  margin-bottom: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  position: relative;
+}
+
+.explanation-section li:before {
+  content: "•";
+  color: #00ff87;
+  position: absolute;
+  left: -15px;
 } 
