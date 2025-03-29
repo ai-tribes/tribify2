@@ -2334,52 +2334,53 @@ function WalletPage() {
         </div>
       )}
       <div className="wallet-content">
+        <div className="parent-wallet-info">
+          <div className="parent-wallet-row">
+            <span className="label">Parent Wallet:</span>
+            <span className="address">{parentWalletAddress || 'Not Connected'}</span>
+            <div className="parent-balances">
+              <span className="parent-balance sol">
+                3.1040 SOL
+              </span>
+              <span className="parent-balance tribify">
+                32,071,767.199 TRIBIFY
+              </span>
+              <span className="parent-balance usdc">
+                $0.00 USDC
+              </span>
+              <span className="parent-balance target">
+                N/A TARGET
+              </span>
+            </div>
+          </div>
+        </div>
+        
         <div className="wallet-header">
           <div className="wallet-section">
             <div className="wallet-controls primary">
               <button onClick={generateHDWallet} disabled={generating}>
-                {generating ? 'Generating...' : 'Generate Keys'}
+                {generating ? 'Generating...' : 'Generate Subwallets'}
               </button>
               <button onClick={downloadKeypairs} disabled={keypairs.length === 0}>
-                Backup Keys
+                Backup Subwallets
+              </button>
+              <button 
+                className="fund-button" 
+                onClick={() => setIsFundingModalOpen(true)}
+              >
+                Fund Subwallets
               </button>
               <button 
                 onClick={() => fileInputRef.current?.click()}
                 className="restore-button"
               >
-                Restore Keys
+                Restore Subwallets
               </button>
               <button 
                 onClick={fetchBalances} 
                 disabled={keypairs.length === 0 || isLoading}
               >
-                ↻ Refresh Wallets
-              </button>
-              <button
-                onClick={() => {
-                  const confirmed = window.confirm(
-                    'WARNING: This will delete all your private keys!\n\n' +
-                    'Make sure you have backed up your keys first.\n\n' +
-                    'Are you absolutely sure you want to proceed?'
-                  );
-                  if (confirmed) {
-                    const doubleConfirmed = window.confirm(
-                      'FINAL WARNING: This action cannot be undone!\n\n' +
-                      'Your private keys will be permanently deleted.\n\n' +
-                      'Type "DELETE" to confirm:'
-                    );
-                    if (doubleConfirmed === 'DELETE') {
-                      localStorage.clear();
-                      setKeypairs([]);
-                      setSubwallets([]);
-                      setPublicKeys([]);
-                      window.location.reload();
-                    }
-                  }
-                }}
-                className="danger-button"
-              >
-                Clear Storage & Reset
+                Refresh Subwallets
               </button>
             </div>
           </div>
@@ -2388,12 +2389,6 @@ function WalletPage() {
             <div className="wallet-controls-container">
               {/* All buttons in a single row */}
               <div className="wallet-controls secondary row">
-                <button 
-                  className="fund-button" 
-                  onClick={() => setIsFundingModalOpen(true)}
-                >
-                  Fund Subwallets
-                </button>
                 <button 
                   className="distribute-button" 
                   onClick={() => setIsDistributeModalOpen(true)}
@@ -2493,27 +2488,6 @@ function WalletPage() {
           </div>
         </div>
 
-        <div className="parent-wallet-info">
-          <div className="parent-wallet-row">
-            <span className="label">Parent Wallet:</span>
-            <span className="address">{parentWalletAddress || 'Not Connected'}</span>
-            <div className="parent-balances">
-              <span className="parent-balance sol">
-                3.1040 SOL
-              </span>
-              <span className="parent-balance tribify">
-                32,071,767.199 TRIBIFY
-              </span>
-              <span className="parent-balance usdc">
-                $0.00 USDC
-              </span>
-              <span className="parent-balance target">
-                N/A TARGET
-              </span>
-            </div>
-          </div>
-        </div>
-        
         <div className="wallets-header">
           <h3 className="subwallets-title">Sub Wallets</h3>
         </div>
