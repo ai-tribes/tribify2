@@ -135,6 +135,56 @@ const styles = `
   .target-button:hover {
     background-color: #34495e;
   }
+
+  /* TARGET conversion button styles */
+  .target-to-tribify {
+    background-color: #9b59b6;
+    color: white;
+  }
+
+  .target-to-tribify:hover {
+    background-color: #8e44ad;
+  }
+
+  .target-to-sol {
+    background-color: #3498db;
+    color: white;
+  }
+
+  .target-to-sol:hover {
+    background-color: #2980b9;
+  }
+
+  /* Buy/Sell button styles */
+  .wallet-controls.secondary button {
+    padding: 10px 16px;
+    border-radius: 4px;
+    border: none;
+    margin: 0 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
+  }
+
+  /* Green buttons (Buy) */
+  .configure-buy-button, .buy-button {
+    background-color: #2ecc71 !important;
+    color: white !important;
+  }
+
+  .configure-buy-button:hover, .buy-button:hover {
+    background-color: #27ae60 !important;
+  }
+
+  /* Red buttons (Sell) */
+  .configure-sell-button, .sell-button {
+    background-color: #e74c3c !important;
+    color: white !important;
+  }
+
+  .configure-sell-button:hover, .sell-button:hover {
+    background-color: #c0392b !important;
+  }
 `;
 
 // Add style tag to document
@@ -2270,7 +2320,6 @@ function WalletPage() {
           <div className="wallet-section">
             <h2>Wallet Management</h2>
             <div className="wallet-controls primary">
-              <button onClick={() => navigate(-1)} className="close-wallet-button">Close Wallet</button>
               <button onClick={generateHDWallet} disabled={generating}>
                 {generating ? 'Generating...' : 'Generate Keys'}
               </button>
@@ -2321,7 +2370,7 @@ function WalletPage() {
           <div className="wallet-section">
             <h2>Trading Options</h2>
             <div className="wallet-controls-container">
-              {/* First row: Fund and Distribute */}
+              {/* All buttons in a single row */}
               <div className="wallet-controls secondary row">
                 <button 
                   className="fund-button" 
@@ -2341,15 +2390,11 @@ function WalletPage() {
                 >
                   Select Target
                 </button>
-              </div>
-              
-              {/* Second row: Configure Buy/Sell and Sequences */}
-              <div className="wallet-controls secondary row">
-                <button onClick={() => setIsBuyModalOpen(true)}>
+                <button className="configure-buy-button" onClick={() => setIsBuyModalOpen(true)}>
                   Configure Buy
                 </button>
                 <button 
-                  className="sequence-button" 
+                  className="buy-button" 
                   onClick={() => {
                     buyAndDistribute();
                     setStatus('Buy sequence started');
@@ -2357,11 +2402,11 @@ function WalletPage() {
                 >
                   Buy
                 </button>
-                <button onClick={() => setIsSellModalOpen(true)}>
+                <button className="configure-sell-button" onClick={() => setIsSellModalOpen(true)}>
                   Configure Sell
                 </button>
                 <button 
-                  className="sequence-button sell" 
+                  className="sell-button" 
                   onClick={() => {
                     sellAndDistribute();
                     setStatus('Sell sequence started');

@@ -2029,24 +2029,31 @@ body.light .debug-value {
 }
 
 /* Configure Buy button */
-.wallet-controls.secondary.row button:nth-child(3) {
+.wallet-controls.secondary.row button:nth-child(4) {
   background: rgba(46, 204, 113, 0.1) !important;
   border: 1px solid #2ecc71 !important;
   color: #2ecc71 !important;
 }
 
 /* Buy button */
-.wallet-controls.secondary.row button:nth-child(4) {
+.wallet-controls.secondary.row button:nth-child(5) {
   background: #2ecc71 !important;
   border: 1px solid #27ae60 !important;
   color: #FFFFFF !important;
 }
 
 /* Configure Sell button */
-.wallet-controls.secondary.row button:nth-child(5) {
+.wallet-controls.secondary.row button:nth-child(6) {
   background: rgba(231, 76, 60, 0.1) !important;
   border: 1px solid #e74c3c !important;
   color: #e74c3c !important;
+}
+
+/* Sell button */
+.wallet-controls.secondary.row button:nth-child(7) {
+  background: #e74c3c !important;
+  border: 1px solid #c0392b !important;
+  color: #FFFFFF !important;
 }
 
 /* Hover effects */
