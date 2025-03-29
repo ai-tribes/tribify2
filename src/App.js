@@ -401,7 +401,7 @@ function App() {
       if (!pubKey) return;
       const bal = await connection.getBalance(new PublicKey(pubKey));
       setBalance(bal / LAMPORTS_PER_SOL);
-    } catch (error) {
+          } catch (error) {
       console.error('Error updating balance:', error);
     }
   };
@@ -457,7 +457,7 @@ function App() {
       const filteredHolders = holders
         .filter(h => h.tokenBalance > 0)
         .sort((a, b) => b.tokenBalance - a.tokenBalance);
-
+        
       console.log('Setting token holders:', filteredHolders);
       setTokenHolders(filteredHolders);
     } catch (error) {
@@ -520,10 +520,10 @@ function App() {
           const provider = getPhantomProvider();
           
           if (connectionState === 'connected' && provider) {
-            setIsConnected(true);
+          setIsConnected(true);
             setPublicKey(storedPublicKey);
             await updateBalance(storedPublicKey);
-            await fetchTokenHolders();
+          await fetchTokenHolders();
           }
         }
       } catch (error) {
@@ -538,8 +538,8 @@ function App() {
     try {
       if (!window.phantom?.solana) {
         alert('Please install Phantom wallet!');
-        return;
-      }
+      return;
+    }
 
       const resp = await window.phantom.solana.connect();
       localStorage.setItem('tribify_parent_wallet', resp.publicKey.toString());
@@ -678,7 +678,7 @@ function App() {
             >
               Backup
             </button>
-          </div>
+                        </div>
           <div className="nav-buttons-row">
             <button 
               className={`nav-button ${activeView === 'password' ? 'active' : ''}`}
@@ -692,7 +692,7 @@ function App() {
             <button 
               className={`nav-button ${activeView === 'messages' ? 'active' : ''}`}
               onClick={() => {
-                setActiveView('messages');
+              setActiveView('messages');
                 navigate('/messages');
               }}
             >
@@ -741,7 +741,7 @@ function App() {
               Disconnect
             </button>
           </div>
-        </div>
+            </div>
       </nav>
 
       <main className="main-content">
@@ -761,20 +761,20 @@ function App() {
                   <button onClick={fetchTokenHolders} className="retry-button">
                     Retry
                   </button>
-                </div>
+                    </div>
               ) : (
                 <div className="shareholders-content">
-                  <Shareholders 
-                    holders={tokenHolders}
-                    nicknames={nicknames}
-                    setNicknames={setNicknames}
-                    setActiveView={setActiveView}
+                <Shareholders 
+                  holders={tokenHolders}
+                  nicknames={nicknames}
+                  setNicknames={setNicknames}
+                  setActiveView={setActiveView}
                     publicKey={localStorage.getItem('tribify_parent_wallet')}
                     subwallets={subwallets}
-                  />
-                </div>
-              )}
-            </div>
+                />
+              </div>
+            )}
+              </div>
           } />
           <Route path="/wallet" element={
             <div className="wallet-container">
@@ -795,7 +795,7 @@ function App() {
                 nicknames={nicknames}
                 setNicknames={setNicknames}
               />
-            </div>
+              </div>
           } />
           <Route path="/snipe" element={
             <div className="snipe-container">
@@ -807,9 +807,9 @@ function App() {
             </div>
           } />
           <Route path="/sign" element={
-            <div className="sign-container">
+              <div className="sign-container">
               <Sign />
-            </div>
+              </div>
           } />
           <Route path="/vote" element={
             <div className="vote-container">
@@ -817,12 +817,12 @@ function App() {
                 tokenHolders={tokenHolders}
                 publicKey={localStorage.getItem('tribify_parent_wallet')}
               />
-            </div>
+          </div>
           } />
           <Route path="/password" element={
             <div className="password-container">
               <Password />
-            </div>
+              </div>
           } />
           <Route path="/messages" element={
             <div className="messages-container">
@@ -836,34 +836,34 @@ function App() {
                 onSendMessage={handleSendMessage}
                 onClose={() => navigate('/')}
               />
-            </div>
+                  </div>
           } />
           <Route path="/backup" element={
             <div className="backup-container">
               <Backup />
-            </div>
+                        </div>
           } />
           <Route path="/restore" element={
             <div className="restore-container">
               <Restore />
-            </div>
+                        </div>
           } />
           <Route path="/docs" element={
             <div className="docs-container">
               <div className="docs-content" dangerouslySetInnerHTML={{ __html: marked(DOCS_CONTENT) }} />
-            </div>
+                      </div>
           } />
           <Route path="/graph" element={
             <div className="graph-container">
               <TokenHolderGraph holders={tokenHolders} />
-            </div>
+              </div>
           } />
           <Route path="/connection" element={
             <div className="connection-container">
               <Connected onClick={handleConnection} />
             </div>
           } />
-        </Routes>
+      </Routes>
       </main>
     </div>
   );
