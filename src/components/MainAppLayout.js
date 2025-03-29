@@ -6,9 +6,7 @@ import SnipePage from './SnipePage';
 import StakeView from './StakeView';
 import VotePage from './VotePage';
 import Sign from './Sign';
-import Password from './Password';
 import Messages from './Messages';
-import Backup from './Backup';
 import Restore from './Restore';
 
 function MainAppLayout({ 
@@ -73,12 +71,6 @@ function MainAppLayout({
             onClick={() => setActiveView('vote')}
           >
             Vote
-          </button>
-          <button 
-            className="nav-button"
-            onClick={onDisconnect}
-          >
-            Disconnect
           </button>
         </div>
       </div>

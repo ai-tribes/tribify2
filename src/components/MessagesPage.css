@@ -64,15 +64,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 20px;
   padding: 0;
   cursor: pointer;
   transition: all 0.2s ease;
+  margin-left: auto;
 }
 
 .messages-header .close-button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: rotate(90deg);
+  background: rgba(255, 0, 0, 0.1);
+  border-color: rgba(255, 0, 0, 0.2);
+  color: #ff3b30;
 }
 
 .messages-layout {

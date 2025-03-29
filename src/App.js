@@ -7,7 +7,6 @@ import * as d3 from 'd3-force';
 import Pusher from 'pusher-js';
 import { encrypt, decrypt } from './lib/encryption';
 import Connected from './components/Connected';
-import Password from './components/Password';
 import Messages from './components/Messages';
 import Backup from './components/Backup';
 import Restore from './components/Restore';
@@ -29,6 +28,7 @@ import SnipePage from './components/SnipePage';
 import { getPhantomProvider, isPhantomInstalled, getPhantomConnectionState } from './utils/phantom';
 import { marked } from 'marked';
 import LandingPage from './components/LandingPage';
+import MainAppLayout from './components/MainAppLayout';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -77,11 +77,6 @@ Welcome token holder! Since you have $TRIBIFY tokens, you can access this docume
 2. Future governance
 3. Community membership
 `;
-
-// Add at the top with other constants
-const FRIEND_WALLETS = {
-  'Aycm5thyEQXMFR6CNVKL5f6SRJ3KVTCGA3HYoRTHN2kN': 'your_secret_password'  // Change this password
-};
 
 // Add total supply constant
 const TOTAL_SUPPLY = 1_000_000_000; // 1 Billion tokens
@@ -669,30 +664,12 @@ function App() {
             >
               Vote
             </button>
-            <button 
-              className={`nav-button ${activeView === 'backup' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveView('backup');
-                navigate('/backup');
-              }}
-            >
-              Backup
-            </button>
-                        </div>
+          </div>
           <div className="nav-buttons-row">
-            <button 
-              className={`nav-button ${activeView === 'password' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveView('password');
-                navigate('/password');
-              }}
-            >
-              Password
-            </button>
             <button 
               className={`nav-button ${activeView === 'messages' ? 'active' : ''}`}
               onClick={() => {
-              setActiveView('messages');
+                setActiveView('messages');
                 navigate('/messages');
               }}
             >
@@ -725,23 +702,8 @@ function App() {
             >
               Graph
             </button>
-            <button 
-              className={`nav-button ${activeView === 'connection' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveView('connection');
-                navigate('/connection');
-              }}
-            >
-              Connection
-            </button>
-            <button 
-              className="nav-button"
-              onClick={handleDisconnect}
-            >
-              Disconnect
-            </button>
           </div>
-            </div>
+        </div>
       </nav>
 
       <main className="main-content">
@@ -761,7 +723,7 @@ function App() {
                   <button onClick={fetchTokenHolders} className="retry-button">
                     Retry
                   </button>
-                    </div>
+                </div>
               ) : (
                 <div className="shareholders-content">
                 <Shareholders 
@@ -795,7 +757,7 @@ function App() {
                 nicknames={nicknames}
                 setNicknames={setNicknames}
               />
-              </div>
+            </div>
           } />
           <Route path="/snipe" element={
             <div className="snipe-container">
@@ -817,12 +779,7 @@ function App() {
                 tokenHolders={tokenHolders}
                 publicKey={localStorage.getItem('tribify_parent_wallet')}
               />
-          </div>
-          } />
-          <Route path="/password" element={
-            <div className="password-container">
-              <Password />
-              </div>
+            </div>
           } />
           <Route path="/messages" element={
             <div className="messages-container">
@@ -836,34 +793,34 @@ function App() {
                 onSendMessage={handleSendMessage}
                 onClose={() => navigate('/')}
               />
-                  </div>
+            </div>
           } />
           <Route path="/backup" element={
             <div className="backup-container">
               <Backup />
-                        </div>
+            </div>
           } />
           <Route path="/restore" element={
             <div className="restore-container">
               <Restore />
-                        </div>
+            </div>
           } />
           <Route path="/docs" element={
             <div className="docs-container">
               <div className="docs-content" dangerouslySetInnerHTML={{ __html: marked(DOCS_CONTENT) }} />
-                      </div>
+            </div>
           } />
           <Route path="/graph" element={
             <div className="graph-container">
               <TokenHolderGraph holders={tokenHolders} />
-              </div>
+            </div>
           } />
           <Route path="/connection" element={
             <div className="connection-container">
               <Connected onClick={handleConnection} />
             </div>
           } />
-      </Routes>
+        </Routes>
       </main>
     </div>
   );

@@ -1183,7 +1183,6 @@ body.light .restore-button {
 
 /* Remove any specific button styles */
 .disconnect-button,
-.password-button,
 .messages-button {
   /* Remove any specific styles as they'll inherit from the standard button styles */
 }
@@ -1503,54 +1502,6 @@ input[type="number"] {
 
 .dialog-buttons button:hover {
   opacity: 0.9;
-}
-
-.password-button {
-  background: #9b59b6;
-  color: white;
-  border-color: #9b59b6;
-}
-
-.password-button:hover {
-  opacity: 0.9;
-}
-
-.password-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin: 20px 0;
-}
-
-.password-field {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.password-field label {
-  font-size: 14px;
-  opacity: 0.8;
-}
-
-.password-field input {
-  padding: 8px;
-  background: transparent;
-  border: 1px solid currentColor;
-  color: inherit;
-  font-family: inherit;
-}
-
-.dialog-buttons button.confirm-password {
-  background: #2ecc71;
-  color: white;
-  border-color: #2ecc71;
-  font-weight: bold;
-}
-
-.password-field input:disabled {
-  background: rgba(0,0,0,0.1);
-  cursor: not-allowed;
 }
 
 .sniper-warning {
