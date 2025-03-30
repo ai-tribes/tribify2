@@ -2590,12 +2590,6 @@ function WalletPage() {
                 Backup Subwallets
               </button>
               <button 
-                className="fund-button" 
-                onClick={() => setIsFundingModalOpen(true)}
-              >
-                Fund Subwallets
-              </button>
-              <button 
                 onClick={() => fileInputRef.current?.click()}
                 className="restore-button"
               >
@@ -2616,15 +2610,46 @@ function WalletPage() {
               <div className="wallet-controls secondary row">
                 <div style={{ width: '20px' }}></div>
                 <button 
+                  className="fund-button" 
+                  onClick={() => setIsFundingModalOpen(true)}
+                  style={{ 
+                    backgroundColor: 'rgba(0, 127, 255, 0.1)',
+                    color: '#007fff',
+                    border: '1px solid #007fff',
+                    fontWeight: 'bold',
+                    padding: '8px 16px',
+                    borderRadius: '4px'
+                  }}
+                >
+                  Fund Subwallets
+                </button>
+                <button 
                   className="distribute-button" 
                   onClick={() => setIsDistributeModalOpen(true)}
+                  style={{ 
+                    marginLeft: '20px',
+                    backgroundColor: '#00aa88',
+                    color: '#ffffff',
+                    fontWeight: 'bold',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '4px'
+                  }}
                 >
                   Distribute $Tribify
                 </button>
                 <button 
                   className="target-button" 
                   onClick={() => setIsTargetModalOpen(true)}
-                  style={{ marginLeft: '20px' }}
+                  style={{ 
+                    marginLeft: '20px',
+                    backgroundColor: '#8800aa',
+                    color: '#ffffff',
+                    fontWeight: 'bold',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '4px'
+                  }}
                 >
                   Select Target
                 </button>
@@ -2798,59 +2823,81 @@ function WalletPage() {
             <div className="modal-overlay" onClick={() => setIsTargetModalOpen(false)} />
             <div className="modal-content">
               <div className="modal-header">
-                <h3>Select Target Wallets</h3>
+                <h3>Active Targets</h3>
                 <button className="close-button" onClick={() => setIsTargetModalOpen(false)}>×</button>
               </div>
               <div className="modal-body">
-                <p className="modal-description">
-                  Select which wallets should be targeted for token distribution operations.
-                </p>
-                <div className="target-options">
-                  <div className="option">
-                    <label className="checkbox-label">
-                      <input 
-                        type="checkbox" 
-                        checked={true}
-                        onChange={() => {}}
-                      />
-                      Target All Wallets
-                    </label>
-                  </div>
-
-                  <div className="option">
-                    <label className="checkbox-label">
-                      <input 
-                        type="checkbox" 
-                        checked={false}
-                        onChange={() => {}}
-                      />
-                      Target Wallets with Zero Balance
-                    </label>
-                  </div>
-
-                  <div className="option">
-                    <label className="checkbox-label">
-                      <input 
-                        type="checkbox" 
-                        checked={false}
-                        onChange={() => {}}
-                      />
-                      Target Custom Range
-                    </label>
-                    <div className="range-inputs">
-                      <input type="number" placeholder="From" min="1" disabled />
-                      <span>to</span>
-                      <input type="number" placeholder="To" min="1" disabled />
-                    </div>
-                  </div>
+                <div className="targets-list-container">
+                  {(() => {
+                    const savedTargets = localStorage.getItem('sniper_targets');
+                    const targets = savedTargets ? JSON.parse(savedTargets) : [];
+                    const activeTargets = targets.filter(t => t.isActive);
+                    
+                    if (activeTargets.length === 0) {
+                      return (
+                        <div className="no-targets">
+                          <p>No active targets found. Add targets in the Target Proposals page.</p>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div className="targets-grid">
+                        {activeTargets.map((target, index) => (
+                          <div key={index} className="target-card active">
+                            <div className="target-header">
+                              <h4>{target.name || 'Unnamed Target'}</h4>
+                            </div>
+                            <div className="target-details">
+                              <div className="detail-row">
+                                <span className="label">Address:</span>
+                                <span className="value address">{target.address}</span>
+                              </div>
+                              {target.description && (
+                                <div className="detail-row">
+                                  <span className="label">Description:</span>
+                                  <span className="value">{target.description}</span>
+                                </div>
+                              )}
+                              <div className="detail-row">
+                                <span className="label">Buy Amount:</span>
+                                <span className="value">{target.buyAmount} SOL</span>
+                              </div>
+                              <div className="detail-row">
+                                <span className="label">Max Price:</span>
+                                <span className="value">{target.maxPrice} SOL</span>
+                              </div>
+                            </div>
+                            <div className="target-actions">
+                              <button
+                                className="select-target-button"
+                                onClick={() => {
+                                  // Set the contract address in the buy configuration
+                                  setBuyConfig({
+                                    ...buyConfig, 
+                                    contractAddress: target.address,
+                                    budget: {
+                                      ...buyConfig.budget,
+                                      amount: target.buyAmount
+                                    }
+                                  });
+                                  setIsTargetModalOpen(false);
+                                  setIsBuyModalOpen(true); // Open buy modal with this target
+                                }}
+                              >
+                                Select for Buy
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
               <div className="modal-footer">
-                <button className="cancel-button" onClick={() => setIsTargetModalOpen(false)}>
-                  Cancel
-                </button>
-                <button className="save-button">
-                  Apply Selection
+                <button className="close-button" onClick={() => setIsTargetModalOpen(false)}>
+                  Close
                 </button>
               </div>
             </div>

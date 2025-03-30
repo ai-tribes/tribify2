@@ -24,6 +24,26 @@ function fixButtonColors() {
     button.style.cssText = "background: rgba(255, 0, 0, 0.1) !important; background-color: rgba(255, 0, 0, 0.1) !important; color: #ff0000 !important; border: 1px solid #ff0000 !important;";
   });
   
+  // Distribute button
+  document.querySelectorAll('.distribute-button').forEach(button => {
+    button.style.cssText = "background: #00aa88 !important; background-color: #00aa88 !important; color: #ffffff !important; border: none !important; font-weight: bold !important; padding: 8px 16px !important; border-radius: 4px !important;";
+  });
+  
+  // Target button
+  document.querySelectorAll('.target-button').forEach(button => {
+    button.style.cssText = "background: #8800aa !important; background-color: #8800aa !important; color: #ffffff !important; border: none !important; font-weight: bold !important; padding: 8px 16px !important; border-radius: 4px !important;";
+  });
+  
+  // Fund button
+  document.querySelectorAll('.fund-button').forEach(button => {
+    button.style.cssText = "background: rgba(0, 127, 255, 0.1) !important; background-color: rgba(0, 127, 255, 0.1) !important; color: #007fff !important; border: 1px solid #007fff !important; font-weight: bold !important; padding: 8px 16px !important; border-radius: 4px !important;";
+  });
+  
+  // Select Target button in Target modal
+  document.querySelectorAll('.select-target-button').forEach(button => {
+    button.style.cssText = "background: #00aa88 !important; background-color: #00aa88 !important; color: #ffffff !important; border: none !important; font-weight: bold !important; padding: 8px 16px !important; border-radius: 4px !important;";
+  });
+  
   console.log("Button colors fixed!");
 }
 
