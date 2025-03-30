@@ -122,10 +122,10 @@ function StakeView({ parentWallet, tokenHolders = [] }) {
             <span>Balance</span>
           </div>
           <div className="wallet-col stake">
-            <span>Simple Stake</span>
+            <span>Vote</span>
           </div>
           <div className="wallet-col motions">
-            <span>Governance Stake</span>
+            <span>Target</span>
           </div>
         </div>
 

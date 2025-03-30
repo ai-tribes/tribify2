@@ -1,0 +1,102 @@
+/* Emergency Fix for Button Colors */
+/* Buy Buttons */
+html body button.buy-button,
+html body .buy-button,
+html body div button.buy-button,
+html body .wallet-controls button.buy-button,
+html body .wallet-section button.buy-button,
+html body .modal-content button.buy-button,
+html body .buy-config-modal button.buy-button,
+html body .modal-container button.buy-button {
+  background: #00ff00 !important;
+  background-color: #00ff00 !important;
+  color: #000000 !important;
+  border: none !important;
+  font-weight: bold !important;
+}
+
+/* Buy Button Hover */
+html body button.buy-button:hover,
+html body .buy-button:hover,
+html body div button.buy-button:hover,
+html body .wallet-controls button.buy-button:hover,
+html body .wallet-section button.buy-button:hover,
+html body .modal-content button.buy-button:hover,
+html body .buy-config-modal button.buy-button:hover,
+html body .modal-container button.buy-button:hover {
+  background: #00cc00 !important;
+  background-color: #00cc00 !important;
+}
+
+/* Sell Buttons */
+html body button.sell-button,
+html body .sell-button,
+html body div button.sell-button,
+html body .wallet-controls button.sell-button,
+html body .wallet-section button.sell-button,
+html body .modal-content button.sell-button,
+html body .sell-config-modal button.sell-button,
+html body .modal-container button.sell-button {
+  background: #ff0000 !important;
+  background-color: #ff0000 !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-weight: bold !important;
+}
+
+/* Sell Button Hover */
+html body button.sell-button:hover,
+html body .sell-button:hover,
+html body div button.sell-button:hover,
+html body .wallet-controls button.sell-button:hover,
+html body .wallet-section button.sell-button:hover,
+html body .modal-content button.sell-button:hover,
+html body .sell-config-modal button.sell-button:hover,
+html body .modal-container button.sell-button:hover {
+  background: #cc0000 !important;
+  background-color: #cc0000 !important;
+}
+
+/* Configure Buy Buttons */
+html body button.configure-buy-button,
+html body .configure-buy-button,
+html body div button.configure-buy-button,
+html body .wallet-controls button.configure-buy-button,
+html body .wallet-section button.configure-buy-button {
+  background: rgba(0, 255, 0, 0.1) !important;
+  background-color: rgba(0, 255, 0, 0.1) !important;
+  color: #00ff00 !important;
+  border: 1px solid #00ff00 !important;
+}
+
+/* Configure Buy Button Hover */
+html body button.configure-buy-button:hover,
+html body .configure-buy-button:hover,
+html body div button.configure-buy-button:hover,
+html body .wallet-controls button.configure-buy-button:hover,
+html body .wallet-section button.configure-buy-button:hover {
+  background: rgba(0, 255, 0, 0.2) !important;
+  background-color: rgba(0, 255, 0, 0.2) !important;
+}
+
+/* Configure Sell Buttons */
+html body button.configure-sell-button,
+html body .configure-sell-button,
+html body div button.configure-sell-button,
+html body .wallet-controls button.configure-sell-button,
+html body .wallet-section button.configure-sell-button {
+  background: rgba(255, 0, 0, 0.1) !important;
+  background-color: rgba(255, 0, 0, 0.1) !important;
+  color: #ff0000 !important;
+  border: 1px solid #ff0000 !important;
+}
+
+/* Configure Sell Button Hover */
+html body button.configure-sell-button:hover,
+html body .configure-sell-button:hover,
+html body div button.configure-sell-button:hover,
+html body .wallet-controls button.configure-sell-button:hover,
+html body .wallet-section button.configure-sell-button:hover {
+  background: rgba(255, 0, 0, 0.2) !important;
+  background-color: rgba(255, 0, 0, 0.2) !important;
+} 

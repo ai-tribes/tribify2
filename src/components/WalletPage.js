@@ -24,6 +24,8 @@ import './BuyConfigModal.css';
 import './SellConfigModal.css';
 import { createJupiterApiClient } from '@jup-ag/api';
 import { DefaultApi, Configuration } from '@jup-ag/api';
+import './WalletPage.css';
+import './ButtonStyles.css'; // Import the new button styles
 
 // Add CSS styles
 const styles = `
@@ -2639,6 +2641,12 @@ function WalletPage() {
                     buyAndDistribute();
                     setStatus('Buy sequence started');
                   }}
+                  style={{ 
+                    backgroundColor: '#00ff00', 
+                    color: '#000000',
+                    fontWeight: 'bold',
+                    border: 'none'
+                  }}
                 >
                   Buy
                 </button>
@@ -2653,6 +2661,12 @@ function WalletPage() {
                   onClick={() => {
                     sellAndDistribute();
                     setStatus('Sell sequence started');
+                  }}
+                  style={{ 
+                    backgroundColor: '#ff0000', 
+                    color: '#ffffff',
+                    fontWeight: 'bold',
+                    border: 'none'
                   }}
                 >
                   Sell
@@ -2983,6 +2997,12 @@ function WalletPage() {
                     setIsBuyModalOpen(false);
                     setStatus('Automated buying has been started.');
                   }}
+                  style={{ 
+                    backgroundColor: '#00ff00', 
+                    color: '#000000',
+                    fontWeight: 'bold',
+                    border: 'none'
+                  }}
                 >
                   Start Buying
                 </button>
@@ -3128,6 +3148,12 @@ function WalletPage() {
                     sellAndDistribute();
                     setIsSellModalOpen(false);
                     setStatus('Automated selling has been started.');
+                  }}
+                  style={{ 
+                    backgroundColor: '#ff0000', 
+                    color: '#ffffff',
+                    fontWeight: 'bold',
+                    border: 'none'
                   }}
                 >
                   Start Selling

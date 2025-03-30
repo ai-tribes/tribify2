@@ -19,11 +19,115 @@
             margin: 0;
             padding: 0;
         }
+        
+        /* Emergency Fix for Button Colors */
+        /* Buy Buttons */
+        button.buy-button,
+        .buy-button,
+        div button.buy-button,
+        .wallet-controls button.buy-button,
+        .wallet-section button.buy-button,
+        .modal-content button.buy-button,
+        .buy-config-modal button.buy-button,
+        .modal-container button.buy-button {
+          background: #00ff00 !important;
+          background-color: #00ff00 !important;
+          color: #000000 !important;
+          border: none !important;
+          font-weight: bold !important;
+        }
+        
+        /* Buy Button Hover */
+        button.buy-button:hover,
+        .buy-button:hover,
+        div button.buy-button:hover,
+        .wallet-controls button.buy-button:hover,
+        .wallet-section button.buy-button:hover,
+        .modal-content button.buy-button:hover,
+        .buy-config-modal button.buy-button:hover,
+        .modal-container button.buy-button:hover {
+          background: #00cc00 !important;
+          background-color: #00cc00 !important;
+        }
+        
+        /* Sell Buttons */
+        button.sell-button,
+        .sell-button,
+        div button.sell-button,
+        .wallet-controls button.sell-button,
+        .wallet-section button.sell-button,
+        .modal-content button.sell-button,
+        .sell-config-modal button.sell-button,
+        .modal-container button.sell-button {
+          background: #ff0000 !important;
+          background-color: #ff0000 !important;
+          color: #ffffff !important;
+          border: none !important;
+          font-weight: bold !important;
+        }
+        
+        /* Sell Button Hover */
+        button.sell-button:hover,
+        .sell-button:hover,
+        div button.sell-button:hover,
+        .wallet-controls button.sell-button:hover,
+        .wallet-section button.sell-button:hover,
+        .modal-content button.sell-button:hover,
+        .sell-config-modal button.sell-button:hover,
+        .modal-container button.sell-button:hover {
+          background: #cc0000 !important;
+          background-color: #cc0000 !important;
+        }
+        
+        /* Configure Buy Buttons */
+        button.configure-buy-button,
+        .configure-buy-button,
+        div button.configure-buy-button,
+        .wallet-controls button.configure-buy-button,
+        .wallet-section button.configure-buy-button {
+          background: rgba(0, 255, 0, 0.1) !important;
+          background-color: rgba(0, 255, 0, 0.1) !important;
+          color: #00ff00 !important;
+          border: 1px solid #00ff00 !important;
+        }
+        
+        /* Configure Buy Button Hover */
+        button.configure-buy-button:hover,
+        .configure-buy-button:hover,
+        div button.configure-buy-button:hover,
+        .wallet-controls button.configure-buy-button:hover,
+        .wallet-section button.configure-buy-button:hover {
+          background: rgba(0, 255, 0, 0.2) !important;
+          background-color: rgba(0, 255, 0, 0.2) !important;
+        }
+        
+        /* Configure Sell Buttons */
+        button.configure-sell-button,
+        .configure-sell-button,
+        div button.configure-sell-button,
+        .wallet-controls button.configure-sell-button,
+        .wallet-section button.configure-sell-button {
+          background: rgba(255, 0, 0, 0.1) !important;
+          background-color: rgba(255, 0, 0, 0.1) !important;
+          color: #ff0000 !important;
+          border: 1px solid #ff0000 !important;
+        }
+        
+        /* Configure Sell Button Hover */
+        button.configure-sell-button:hover,
+        .configure-sell-button:hover,
+        div button.configure-sell-button:hover,
+        .wallet-controls button.configure-sell-button:hover,
+        .wallet-section button.configure-sell-button:hover {
+          background: rgba(255, 0, 0, 0.2) !important;
+          background-color: rgba(255, 0, 0, 0.2) !important;
+        }
     </style>
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src *;">
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+    <script src="%PUBLIC_URL%/fix-buttons.js"></script>
   </body>
 </html> 

@@ -203,7 +203,7 @@ const MessagesPage = ({
                 <div className="chat-header">
                   <h3>
                     {activeChat === 'all' 
-                      ? 'Message All Shareholders' 
+                      ? 'Message All Tribe Members' 
                       : (nicknames[activeChat] || activeChat)
                     }
                   </h3>
@@ -212,7 +212,7 @@ const MessagesPage = ({
                 <div className="messages-container">
                   {activeChat === 'all' ? (
                     <div className="broadcast-info">
-                      Messages will be sent to all shareholders
+                      Messages will be sent to all tribe members
                     </div>
                   ) : messages[activeChat]?.length > 0 ? (
                     messages[activeChat].map((msg, i) => (
