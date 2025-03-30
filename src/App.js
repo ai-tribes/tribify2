@@ -585,7 +585,7 @@ function App() {
                 navigate('/');
               }}
             >
-              /tribify.ai
+              $Tribify.ai
             </button>
             <button 
               className={`nav-button ${activeView === 'shareholders' ? 'active' : ''}`}

@@ -8,7 +8,7 @@ const LandingPage = ({ onSocialLogin, onWalletLogin }) => {
     <div className="landing-container">
       <div className="landing-header">
         <div className="logo-section">
-          <h1>/tribify.ai</h1>
+          <h1>$Tribify.ai</h1>
           <p className="subtitle">Tribify your social media with AI-powered token management</p>
         </div>
       </div>
@@ -18,7 +18,7 @@ const LandingPage = ({ onSocialLogin, onWalletLogin }) => {
           <div className="hero-text">
             <h2>Transform Your Social Media Following Into a Token-Powered Community</h2>
             <p className="hero-description">
-              Tribify.ai connects your social media accounts, launches your personal token, and deploys an AI agent to help you grow and manage your community.
+              $Tribify.ai connects your social media accounts, launches your personal token, and deploys an AI agent to help you grow and manage your community.
             </p>
           </div>
           <div className="hero-image">
@@ -161,7 +161,7 @@ const LandingPage = ({ onSocialLogin, onWalletLogin }) => {
           <h3 className="section-title">What is Tribify?</h3>
           <div className="tribify-explanation">
             <p>
-              <strong>Tribify</strong> is a platform that transforms your social media following into a token-powered community. By "tribifying" your social media accounts, you can:
+              <strong>$Tribify</strong> is a platform that transforms your social media following into a token-powered community. By "tribifying" your social media accounts, you can:
             </p>
             <ul className="tribify-benefits">
               <li>Launch your own token that represents value in your community</li>
@@ -173,33 +173,6 @@ const LandingPage = ({ onSocialLogin, onWalletLogin }) => {
             <p className="cta-text">
               Ready to tribify your online presence? Sign up today and transform your followers into a thriving community!
             </p>
-          </div>
-        </div>
-
-        <div className="terminal-section">
-          <div className="terminal-header">
-            <span className="terminal-title">AI Terminal</span>
-            <button className="close-terminal">×</button>
-          </div>
-          <div className="terminal-content">
-            <div className="welcome-message">
-              Welcome to /tribify.ai! I'm your AI assistant for managing tokens and growing your community. I can help you:
-              • Launch your personal token
-              • Manage your token holders
-              • Optimize distribution strategies
-              • Engage with your community
-              • Analyze growth metrics
-            </div>
-            <div className="terminal-input-container">
-              <input
-                type="text"
-                className="terminal-input"
-                placeholder="Ask me how to grow your community..."
-              />
-            </div>
-            <div className="terminal-output">
-              Type /help to see all commands
-            </div>
           </div>
         </div>
       </div>
