@@ -29,6 +29,7 @@ import LandingPage from './components/LandingPage';
 import MainAppLayout from './components/MainAppLayout';
 import TribifyAI from './components/TribifyAI';
 import { FaHome } from 'react-icons/fa';
+import Dashboard from './components/Dashboard';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -569,15 +570,21 @@ function App() {
     navigate('/');
   };
 
-  // Show updated landing page when not connected
+  // Show landing page when not connected (no navigation)
   if (!isConnected) {
-    return <LandingPage 
-      onSocialLogin={handleSocialLogin} 
-      onWalletLogin={handleWalletLogin}
-    />;
+    return (
+      <Routes>
+        <Route path="*" element={
+          <LandingPage 
+            onSocialLogin={handleSocialLogin} 
+            onWalletLogin={handleWalletLogin}
+          />
+        } />
+      </Routes>
+    );
   }
 
-  // Show main app when connected
+  // Show authenticated app with navigation
   return (
     <div className="App">
       <nav className="desktop-nav">
@@ -654,7 +661,7 @@ function App() {
 
       <main className="main-content">
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<Dashboard />} />
           <Route path="/tribifyai" element={<TribifyAI />} />
           <Route path="/shareholders" element={
             <div className="shareholders-container">
