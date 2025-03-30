@@ -3350,3 +3350,20 @@ body.light .debug-value {
   from { opacity: 1; transform: translateX(0); }
   to { opacity: 0; transform: translateX(20px); }
 }
+
+.nav-button.home-button {
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.nav-button.home-button:hover {
+  color: white;
+}
+
+.nav-button.home-button.active {
+  color: #00ff87;
+}

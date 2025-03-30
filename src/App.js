@@ -27,6 +27,8 @@ import { getPhantomProvider, isPhantomInstalled, getPhantomConnectionState } fro
 import { marked } from 'marked';
 import LandingPage from './components/LandingPage';
 import MainAppLayout from './components/MainAppLayout';
+import TribifyAI from './components/TribifyAI';
+import { FaHome } from 'react-icons/fa';
 
 // Need this shit for Solana
 window.Buffer = window.Buffer || require('buffer').Buffer;
@@ -353,7 +355,7 @@ const MessageModal = ({ isOpen, onClose, recipient, recipientName, messages, onS
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeView, setActiveView] = useState('ai');
+  const [activeView, setActiveView] = useState('home');
   const [isConnected, setIsConnected] = useState(false);
   const [tokenHolders, setTokenHolders] = useState([]);
   const [nicknames, setNicknames] = useState({});
@@ -471,6 +473,9 @@ function App() {
 
     switch (path) {
       case '/':
+        setActiveView('home');
+        break;
+      case '/tribifyai':
         setActiveView('ai');
         break;
       case '/shareholders':
@@ -494,7 +499,7 @@ function App() {
         setActiveView('stake');
         break;
       default:
-        setActiveView('ai');
+        setActiveView('home');
     }
   }, [location.pathname, tokenHolders.length, isLoading]);
 
@@ -579,10 +584,19 @@ function App() {
         <div className="nav-buttons">
           <div className="nav-buttons-row">
             <button 
+              className={`nav-button home-button ${activeView === 'home' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveView('home');
+                navigate('/');
+              }}
+            >
+              <FaHome />
+            </button>
+            <button 
               className={`nav-button tribify-button ${activeView === 'ai' ? 'active' : ''}`}
               onClick={() => {
                 setActiveView('ai');
-                navigate('/');
+                navigate('/tribifyai');
               }}
             >
               $Tribify.ai
@@ -641,6 +655,7 @@ function App() {
       <main className="main-content">
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/tribifyai" element={<TribifyAI />} />
           <Route path="/shareholders" element={
             <div className="shareholders-container">
               <h2>Tribe Members</h2>
