@@ -766,4 +766,102 @@
 
 .remove-token-btn:hover {
   background: rgba(255, 71, 87, 0.4);
+}
+
+.wallet-selection-modal {
+  max-width: 800px;
+}
+
+.wallet-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 10px;
+  margin: 10px 0;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.wallet-selection-card {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.wallet-selection-card.selected {
+  border-color: #00ff87;
+  background: rgba(0, 255, 135, 0.1);
+}
+
+.wallet-selection-card input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.token-info {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 15px;
+  border-radius: 8px;
+  font-family: monospace;
+  margin-bottom: 15px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.no-funded-wallets {
+  text-align: center;
+  padding: 40px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.fund-wallets-btn {
+  background: #00ff87;
+  color: #000;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.fund-wallets-btn:hover {
+  background: #60efff;
+  transform: translateY(-2px);
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.confirm-btn {
+  background: #00ff87;
+  color: #000;
+  border: none;
+  padding: 10px 25px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.confirm-btn:hover {
+  background: #60efff;
+  transform: translateY(-2px);
 } 

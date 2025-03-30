@@ -134,7 +134,7 @@ function StakeView({ parentWallet, tokenHolders = [] }) {
             <div className="wallet-col address">
               <span className="wallet-number">{index}</span>
               <span className="wallet-icon">{index === 0 ? '🔑' : '◈'}</span>
-              <span className="wallet-address-text">{wallet.publicKey}</span>
+              <span className="wallet-address-text">{wallet.publicKey.slice(0, 6) + "..." + wallet.publicKey.slice(-4)}</span>
             </div>
             
             <div className="wallet-col balance">

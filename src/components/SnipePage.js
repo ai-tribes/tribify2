@@ -51,8 +51,10 @@ function SnipePage({ publicKey, parentBalance, subwallets = [] }) {
 
     return (
       <div className="modal-overlay">
-        <div className="modal-content">
+        <div className="modal-content wallet-selection-modal">
           <h3>Select Wallets for Sniping</h3>
+          <button className="close-btn" onClick={() => setShowMultiSnipeModal(false)}>×</button>
+          
           <div className="token-info">
             Token: {currentTokenCA.slice(0,6)}...{currentTokenCA.slice(-4)}
           </div>
@@ -64,7 +66,7 @@ function SnipePage({ publicKey, parentBalance, subwallets = [] }) {
                 const isSelected = selectedWallets[currentTokenCA]?.includes(wallet.publicKey.toString());
                 
                 return (
-                  <div key={wallet.publicKey.toString()} className="wallet-selection-card">
+                  <div key={wallet.publicKey.toString()} className={`wallet-selection-card ${isSelected ? 'selected' : ''}`}>
                     <input
                       type="checkbox"
                       checked={isSelected}
@@ -96,6 +98,7 @@ function SnipePage({ publicKey, parentBalance, subwallets = [] }) {
               <button 
                 onClick={() => {
                   // Navigate to wallet page or show funding modal
+                  setShowMultiSnipeModal(false);
                 }}
                 className="fund-wallets-btn"
               >
