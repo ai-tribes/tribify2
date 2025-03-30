@@ -85,11 +85,12 @@
 }
 
 .ai-token-graphic {
-  font-size: 3rem;
+  font-size: 1.8rem;
   font-weight: bold;
   color: #00ff87;
   z-index: 2;
   position: relative;
+  text-align: center;
 }
 
 .token-circle {

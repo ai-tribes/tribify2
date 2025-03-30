@@ -18,12 +18,12 @@ const LandingPage = ({ onSocialLogin, onWalletLogin }) => {
           <div className="hero-text">
             <h2>Transform Your Social Media Following Into a Token-Powered Community</h2>
             <p className="hero-description">
-              $Tribify.ai connects your social media accounts, launches your personal token, and deploys an AI agent to help you grow and manage your community.
+              $Tribify.ai connects your social media accounts, launches your personal token, and deploys an AI agent to help you grow and manage your community with the power of AI and Blockchain.
             </p>
           </div>
           <div className="hero-image">
             <div className="image-placeholder">
-              <span className="ai-token-graphic">AI</span>
+              <span className="ai-token-graphic">$Tribify</span>
               <div className="token-circle"></div>
               <div className="social-connections">
                 <div className="connection-line"></div>
