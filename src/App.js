@@ -524,16 +524,31 @@ function App() {
     autoConnect();
   }, []);
 
+  // Add new method to handle social media login
+  const handleSocialLogin = async (provider) => {
+    console.log(`Social login with ${provider}`);
+    // For now, redirect to phantom wallet connection as dummy functionality
+    handleConnection();
+  };
+
+  // Add new method to handle wallet login
+  const handleWalletLogin = async (walletType) => {
+    console.log(`Wallet login with ${walletType}`);
+    // Default to Phantom for now
+    handleConnection();
+  };
+
   const handleConnection = async () => {
     try {
       if (!window.phantom?.solana) {
         alert('Please install Phantom wallet!');
-      return;
-    }
+        return;
+      }
 
       const resp = await window.phantom.solana.connect();
       localStorage.setItem('tribify_parent_wallet', resp.publicKey.toString());
       setIsConnected(true);
+      setPublicKey(resp.publicKey.toString());
       navigate('/');
     } catch (err) {
       console.error('Failed to connect:', err);
@@ -549,45 +564,12 @@ function App() {
     navigate('/');
   };
 
-  // Show landing page when not connected
+  // Show updated landing page when not connected
   if (!isConnected) {
-    return (
-      <div className="landing-container">
-        <div className="landing-header">
-          <div className="logo-section">
-            <h1>/tribify.ai</h1>
-            <p className="subtitle">AI-powered token management & community platform</p>
-          </div>
-        </div>
-
-        <div className="landing-content">
-          <div className="features-grid">
-            <div className="feature-card">
-              <h3>Token Management</h3>
-              <p>Create and manage up to 100 subwallets for strategic token distribution</p>
-            </div>
-            <div className="feature-card">
-              <h3>Community Tools</h3>
-              <p>Monitor token holders, communicate with shareholders, and build your community</p>
-            </div>
-            <div className="feature-card">
-              <h3>Token Conversion</h3>
-              <p>Seamlessly convert between TRIBIFY, SOL, and USDC tokens</p>
-            </div>
-            <div className="feature-card">
-              <h3>AI Assistant</h3>
-              <p>Get help with wallet management, token strategies, and community engagement</p>
-            </div>
-          </div>
-
-          <div className="connect-section">
-            <button className="connect-button" onClick={handleConnection}>
-              Connect Wallet
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+    return <LandingPage 
+      onSocialLogin={handleSocialLogin} 
+      onWalletLogin={handleWalletLogin}
+    />;
   }
 
   // Show main app when connected
