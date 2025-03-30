@@ -491,7 +491,7 @@ function App() {
         setActiveView('snipe');
         break;
       case '/vote':
-        setActiveView('vote');
+        setActiveView('stake');
         break;
       default:
         setActiveView('ai');
@@ -639,16 +639,7 @@ function App() {
                 navigate('/target');
               }}
             >
-              Target
-            </button>
-            <button 
-              className={`nav-button ${activeView === 'vote' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveView('vote');
-                navigate('/vote');
-              }}
-            >
-              Vote
+              Target Proposals
             </button>
             <button 
               className={`nav-button ${activeView === 'stake' ? 'active' : ''}`}
@@ -657,7 +648,7 @@ function App() {
                 navigate('/stake');
               }}
             >
-              Stake
+              Vote & Stake
             </button>
           </div>
           <div className="nav-buttons-row">
@@ -724,14 +715,6 @@ function App() {
                 publicKey={localStorage.getItem('tribify_parent_wallet')}
                 parentBalance={balance}
                 subwallets={subwallets}
-              />
-            </div>
-          } />
-          <Route path="/vote" element={
-            <div className="vote-container">
-              <VotePage 
-                tokenHolders={tokenHolders}
-                publicKey={localStorage.getItem('tribify_parent_wallet')}
               />
             </div>
           } />

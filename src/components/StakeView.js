@@ -187,7 +187,7 @@ function StakeView({ parentWallet, tokenHolders = [] }) {
                 <option value="">
                   {lockedStakes[wallet.publicKey] 
                     ? "Tokens locked in stake" 
-                    : "Select Proposal"
+                    : "Select Target"
                   }
                 </option>
                 {!lockedStakes[wallet.publicKey] && motions.map(motion => (

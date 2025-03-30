@@ -334,15 +334,20 @@
 }
 
 .modal-content {
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(17, 25, 40, 0.95);
   border-radius: 12px;
   padding: 24px;
   width: 90%;
-  max-width: 1200px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
   color: #fff;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
 
 .modal-content h3 {
@@ -519,4 +524,246 @@
   color: #00ff87;
   position: absolute;
   left: -15px;
+}
+
+/* Main layout structure for the target page */
+.target-page {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.target-header {
+  margin-bottom: 10px;
+}
+
+/* Grid layout for main content sections */
+.target-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+
+@media (max-width: 1024px) {
+  .target-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Proposal section styles */
+.proposal-section {
+  margin-bottom: 20px;
+}
+
+.propose-target-btn {
+  background: #00ff87;
+  color: #000;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  margin-bottom: 20px;
+  transition: all 0.2s;
+}
+
+.propose-target-btn:hover {
+  background: #60efff;
+  transform: translateY(-1px);
+}
+
+/* Token management section */
+.token-management {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.tokens-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+/* Voting section */
+.voting-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.proposals-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.proposal-card {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s;
+}
+
+.proposal-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.proposal-card h3 {
+  margin-top: 0;
+  color: #00ff87;
+}
+
+.stake-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #fff;
+  margin-top: 10px;
+}
+
+/* Form styles for proposal modal */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.target-input, .target-textarea, .target-select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: #fff;
+  font-family: inherit;
+}
+
+.target-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Fix for token card layout */
+.token-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.token-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.token-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.no-proposals, .no-tokens {
+  text-align: center;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.close-btn:hover {
+  color: #fff;
+}
+
+.create-target-btn {
+  width: 100%;
+  background: #00ff87;
+  color: #000;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  margin-top: 10px;
+  transition: all 0.2s;
+}
+
+.create-target-btn:hover {
+  background: #60efff;
+  transform: translateY(-2px);
+}
+
+.start-sniper-btn {
+  width: 100%;
+  background: #00ff87;
+  color: #000;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.start-sniper-btn:hover {
+  background: #60efff;
+  transform: translateY(-2px);
+}
+
+.edit-wallets-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.edit-wallets-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.remove-token-btn {
+  background: rgba(255, 71, 87, 0.2);
+  color: #ff4757;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.remove-token-btn:hover {
+  background: rgba(255, 71, 87, 0.4);
 } 
