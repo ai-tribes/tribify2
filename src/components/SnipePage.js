@@ -149,25 +149,60 @@ function SnipePage({ publicKey, parentBalance, subwallets = [] }) {
     <div className="target-page">
       <div className="target-header">
         <h2>Target Coordination</h2>
-        <p>This page allows you to coordinate raids on other tribes by targeting their tokens. Automatically convert raided tokens to $TRIBIFY, increasing our token's power.</p>
-        <ul>
-          <li>Enter token contract addresses to monitor and raid</li>
-          <li>Select which subwallets to use for coordinated raids</li>
-          <li>Set maximum budget and slippage for each wallet</li>
-          <li>Auto-convert raided tokens to $TRIBIFY for maximum impact</li>
-        </ul>
       </div>
 
-      <div className="target-content">
-        <div className="left-column">
-          <div className="proposal-section">
-            <button onClick={() => setShowProposalModal(true)} className="propose-target-btn">
-              + Propose New Target
+      <div className="target-grid">
+        <div className="grid-item description-box">
+          <p>This page allows you to coordinate raids on other tribes by targeting their tokens. Automatically convert raided tokens to $TRIBIFY, increasing our token's power.</p>
+        </div>
+        
+        <div className="grid-item features-box">
+          <ul>
+            <li>Enter token contract addresses to monitor and raid</li>
+            <li>Select which subwallets to use for coordinated raids</li>
+            <li>Set maximum budget and slippage for each wallet</li>
+            <li>Auto-convert raided tokens to $TRIBIFY for maximum impact</li>
+          </ul>
+        </div>
+        
+        <div className="grid-item proposal-box">
+          <button onClick={() => setShowProposalModal(true)} className="propose-target-btn">
+            + Propose New Target
+          </button>
+        </div>
+        
+        <div className="grid-item manage-tokens-box">
+          <h3>Manage Tokens</h3>
+          <div className="token-input-container">
+            <input
+              type="text"
+              value={newTokenCA}
+              onChange={(e) => setNewTokenCA(e.target.value)}
+              placeholder="Enter Token CA"
+              className="token-input"
+            />
+            <button 
+              onClick={() => {
+                if (newTokenCA && newTokenCA.length >= 32) { // Basic validation
+                  setTokens(prev => [...prev, newTokenCA]);
+                  setNewTokenCA('');
+                }
+              }}
+              className="add-token-btn"
+              disabled={!newTokenCA || newTokenCA.length < 32}
+            >
+              Add Token
             </button>
           </div>
-
-          <div className="voting-section">
-            <h3>Vote on Proposals</h3>
+        </div>
+        
+        <div className="grid-item voting-box">
+          <h3>Vote on Proposals</h3>
+          {proposals.length === 0 ? (
+            <div className="no-proposals">
+              No target proposals yet. Create one to start!
+            </div>
+          ) : (
             <div className="proposals-list">
               {proposals.map((proposal, index) => (
                 <div key={index} className="proposal-card">
@@ -183,40 +218,16 @@ function SnipePage({ publicKey, parentBalance, subwallets = [] }) {
                   />
                 </div>
               ))}
-              {proposals.length === 0 && (
-                <div className="no-proposals">
-                  No target proposals yet. Create one to start!
-                </div>
-              )}
             </div>
-          </div>
+          )}
         </div>
-
-        <div className="right-column">
-          <div className="token-management">
-            <h3>Manage Tokens</h3>
-            <div className="token-input-container">
-              <input
-                type="text"
-                value={newTokenCA}
-                onChange={(e) => setNewTokenCA(e.target.value)}
-                placeholder="Enter Token CA"
-                className="token-input"
-              />
-              <button 
-                onClick={() => {
-                  if (newTokenCA && newTokenCA.length >= 32) { // Basic validation
-                    setTokens(prev => [...prev, newTokenCA]);
-                    setNewTokenCA('');
-                  }
-                }}
-                className="add-token-btn"
-                disabled={!newTokenCA || newTokenCA.length < 32}
-              >
-                Add Token
-              </button>
+        
+        <div className="grid-item tokens-box">
+          {tokens.length === 0 ? (
+            <div className="no-tokens">
+              No tokens added. Click "Add Token" to start sniping.
             </div>
-
+          ) : (
             <div className="tokens-grid">
               {tokens.map(tokenCA => (
                 <div key={tokenCA} className="token-card">
@@ -278,14 +289,8 @@ function SnipePage({ publicKey, parentBalance, subwallets = [] }) {
                   </button>
                 </div>
               ))}
-
-              {tokens.length === 0 && (
-                <div className="no-tokens">
-                  No tokens added. Click "Add Token" to start sniping.
-                </div>
-              )}
             </div>
-          </div>
+          )}
         </div>
       </div>
 

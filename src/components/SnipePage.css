@@ -526,109 +526,178 @@
   left: -15px;
 }
 
-/* Main layout structure for the target page */
+/* Main layout structure for the Target page */
 .target-page {
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 30px;
   max-width: 1200px;
   margin: 0 auto;
 }
 
 .target-header {
-  margin-bottom: 10px;
+  margin-bottom: 30px;
+  text-align: center;
 }
 
-/* Grid layout for main content sections */
-.target-content {
+.target-header h2 {
+  color: #00ff87;
+  margin: 0;
+  font-size: 28px;
+}
+
+/* Grid layout */
+.target-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 30px;
+  grid-template-rows: auto auto auto;
+  gap: 20px;
+  margin-bottom: 30px;
 }
 
-@media (max-width: 1024px) {
-  .target-content {
-    grid-template-columns: 1fr;
-  }
+.grid-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
 }
 
-/* Proposal section styles */
-.proposal-section {
-  margin-bottom: 20px;
+/* Description box */
+.description-box {
+  display: flex;
+  align-items: center;
+}
+
+.description-box p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Features box */
+.features-box ul {
+  list-style-type: none;
+  padding-left: 20px;
+  margin: 0;
+}
+
+.features-box li {
+  margin-bottom: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  position: relative;
+}
+
+.features-box li:before {
+  content: "•";
+  color: #00ff87;
+  position: absolute;
+  left: -15px;
+}
+
+/* Proposal box */
+.proposal-box {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .propose-target-btn {
   background: #00ff87;
   color: #000;
   border: none;
-  padding: 10px 20px;
+  padding: 15px 30px;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
-  margin-bottom: 20px;
+  font-size: 16px;
   transition: all 0.2s;
 }
 
 .propose-target-btn:hover {
   background: #60efff;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
-/* Token management section */
-.token-management {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
+/* Tokens management box */
+.manage-tokens-box h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #00ff87;
+}
+
+.token-input-container {
+  display: flex;
+  gap: 10px;
+}
+
+.token-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: #fff;
+  font-family: monospace;
+}
+
+.add-token-btn {
+  background: #00ff87;
+  color: #000;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.add-token-btn:hover {
+  background: #60efff;
+}
+
+.add-token-btn:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: not-allowed;
+}
+
+/* Voting box */
+.voting-box h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #00ff87;
+}
+
+.no-proposals, .no-tokens {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  font-size: 16px;
+}
+
+/* Tokens box */
+.tokens-box {
+  min-height: 250px;
 }
 
 .tokens-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
-  margin-top: 20px;
+  grid-template-columns: 1fr;
+  gap: 15px;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
-/* Voting section */
-.voting-section {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 20px;
-}
-
-.proposals-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
-  margin-top: 20px;
-}
-
-.proposal-card {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  padding: 16px;
-  transition: all 0.2s;
-}
-
-.proposal-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-.proposal-card h3 {
-  margin-top: 0;
-  color: #00ff87;
-}
-
-.stake-input {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 8px 12px;
-  border-radius: 6px;
-  color: #fff;
-  margin-top: 10px;
+@media (max-width: 768px) {
+  .target-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Form styles for proposal modal */
@@ -657,35 +726,7 @@
   resize: vertical;
 }
 
-/* Fix for token card layout */
-.token-card {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.token-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.token-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.no-proposals, .no-tokens {
-  text-align: center;
-  padding: 30px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7);
-}
-
+/* Close button for modals */
 .close-btn {
   position: absolute;
   top: 15px;
@@ -702,6 +743,7 @@
   color: #fff;
 }
 
+/* Create target button */
 .create-target-btn {
   width: 100%;
   background: #00ff87;
@@ -720,21 +762,25 @@
   transform: translateY(-2px);
 }
 
-.start-sniper-btn {
-  width: 100%;
-  background: #00ff87;
-  color: #000;
-  border: none;
-  padding: 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s;
+/* Token card styles */
+.token-card {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
-.start-sniper-btn:hover {
-  background: #60efff;
-  transform: translateY(-2px);
+.token-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.token-actions {
+  display: flex;
+  gap: 10px;
 }
 
 .edit-wallets-btn {
@@ -768,6 +814,54 @@
   background: rgba(255, 71, 87, 0.4);
 }
 
+/* Start sniper button */
+.start-sniper-btn {
+  width: 100%;
+  background: #00ff87;
+  color: #000;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.start-sniper-btn:hover {
+  background: #60efff;
+  transform: translateY(-2px);
+}
+
+/* Proposal card styles */
+.proposal-card {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s;
+  margin-bottom: 15px;
+}
+
+.proposal-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.proposal-card h3 {
+  margin-top: 0;
+  color: #00ff87;
+}
+
+.stake-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #fff;
+  margin-top: 10px;
+}
+
+/* Wallet selection modal styles */
 .wallet-selection-modal {
   max-width: 800px;
 }
@@ -814,34 +908,6 @@
   margin-bottom: 15px;
   text-align: center;
   font-size: 14px;
-}
-
-.no-funded-wallets {
-  text-align: center;
-  padding: 40px 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-}
-
-.fund-wallets-btn {
-  background: #00ff87;
-  color: #000;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.fund-wallets-btn:hover {
-  background: #60efff;
-  transform: translateY(-2px);
 }
 
 .modal-buttons {
