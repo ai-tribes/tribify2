@@ -16,7 +16,7 @@ import TokenDistributor from './TokenDistributor';
 // Import the new component
 import FundSubwallets from './FundSubwallets';
 // Add these imports at the top
-import { Jupiter, QuoteCalculator } from '@jup-ag/sdk';
+// Jupiter SDK removed - SOL/USDC conversion not yet active
 import { NATIVE_MINT } from '@solana/spl-token';
 import './ConversionModal.css';
 import ConversionModal from './ConversionModal';
